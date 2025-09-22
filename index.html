@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>콴다 신기능 체험 사이트</title>
+    
+    <!-- Open Graph Meta Tags -->
+    <meta property="og:title" content="콴다 신기능 체험 사이트">
+    <meta property="og:description" content="스마트 오답노트와 신기능 제안을 체험해보세요">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://qanda-test.vercel.app">
+    <meta property="og:site_name" content="콴다 신기능 체험 사이트">
+    
+    <!-- Twitter Card Meta Tags -->
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="콴다 신기능 체험 사이트">
+    <meta name="twitter:description" content="스마트 오답노트와 신기능 제안을 체험해보세요">
+    
+    <!-- Additional Meta Tags -->
+    <meta name="description" content="스마트 오답노트와 신기능 제안을 체험해보세요">
+    <meta name="keywords" content="콴다, 학습, 오답노트, 신기능, 체험">
+    
+    <!-- Mixpanel Analytics -->
+    <script type="text/javascript">
+        (function(c,a){if(!a.__SV){var b=window;try{var d,m,j,k=b.location,f=k.hash;d=function(a,b){return(m=a.match(RegExp(b+"=([^&]*)")))?m[1]:null};f&&d(f,"state")&&(j=JSON.parse(decodeURIComponent(d(f,"state"))),"mpeditor"===j.action&&(b.sessionStorage.setItem("_mpcehash",f),history.replaceState(j.desiredHash||"",c.title,k.pathname+k.search)))}catch(n){}var l,h;window.mixpanel=a;a._i=[];a.init=function(b,d,g){function c(b,i){var a=i.split(".");2==a.length&&(b=b[a[0]],i=a[1]);b[i]=function(){b.push([i].concat(Array.prototype.slice.call(arguments,0)))}}var e=a;"undefined"!==typeof g?e=a[g]=[]:g="mixpanel";e.people=e.people||[];e.toString=function(b){var a="mixpanel";"mixpanel"!==g&&(a+="."+g);b||(a+=" (stub)");return a};e.people.toString=function(){return e.toString(1)+".people (stub)"};l="disable time_event track track_pageview track_links track_forms track_with_groups add_group set_group remove_group register register_once alias unregister identify name_tag set_config reset opt_in_tracking opt_out_tracking has_opted_in_tracking has_opted_out_tracking clear_opt_in_tracking clear_opt_out_tracking people.identify people.set people.set_once people.unset people.increment people.append people.union people.track_charge people.clear_charges people.delete_user people.remove".split(" ");for(h=0;h<l.length;h++)c(e,l[h]);var f="init identify track track_pageview track_links track_forms track_with_groups add_group set_group remove_group register register_once alias unregister identify name_tag set_config reset opt_in_tracking opt_out_tracking has_opted_in_tracking has_opted_out_tracking clear_opt_in_tracking clear_opt_out_tracking people.identify people.set people.set_once people.unset people.increment people.append people.union people.track_charge people.clear_charges people.delete_user people.remove".split(" ");for(h=0;h<f.length;h++)c(e,f[h]);a._i.push([b,d,g])};a.__SV=1.2;b=c.createElement("script");b.type="text/javascript";b.async=!0;b.src="undefined"!==typeof MIXPANEL_CUSTOM_LIB_URL?MIXPANEL_CUSTOM_LIB_URL:"file:"===c.location.protocol&&"//cdn4.mxpnl.com/libs/mixpanel-2-latest.min.js".match(/^\/\//)?"https://cdn4.mxpnl.com/libs/mixpanel-2-latest.min.js":"//cdn4.mxpnl.com/libs/mixpanel-2-latest.min.js";d=c.getElementsByTagName("script")[0];d.parentNode.insertBefore(b,d)}})(document,window.mixpanel||[]);
+        mixpanel.init('2b7b98ad37048cc7e11a47f55abe39e4');
+    </script>
+    
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Status Bar -->
+    <div class="status-bar">
+        <span>9:41</span>
+    </div>
+
+    <!-- Header -->
+    <div class="header">
+        <div class="header-top">
+            <h1 class="header-title">콴다 신기능</h1>
+        </div>
+    </div>
+
+    <!-- Content Area -->
+    <div class="content">
+        <!-- Game Card 1 - Smart Review Note -->
+        <div class="game-card">
+            <!-- Left Column - Notebook Icon -->
+            <div class="game-icon">
+                📓
+            </div>
+            <!-- Right Column - Content -->
+            <div class="game-content">
+                <h2 class="game-title">스마트 오답노트</h2>
+                <p class="game-description">귀찮고 하기싫은 오답노트.. 핸드폰으로 빠르고 쉽게 해결해요!</p>
+                <div class="game-meta">
+                    <button class="challenge-btn" onclick="trackSmartReviewNote()">사용하기</button>
+                </div>
+            </div>
+        </div>
+
+            <!-- Game Card 2 - Smart planner -->
+            <div class="game-card">
+                <!-- Left Column - Notebook Icon -->
+                <div class="game-icon">
+                    🗓️
+                </div>
+                <!-- Right Column - Content -->
+                <div class="game-content">
+                    <h2 class="game-title">스마트 플래너</h2>
+                    <p class="game-description">목표 달성까지 해야되는 할일들을 스마트하게 관리해요!</p>
+                    <div class="game-meta">
+                        <button class="challenge-btn" onclick="trackSmartPlanner()">사용하기</button>
+                    </div>
+                </div>
+            </div>
+
+
+            <!-- Game Card 2 - Smart planner -->
+            <div class="game-card">
+                <!-- Left Column - Notebook Icon -->
+                <div class="game-icon">
+                    🙋🏻‍♂️
+                </div>
+                <!-- Right Column - Content -->
+                <div class="game-content">
+                    <h2 class="game-title">스마트 과외쌤</h2>
+                    <p class="game-description">이해하기 힘든 문제는 스마트 과외쌤과 함께 해결해요!</p>
+                    <div class="game-meta">
+                        <button class="challenge-btn" onclick="trackSmartTutor()">사용하기</button>
+                    </div>
+                </div>
+            </div>
+
+        <!-- Game Card 2 - Feature Recommendation -->
+        <div class="game-card">
+            <!-- Left Column - Innovation/Lightbulb Icon -->
+            <div class="game-icon">
+                💡
+            </div>
+            
+            <!-- Right Column - Content -->
+            <div class="game-content">
+                <h2 class="game-title">신기능 제안</h2>
+                <p class="game-description">새로운 기능을 제안해주세요!</p>
+                <div class="game-meta">
+                    <button class="challenge-btn" onclick="trackFeatureRecommendation()">제안하기</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bottom Navigation -->
+    <div class="bottom-nav">
+        <button class="nav-item" onclick="trackNavigation('home')">
+            <img src="assets/Icon_Home_Fill.svg" alt="Home" class="nav-icon">
+            <span class="nav-label">Home</span>
+        </button>
+        <button class="nav-item" onclick="trackNavigation('study')">
+            <img src="assets/Icon_Star_Page_Fill.svg" alt="Study" class="nav-icon">
+            <span class="nav-label">Study</span>
+        </button>
+        <button class="nav-item active" onclick="trackNavigation('break')">
+            <img src="assets/Icon_Cloud_Fill.svg" alt="Break" class="nav-icon">
+            <span class="nav-label">Break</span>
+        </button>
+        <button class="nav-item" onclick="trackNavigation('community')">
+            <img src="assets/Icon_Chat-balloon-ellipsis_Fill.svg" alt="Community" class="nav-icon">
+            <span class="nav-label">Community</span>
+        </button>
+        <button class="nav-item" onclick="trackNavigation('menu')">
+            <img src="assets/Icon_Bars.svg" alt="Menu" class="nav-icon">
+            <span class="nav-label">Menu</span>
+        </button>
+        <div class="home-indicator"></div>
+    </div>
+
+    <!-- Version Info -->
+    <div class="version-info">v1.0.0</div>
+
+    <!-- External JavaScript -->
+    <script src="script.js"></script>
+</body>
+</html>
