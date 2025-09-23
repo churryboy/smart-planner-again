@@ -604,7 +604,7 @@ class ScheduleModal {
 
     // Validation
     if (!eventData.title || !eventData.start_date || !eventData.category) {
-      // Validation message removed
+      showToast('제목, 날짜, 카테고리는 필수입니다.', 'error');
       return;
     }
 
@@ -626,12 +626,12 @@ class ScheduleModal {
       window.globalCalendar?.renderCalendar();
 
       // Show success message
-      // Success message removed
+      showToast('일정이 성공적으로 저장되었습니다!', 'success');
 
       this.close();
     } catch (error) {
       console.error('Failed to save event:', error);
-      // Error message removed
+      showToast('일정 저장 중 오류가 발생했습니다.', 'error');
     }
   }
 }
@@ -1110,21 +1110,21 @@ function validateEventForm(eventData) {
   
   // Check if values are empty or just whitespace
   if (!eventData.title || eventData.title.trim() === "") {
-    // Validation message removed
+    showToast("제목을 입력해주세요.", "error");
     const titleField = document.getElementById("event-title");
     if (titleField) titleField.focus();
     return false;
   }
   
   if (!eventData.start_date) {
-    // Validation message removed
+    showToast("날짜를 선택해주세요.", "error");
     const dateField = document.getElementById("event-date");
     if (dateField) dateField.focus();
     return false;
   }
   
   if (!eventData.category) {
-    // Validation message removed
+    showToast("카테고리를 선택해주세요.", "error");
     return false;
   }
   
