@@ -604,7 +604,7 @@ class ScheduleModal {
 
     // Validation
     if (!eventData.title || !eventData.start_date || !eventData.category) {
-      // Validation message removed
+      showToast('제목, 날짜, 카테고리는 필수입니다.', 'error');
       return;
     }
 
@@ -626,12 +626,12 @@ class ScheduleModal {
       window.globalCalendar?.renderCalendar();
 
       // Show success message
-      // Success message removed
+      showToast('일정이 성공적으로 저장되었습니다!', 'success');
 
       this.close();
     } catch (error) {
       console.error('Failed to save event:', error);
-      // Error message removed
+      showToast('일정 저장 중 오류가 발생했습니다.', 'error');
     }
   }
 }
@@ -971,7 +971,7 @@ class NavigationManager {
   }
 
   renderEventsAsTodos() {
-    const todoList = document.getElementById('todo-list');
+    const todoList = document.getElementById("todo-list");
     if (!todoList) return;
 
     // Reload events from localStorage
@@ -984,65 +984,145 @@ class NavigationManager {
       return dateA - dateB;
     });
 
-    todoList.innerHTML = '';
+    todoList.innerHTML = "";
 
     if (sortedEvents.length === 0) {
-      todoList.innerHTML = '<p class="empty-state">등록된 일정이 없습니다.</p>';
+      todoList.innerHTML = "<p class=\"empty-state\">등록된 일정이 없습니다.</p>";
       return;
     }
 
-    sortedEvents.forEach(event => {
-      const todoItem = document.createElement('div');
-      todoItem.className = 'todo-item';
-      
-      const eventDate = new Date(event.start_date);
-      const formattedDate = eventDate.toLocaleDateString('ko-KR', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-        weekday: 'short'
+    // Group events by month and week
+    const groupedEvents = this.groupEventsByMonthAndWeek(sortedEvents);
+
+    // Render grouped events
+    Object.keys(groupedEvents).forEach(monthKey => {
+      // Create month header
+      const monthHeader = document.createElement("div");
+      monthHeader.className = "month-header";
+      monthHeader.innerHTML = `<h3 class="month-title">${monthKey}</h3>`;
+      todoList.appendChild(monthHeader);
+
+      // Render weeks within this month
+      Object.keys(groupedEvents[monthKey]).forEach(weekKey => {
+        // Create week header
+        const weekHeader = document.createElement("div");
+        weekHeader.className = "week-header";
+        weekHeader.innerHTML = `<h4 class="week-title">${weekKey}</h4>`;
+        todoList.appendChild(weekHeader);
+
+        // Create week container
+        const weekContainer = document.createElement("div");
+        weekContainer.className = "week-container";
+
+        // Render events in this week
+        groupedEvents[monthKey][weekKey].forEach(event => {
+          const todoItem = document.createElement("div");
+          todoItem.className = "todo-item";
+          
+          const eventDate = new Date(event.start_date);
+          const dayName = eventDate.toLocaleDateString("ko-KR", { weekday: "short" });
+          const dayNumber = eventDate.getDate();
+
+          const timeInfo = event.start_time ? 
+            `${event.start_time.substring(0, 5)}${event.end_time ? ` - ${event.end_time.substring(0, 5)}` : ""}` : 
+            "종일";
+
+          const categoryColors = {
+            study: "var(--category-study)",
+            daily: "var(--category-daily)",
+            entertainment: "var(--category-entertainment)",
+            other: "var(--category-other)"
+          };
+
+          todoItem.innerHTML = `
+            <div class="todo-date">
+              <div class="day-number">${dayNumber}</div>
+              <div class="day-name">${dayName}</div>
+            </div>
+            <div class="todo-checkbox">
+              <div class="category-indicator" style="background-color: ${categoryColors[event.category] || categoryColors.other}"></div>
+            </div>
+            <div class="todo-content">
+              <div class="todo-title">${event.title}</div>
+              <div class="todo-time">${timeInfo}</div>
+              ${event.description ? `<div class="todo-description">${event.description}</div>` : ""}
+            </div>
+            <div class="todo-actions">
+              <button class="todo-edit-btn" onclick="editEvent('${event.id}')">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                </svg>
+              </button>
+              <button class="todo-delete-btn" onclick="deleteEvent('${event.id}')">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                  <path d="M3 6h18"></path>
+                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"></path>
+                  <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                </svg>
+              </button>
+            </div>
+          `;
+          weekContainer.appendChild(todoItem);
+        });
+
+        todoList.appendChild(weekContainer);
       });
-
-      const timeInfo = event.start_time ? 
-        `${event.start_time.substring(0, 5)}${event.end_time ? ` - ${event.end_time.substring(0, 5)}` : ''}` : 
-        '종일';
-
-      const categoryColors = {
-        study: 'var(--category-study)',
-        daily: 'var(--category-daily)',
-        entertainment: 'var(--category-entertainment)',
-        other: 'var(--category-other)'
-      };
-
-      todoItem.innerHTML = `
-        <div class="todo-checkbox">
-          <div class="category-indicator" style="background-color: ${categoryColors[event.category] || categoryColors.other}"></div>
-        </div>
-        <div class="todo-content">
-          <div class="todo-title">${event.title}</div>
-          <div class="todo-time">${formattedDate} ${timeInfo ? `• ${timeInfo}` : ''}</div>
-          ${event.description ? `<div class="todo-description">${event.description}</div>` : ''}
-        </div>
-        <div class="todo-actions">
-          <button class="todo-edit-btn" onclick="editEvent('${event.id}')">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-            </svg>
-          </button>
-          <button class="todo-delete-btn" onclick="deleteEvent('${event.id}')">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-              <path d="M3 6h18"></path>
-              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"></path>
-              <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-            </svg>
-          </button>
-        </div>
-      `;
-      todoList.appendChild(todoItem);
     });
   }
-}
+
+  groupEventsByMonthAndWeek(events) {
+    const grouped = {};
+
+    events.forEach(event => {
+      const eventDate = new Date(event.start_date);
+      
+      // Get month key (e.g., "2024년 12월")
+      const monthKey = eventDate.toLocaleDateString("ko-KR", {
+        year: "numeric",
+        month: "long"
+      });
+
+      // Get week range for this date
+      const weekKey = this.getWeekRange(eventDate);
+
+      // Initialize nested structure
+      if (!grouped[monthKey]) {
+        grouped[monthKey] = {};
+      }
+      if (!grouped[monthKey][weekKey]) {
+        grouped[monthKey][weekKey] = [];
+      }
+
+      // Add event to the appropriate group
+      grouped[monthKey][weekKey].push(event);
+    });
+
+    return grouped;
+  }
+
+  getWeekRange(date) {
+    // Get the start of the week (Sunday)
+    const startOfWeek = new Date(date);
+    startOfWeek.setDate(date.getDate() - date.getDay());
+    
+    // Get the end of the week (Saturday)
+    const endOfWeek = new Date(startOfWeek);
+    endOfWeek.setDate(startOfWeek.getDate() + 6);
+
+    // Format the week range
+    const startDay = startOfWeek.getDate();
+    const endDay = endOfWeek.getDate();
+    
+    // Handle month boundaries
+    if (startOfWeek.getMonth() === endOfWeek.getMonth()) {
+      return `${startDay}일 - ${endDay}일`;
+    } else {
+      const startMonth = startOfWeek.toLocaleDateString("ko-KR", { month: "short" });
+      const endMonth = endOfWeek.toLocaleDateString("ko-KR", { month: "short" });
+      return `${startMonth} ${startDay}일 - ${endMonth} ${endDay}일`;
+    }
+  }}
 
 // Global functions for event actions
 function editEvent(eventId) {
@@ -1110,21 +1190,21 @@ function validateEventForm(eventData) {
   
   // Check if values are empty or just whitespace
   if (!eventData.title || eventData.title.trim() === "") {
-    // Validation message removed
+    showToast("제목을 입력해주세요.", "error");
     const titleField = document.getElementById("event-title");
     if (titleField) titleField.focus();
     return false;
   }
   
   if (!eventData.start_date) {
-    // Validation message removed
+    showToast("날짜를 선택해주세요.", "error");
     const dateField = document.getElementById("event-date");
     if (dateField) dateField.focus();
     return false;
   }
   
   if (!eventData.category) {
-    // Validation message removed
+    showToast("카테고리를 선택해주세요.", "error");
     return false;
   }
   
