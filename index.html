@@ -2,154 +2,340 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>콴다 신기능 체험 사이트</title>
-    
-    <!-- Open Graph Meta Tags -->
-    <meta property="og:title" content="콴다 신기능 체험 사이트">
-    <meta property="og:description" content="스마트 오답노트와 신기능 제안을 체험해보세요">
-    <meta property="og:type" content="website">
-    <meta property="og:url" content="https://qanda-test.vercel.app">
-    <meta property="og:site_name" content="콴다 신기능 체험 사이트">
-    
-    <!-- Twitter Card Meta Tags -->
-    <meta name="twitter:card" content="summary">
-    <meta name="twitter:title" content="콴다 신기능 체험 사이트">
-    <meta name="twitter:description" content="스마트 오답노트와 신기능 제안을 체험해보세요">
-    
-    <!-- Additional Meta Tags -->
-    <meta name="description" content="스마트 오답노트와 신기능 제안을 체험해보세요">
-    <meta name="keywords" content="콴다, 학습, 오답노트, 신기능, 체험">
-    
-    <!-- Pretendard Font -->
-    <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
-    
-    <!-- Mixpanel Analytics -->
-    <script type="text/javascript">
-        (function(c,a){if(!a.__SV){var b=window;try{var d,m,j,k=b.location,f=k.hash;d=function(a,b){return(m=a.match(RegExp(b+"=([^&]*)")))?m[1]:null};f&&d(f,"state")&&(j=JSON.parse(decodeURIComponent(d(f,"state"))),"mpeditor"===j.action&&(b.sessionStorage.setItem("_mpcehash",f),history.replaceState(j.desiredHash||"",c.title,k.pathname+k.search)))}catch(n){}var l,h;window.mixpanel=a;a._i=[];a.init=function(b,d,g){function c(b,i){var a=i.split(".");2==a.length&&(b=b[a[0]],i=a[1]);b[i]=function(){b.push([i].concat(Array.prototype.slice.call(arguments,0)))}}var e=a;"undefined"!==typeof g?e=a[g]=[]:g="mixpanel";e.people=e.people||[];e.toString=function(b){var a="mixpanel";"mixpanel"!==g&&(a+="."+g);b||(a+=" (stub)");return a};e.people.toString=function(){return e.toString(1)+".people (stub)"};l="disable time_event track track_pageview track_links track_forms track_with_groups add_group set_group remove_group register register_once alias unregister identify name_tag set_config reset opt_in_tracking opt_out_tracking has_opted_in_tracking has_opted_out_tracking clear_opt_in_tracking clear_opt_out_tracking people.identify people.set people.set_once people.unset people.increment people.append people.union people.track_charge people.clear_charges people.delete_user people.remove".split(" ");for(h=0;h<l.length;h++)c(e,l[h]);var f="init identify track track_pageview track_links track_forms track_with_groups add_group set_group remove_group register register_once alias unregister identify name_tag set_config reset opt_in_tracking opt_out_tracking has_opted_in_tracking has_opted_out_tracking clear_opt_in_tracking clear_opt_out_tracking people.identify people.set people.set_once people.unset people.increment people.append people.union people.track_charge people.clear_charges people.delete_user people.remove".split(" ");for(h=0;h<f.length;h++)c(e,f[h]);a._i.push([b,d,g])};a.__SV=1.2;b=c.createElement("script");b.type="text/javascript";b.async=!0;b.src="undefined"!==typeof MIXPANEL_CUSTOM_LIB_URL?MIXPANEL_CUSTOM_LIB_URL:"file:"===c.location.protocol&&"//cdn4.mxpnl.com/libs/mixpanel-2-latest.min.js".match(/^\/\//)?"https://cdn4.mxpnl.com/libs/mixpanel-2-latest.min.js":"//cdn4.mxpnl.com/libs/mixpanel-2-latest.min.js";d=c.getElementsByTagName("script")[0];d.parentNode.insertBefore(b,d)}})(document,window.mixpanel||[]);
-        mixpanel.init('2b7b98ad37048cc7e11a47f55abe39e4');
-    </script>
-    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>스마트 플래너</title>
     <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
-    <!-- Status Bar -->
-    <div class="status-bar">
-        <span class="caption1-strong">9:41</span>
-    </div>
-
-    <!-- Header -->
-    <div class="header">
-        <div class="header-top">
-            <h1 class="title1">콴다 신기능</h1>
-        </div>
-    </div>
-
-    <!-- Content Area -->
-    <div class="content">
-        <!-- Game Card 1 - Smart Review Note -->
-        <div class="card-component">
-            <!-- Left Column - Card Icon -->
-            <div class="card-icon">
-                <span class="icon-emoji">📓</span>
+    <!-- 상단 네비게이션 바 -->
+    <nav class="top-nav">
+        <div class="nav-container">
+            <div class="nav-left">
+                <button class="nav-button" id="menu-button">
+                    <svg class="icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <line x1="3" y1="6" x2="21" y2="6"></line>
+                        <line x1="3" y1="12" x2="21" y2="12"></line>
+                        <line x1="3" y1="18" x2="21" y2="18"></line>
+                    </svg>
+                </button>
             </div>
-            <!-- Right Column - Content -->
-            <div class="card-content">
-                <h2 class="headline-strong">스마트 오답노트</h2>
-                <p class="subheadline">귀찮고 하기싫은 오답노트.. 핸드폰으로 빠르고 쉽게 해결해요!</p>
-                <div class="card-meta">
-                    <button class="button-primary-medium" onclick="trackSmartReviewNote()">
-                        <span class="button-label">사용하기</span>
-                    </button>
-                </div>
+            <div class="nav-center">
+                <h1 class="nav-title">스마트 플래너</h1>
+            </div>
+            <div class="nav-right">
+                <button class="nav-button" id="search-button">
+                    <svg class="icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <path d="m21 21-4.35-4.35"></path>
+                    </svg>
+                </button>
             </div>
         </div>
-
-        <!-- Game Card 2 - Smart planner -->
-        <div class="card-component">
-            <!-- Left Column - Card Icon -->
-            <div class="card-icon">
-                <span class="icon-emoji">🗓️</span>
-            </div>
-            <!-- Right Column - Content -->
-            <div class="card-content">
-                <h2 class="headline-strong">스마트 플래너 (개발중)</h2>
-                <p class="subheadline">목표 달성까지 해야되는 할일들을 스마트하게 관리해요!</p>
-                <div class="card-meta">
-                    <button class="button-primary-medium" onclick="trackSmartPlanner()">
-                        <span class="button-label">사용하기</span>
-                    </button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Game Card 3 - Smart Tutor -->
-        <div class="card-component">
-            <!-- Left Column - Card Icon -->
-            <div class="card-icon">
-                <span class="icon-emoji">🙋🏻‍♂️</span>
-            </div>
-            <!-- Right Column - Content -->
-            <div class="card-content">
-                <h2 class="headline-strong">스마트 과외쌤 (개발중)</h2>
-                <p class="subheadline">이해하기 힘든 문제는 스마트 과외쌤과 함께 해결해요!</p>
-                <div class="card-meta">
-                    <button class="button-primary-medium" onclick="trackSmartTutor()">
-                        <span class="button-label">사용하기</span>
-                    </button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Game Card 4 - Feature Recommendation -->
-        <div class="card-component">
-            <!-- Left Column - Innovation/Lightbulb Icon -->
-            <div class="card-icon">
-                <span class="icon-emoji">💡</span>
-            </div>
-            
-            <!-- Right Column - Content -->
-            <div class="card-content">
-                <h2 class="headline-strong">신기능 제안</h2>
-                <p class="subheadline">새로운 기능을 제안해주세요!</p>
-                <div class="card-meta">
-                    <button class="button-secondary-medium" onclick="trackFeatureRecommendation()">
-                        <span class="button-label">제안하기</span>
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Bottom Navigation -->
-    <nav class="bottom-nav">
-        <button class="nav-item" onclick="trackNavigation('home')" aria-label="홈">
-            <img src="assets/Icon_Home_Fill.svg" alt="" class="nav-icon">
-            <span class="nav-label">홈</span>
-        </button>
-        <button class="nav-item" onclick="trackNavigation('qanda-note')" aria-label="콴다노트">
-            <img src="assets/Icon_Star_Page_Fill.svg" alt="" class="nav-icon">
-            <span class="nav-label">콴다노트</span>
-        </button>
-        <button class="nav-item" onclick="trackNavigation('study')" aria-label="스터디">
-            <img src="assets/Icon_Cloud_Fill.svg" alt="" class="nav-icon">
-            <span class="nav-label">스터디</span>
-        </button>
-        <button class="nav-item" onclick="trackNavigation('community')" aria-label="커뮤니티">
-            <img src="assets/Icon_Chat-balloon-ellipsis_Fill.svg" alt="" class="nav-icon">
-            <span class="nav-label">커뮤니티</span>
-        </button>
-        <button class="nav-item active" onclick="trackNavigation('menu')" aria-label="전체 메뉴">
-            <img src="assets/Icon_Bars.svg" alt="" class="nav-icon">
-            <span class="nav-label">전체 메뉴</span>
-        </button>
-        <div class="home-indicator"></div>
     </nav>
 
-    <!-- Version Info -->
-    <div class="version-info caption2">v1.0.0</div>
+    <!-- 메인 콘텐츠 -->
+    <main class="main-content">
+        <!-- 캘린더 섹션 -->
+        <section class="calendar-section">
+            <div class="calendar-header">
+                <button class="calendar-nav-btn" id="prev-month">
+                    <svg class="icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <polyline points="15,18 9,12 15,6"></polyline>
+                    </svg>
+                </button>
+                <h2 class="calendar-title" id="current-month">2024년 12월</h2>
+                <button class="calendar-nav-btn" id="next-month">
+                    <svg class="icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <polyline points="9,18 15,12 9,6"></polyline>
+                    </svg>
+                </button>
+            </div>
+            
+            <div class="calendar-grid">
+                <div class="calendar-weekdays">
+                    <div class="weekday">일</div>
+                    <div class="weekday">월</div>
+                    <div class="weekday">화</div>
+                    <div class="weekday">수</div>
+                    <div class="weekday">목</div>
+                    <div class="weekday">금</div>
+                    <div class="weekday">토</div>
+                </div>
+                <div class="calendar-days" id="calendar-days">
+                    <!-- 캘린더 날짜는 JavaScript로 생성됩니다 -->
+                </div>
+            </div>
+        </section>
 
-    <!-- External JavaScript -->
+        <!-- 타임라인 뷰 섹션 -->
+        <section class="timeline-section" id="timeline-section" style="display: none;">
+            <div class="timeline-header">
+                <button class="timeline-back-btn" id="timeline-back-btn">
+                    <svg class="icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <polyline points="15,18 9,12 15,6"></polyline>
+                    </svg>
+                </button>
+                <h3 class="timeline-title" id="timeline-title">2024년 12월 22일</h3>
+                <button class="timeline-add-btn" id="timeline-add-btn">
+                    <svg class="icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                    </svg>
+                </button>
+            </div>
+            
+            <div class="timeline-content">
+                <div class="timeline-hours" id="timeline-hours">
+                    <!-- 시간별 타임라인이 JavaScript로 생성됩니다 -->
+                </div>
+            </div>
+        </section>
+
+        <!-- 할일 카드 섹션 -->
+        <section class="todo-section">
+            <div class="todo-header">
+                <h3 class="section-title">오늘의 할일</h3>
+                <button class="todo-add-btn" id="todo-add-btn">
+                    <svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                    </svg>
+                </button>
+            </div>
+            
+            <div class="todo-list" id="todo-list">
+                <div class="todo-item">
+                    <label class="todo-checkbox">
+                        <input type="checkbox">
+                        <span class="checkmark"></span>
+                    </label>
+                    <div class="todo-content">
+                        <div class="todo-title">팀 미팅 준비</div>
+                        <div class="todo-time">오후 2:00</div>
+                    </div>
+                </div>
+                
+                <div class="todo-item">
+                    <label class="todo-checkbox">
+                        <input type="checkbox">
+                        <span class="checkmark"></span>
+                    </label>
+                    <div class="todo-content">
+                        <div class="todo-title">프로젝트 보고서 작성</div>
+                        <div class="todo-time">오후 4:00</div>
+                    </div>
+                </div>
+                
+                <div class="todo-item completed">
+                    <label class="todo-checkbox">
+                        <input type="checkbox" checked>
+                        <span class="checkmark"></span>
+                    </label>
+                    <div class="todo-content">
+                        <div class="todo-title">이메일 확인</div>
+                        <div class="todo-time">오전 9:00</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- 하단 네비게이션 바 -->
+    <nav class="bottom-nav">
+        <div class="nav-container">
+            <button class="nav-item active">
+                <svg class="icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                    <polyline points="9,22 9,12 15,12 15,22"></polyline>
+                </svg>
+                <span class="nav-label">홈</span>
+            </button>
+            <button class="nav-item">
+                <svg class="icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                    <line x1="16" y1="2" x2="16" y2="6"></line>
+                    <line x1="8" y1="2" x2="8" y2="6"></line>
+                    <line x1="3" y1="10" x2="21" y2="10"></line>
+                </svg>
+                <span class="nav-label">캘린더</span>
+            </button>
+            <button class="nav-item">
+                <svg class="icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <path d="M9 12l2 2 4-4"></path>
+                    <path d="M21 12c.552 0 1-.448 1-1V5c0-.552-.448-1-1-1H3c-.552 0-1 .448-1 1v6c0 .552.448 1 1 1h18z"></path>
+                    <path d="M3 12v6c0 .552.448 1 1 1h16c.552 0 1-.448 1-1v-6"></path>
+                </svg>
+                <span class="nav-label">할일</span>
+            </button>
+            <button class="nav-item">
+                <svg class="icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                </svg>
+                <span class="nav-label">채팅</span>
+            </button>
+            <button class="nav-item">
+                <svg class="icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path>
+                </svg>
+                <span class="nav-label">즐겨찾기</span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- 배경 오버레이 -->
+    <div class="overlay" id="overlay"></div>
+
+    <!-- 플로팅 액션 버튼 -->
+    <button class="fab" id="fab">
+        <svg class="icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="12" y1="5" x2="12" y2="19"></line>
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+        </svg>
+    </button>
+
+    <!-- 바텀 시트 -->
+    <div class="bottom-sheet" id="bottom-sheet">
+        <div class="bottom-sheet-header">
+            <div class="bottom-sheet-handle"></div>
+            <div class="bottom-sheet-title-container">
+                <h3 class="bottom-sheet-title">AI 일정 추가</h3>
+                <button class="bottom-sheet-close" id="bottom-sheet-close">
+                    <svg class="icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+        </div>
+        
+        <div class="bottom-sheet-content">
+            <!-- 채팅 메시지 영역 -->
+            <div class="chat-messages" id="chat-messages">
+                <div class="chat-message assistant">
+                    <div class="message-avatar">
+                        <svg class="icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                        </svg>
+                    </div>
+                    <div class="message-content">
+                        <p>안녕하세요! 추가할 일정에 대해 알려주세요. 어떤 일정을 만들어 드릴까요?</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 채팅 입력 영역 -->
+            <div class="chat-input-container">
+                <div class="chat-input-wrapper">
+                    <input 
+                        type="text" 
+                        class="chat-input" 
+                        id="chat-input" 
+                        placeholder="메시지를 입력하세요..."
+                        maxlength="500"
+                    >
+                    <button class="chat-send-btn" id="chat-send-btn" disabled>
+                        <svg class="icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <line x1="22" y1="2" x2="11" y2="13"></line>
+                            <polygon points="22,2 15,22 11,13 2,9"></polygon>
+                        </svg>
+                    </button>
+                </div>
+                <div class="chat-typing-indicator" id="typing-indicator" style="display: none;">
+                    <div class="typing-dots">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                    </div>
+                    <span class="typing-text">AI가 답변을 작성 중입니다...</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 일정 확인 모달 -->
+    <div class="schedule-modal" id="schedule-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">일정 추가</h3>
+                <button class="modal-close" id="modal-close">
+                    <svg class="icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="form-label" for="schedule-title">제목</label>
+                    <input type="text" class="form-input" id="schedule-title" placeholder="일정 제목을 입력하세요">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="schedule-date">날짜</label>
+                    <input type="date" class="form-input" id="schedule-date">
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label" for="schedule-start-time">시작 시간</label>
+                        <input type="time" class="form-input" id="schedule-start-time">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="schedule-end-time">종료 시간</label>
+                        <input type="time" class="form-input" id="schedule-end-time">
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="schedule-priority">중요도</label>
+                    <select class="form-input" id="schedule-priority">
+                        <option value="낮음">낮음</option>
+                        <option value="보통" selected>보통</option>
+                        <option value="높음">높음</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="schedule-description">설명</label>
+                    <textarea class="form-textarea" id="schedule-description" placeholder="추가 설명을 입력하세요 (선택사항)" rows="3"></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">알림</label>
+                    <div class="radio-group">
+                        <label class="radio-option">
+                            <input type="radio" name="reminder" value="none" checked>
+                            <span class="radio-label">알림 없음</span>
+                        </label>
+                        <label class="radio-option">
+                            <input type="radio" name="reminder" value="15">
+                            <span class="radio-label">15분 전</span>
+                        </label>
+                        <label class="radio-option">
+                            <input type="radio" name="reminder" value="30">
+                            <span class="radio-label">30분 전</span>
+                        </label>
+                        <label class="radio-option">
+                            <input type="radio" name="reminder" value="60">
+                            <span class="radio-label">1시간 전</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="modal-footer">
+                <button class="btn-secondary" id="modal-cancel">취소</button>
+                <button class="btn-primary" id="modal-confirm">일정 추가</button>
+            </div>
+        </div>
+    </div>
+
+
+
     <script src="script.js"></script>
 </body>
 </html>
