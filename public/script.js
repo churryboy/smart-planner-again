@@ -241,10 +241,12 @@ class Calendar {
   }
 
   getEventsForDate(dateStr) {
-    return currentEvents.filter(event => {
+    const events = currentEvents.filter(event => {
       const eventDate = event.start_date?.split('T')[0] || event.start_date;
       return eventDate === dateStr;
     });
+    console.log(`Events for ${dateStr}:`, events);
+    return events;
   }
 
   selectDate(dateStr) {
@@ -269,6 +271,9 @@ class Calendar {
     const timelineTitle = document.getElementById('timeline-title');
 
     if (!timelineSection) return;
+
+    // Reload events from localStorage to ensure we have the latest data
+    currentEvents = StorageManager.getEvents();
 
     // Hide calendar and todo sections
     calendarSection.style.display = 'none';
@@ -317,6 +322,28 @@ class Calendar {
     if (!timelineContent) return;
 
     timelineContent.innerHTML = '';
+
+    // Get all events for the day
+    const allDayEvents = this.getEventsForDate(dateStr);
+    
+    // Show all-day events (events without specific times) at the top
+    const allDayEventsWithoutTime = allDayEvents.filter(event => !event.start_time);
+    if (allDayEventsWithoutTime.length > 0) {
+      const allDaySection = document.createElement('div');
+      allDaySection.className = 'timeline-all-day';
+      allDaySection.innerHTML = `
+        <div class="hour-label">종일</div>
+        <div class="hour-events">
+          ${allDayEventsWithoutTime.map(event => `
+            <div class="timeline-event ${event.category || 'other'}">
+              <div class="event-title">${event.title}</div>
+              <div class="event-time">종일 일정</div>
+            </div>
+          `).join('')}
+        </div>
+      `;
+      timelineContent.appendChild(allDaySection);
+    }
 
     // Create timeline hours (6 AM to 11 PM)
     for (let hour = 6; hour <= 23; hour++) {

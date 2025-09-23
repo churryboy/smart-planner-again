@@ -395,6 +395,14 @@ body {
   flex-direction: column;
 }
 
+.timeline-all-day {
+  display: flex;
+  min-height: 60px;
+  border-bottom: 2px solid var(--neutral-70);
+  position: relative;
+  background-color: var(--neutral-90);
+}
+
 .timeline-hour {
   display: flex;
   min-height: 60px;
