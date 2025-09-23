@@ -1058,6 +1058,11 @@ select.form-input:focus {
   gap: var(--space-base);
 }
 
+.radio-group.vertical {
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
 .radio-option {
   display: flex;
   align-items: center;
@@ -1476,4 +1481,36 @@ select.form-input:focus {
 .todo-title.completed {
   text-decoration: line-through;
   opacity: 0.6;
+}
+
+/* Toast Notification */
+.toast {
+  position: fixed;
+  top: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: var(--neutral-10);
+  color: var(--neutral-100);
+  padding: var(--space-base) var(--space-lg);
+  border-radius: var(--radius-large);
+  font-size: 14px;
+  font-weight: 500;
+  z-index: calc(var(--z-nav) + 1);
+  opacity: 0;
+  transition: all 0.3s ease;
+  pointer-events: none;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+}
+
+.toast.success {
+  background-color: var(--category-daily);
+}
+
+.toast.error {
+  background-color: var(--category-entertainment);
+}
+
+.toast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
 }

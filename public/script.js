@@ -8,6 +8,33 @@ let currentUser = null;
 let currentEvents = [];
 let currentTodos = [];
 
+// Toast notification function
+function showToast(message, type = 'success', duration = 2000) {
+  const toastContainer = document.getElementById('toast-container');
+  if (!toastContainer) return;
+
+  const toast = document.createElement('div');
+  toast.className = `toast ${type}`;
+  toast.textContent = message;
+
+  toastContainer.appendChild(toast);
+
+  // Trigger animation
+  setTimeout(() => {
+    toast.classList.add('show');
+  }, 10);
+
+  // Remove toast after duration
+  setTimeout(() => {
+    toast.classList.remove('show');
+    setTimeout(() => {
+      if (toast.parentNode) {
+        toast.parentNode.removeChild(toast);
+      }
+    }, 300);
+  }, duration);
+}
+
 // Check if authentication is required
 const requireAuth = window.APP_CONFIG?.requireAuth ?? true;
 
@@ -232,8 +259,8 @@ class Calendar {
         ).join('')}</div>` : ''}
       `;
 
-      dayElement.addEventListener('click', () => {
-        this.selectDate(currentDateStr);
+      dayElement.addEventListener('click', (e) => {
+        this.selectDate(currentDateStr, e.target);
       });
 
       calendarDays.appendChild(dayElement);
@@ -249,7 +276,8 @@ class Calendar {
     return events;
   }
 
-  selectDate(dateStr) {
+  selectDate(dateStr, targetElement = null) {
+    console.log('selectDate called with:', dateStr);
     this.selectedDate = dateStr;
     
     // Remove previous selection
@@ -258,27 +286,43 @@ class Calendar {
     });
 
     // Add selection to clicked day
-    event.target.closest('.calendar-day').classList.add('selected');
+    if (targetElement) {
+      targetElement.closest('.calendar-day').classList.add('selected');
+    }
 
     // Show timeline view
+    console.log('Calling showTimelineView');
     this.showTimelineView(dateStr);
   }
 
   showTimelineView(dateStr) {
+    console.log('showTimelineView called with:', dateStr);
     const timelineSection = document.getElementById('timeline-section');
     const calendarSection = document.querySelector('.calendar-section');
     const todoSection = document.querySelector('.todo-section');
     const timelineTitle = document.getElementById('timeline-title');
 
-    if (!timelineSection) return;
+    console.log('Timeline elements found:', {
+      timelineSection: !!timelineSection,
+      calendarSection: !!calendarSection,
+      todoSection: !!todoSection,
+      timelineTitle: !!timelineTitle
+    });
+
+    if (!timelineSection) {
+      console.error('Timeline section not found!');
+      return;
+    }
 
     // Reload events from localStorage to ensure we have the latest data
     currentEvents = StorageManager.getEvents();
 
-    // Hide calendar and todo sections
-    calendarSection.style.display = 'none';
-    todoSection.style.display = 'none';
+    // Hide calendar section and show timeline
+    console.log('Hiding calendar and showing timeline');
+    if (calendarSection) calendarSection.style.display = 'none';
+    if (todoSection) todoSection.style.display = 'none';
     timelineSection.style.display = 'block';
+    console.log('Timeline display set to block');
 
     // Update timeline title
     const date = new Date(dateStr);
@@ -291,8 +335,8 @@ class Calendar {
     const backBtn = document.getElementById('timeline-back-btn');
     backBtn.onclick = () => {
       timelineSection.style.display = 'none';
-      calendarSection.style.display = 'block';
-      todoSection.style.display = 'block';
+      if (calendarSection) calendarSection.style.display = 'block';
+      if (todoSection) todoSection.style.display = 'block';
     };
 
     // Setup navigation buttons
@@ -494,23 +538,40 @@ class ScheduleModal {
     document.getElementById('event-end-date').value = eventData.end_date?.split('T')[0] || '';
     document.getElementById('event-start-time').value = eventData.start_time || '';
     document.getElementById('event-end-time').value = eventData.end_time || '';
-    document.getElementById('event-category').value = eventData.category || '';
     document.getElementById('event-description').value = eventData.description || '';
-    document.getElementById('event-reminder').value = eventData.reminder || '';
+    
+    // Set category radio button
+    const categoryRadio = document.querySelector(`input[name="category"][value="${eventData.category || ''}"]`);
+    if (categoryRadio) {
+      categoryRadio.checked = true;
+    }
     
     // Set priority radio button
     const priorityRadio = document.querySelector(`input[name="priority"][value="${eventData.priority || 'medium'}"]`);
     if (priorityRadio) {
       priorityRadio.checked = true;
     }
+    
+    // Set reminder radio button
+    const reminderRadio = document.querySelector(`input[name="reminder"][value="${eventData.reminder || ''}"]`);
+    if (reminderRadio) {
+      reminderRadio.checked = true;
+    }
   }
 
   clearForm() {
     this.form.reset();
+    
     // Set default priority to medium
     const mediumPriority = document.querySelector('input[name="priority"][value="medium"]');
     if (mediumPriority) {
       mediumPriority.checked = true;
+    }
+    
+    // Set default reminder to none
+    const noReminder = document.querySelector('input[name="reminder"][value=""]');
+    if (noReminder) {
+      noReminder.checked = true;
     }
   }
 
@@ -524,14 +585,14 @@ class ScheduleModal {
       end_date: document.getElementById('event-end-date').value || document.getElementById('event-date').value,
       start_time: document.getElementById('event-start-time').value || null,
       end_time: document.getElementById('event-end-time').value || null,
-      category: document.getElementById('event-category').value,
+      category: document.querySelector('input[name="category"]:checked')?.value,
       priority: document.querySelector('input[name="priority"]:checked')?.value || 'medium',
-      reminder: parseInt(document.getElementById('event-reminder').value) || null
+      reminder: parseInt(document.querySelector('input[name="reminder"]:checked')?.value) || null
     };
 
     // Validation
     if (!eventData.title || !eventData.start_date || !eventData.category) {
-      alert('제목, 날짜, 카테고리는 필수입니다.');
+      showToast('제목, 날짜, 카테고리는 필수입니다.', 'error');
       return;
     }
 
@@ -553,12 +614,12 @@ class ScheduleModal {
       window.globalCalendar?.renderCalendar();
 
       // Show success message
-      alert('일정이 성공적으로 저장되었습니다!');
+      showToast('일정이 성공적으로 저장되었습니다!', 'success');
 
       this.close();
     } catch (error) {
       console.error('Failed to save event:', error);
-      alert('일정 저장 중 오류가 발생했습니다.');
+      showToast('일정 저장 중 오류가 발생했습니다.', 'error');
     }
   }
 }

@@ -62,18 +62,8 @@
                 </div>
                 <div class="nav-right">
                     <span class="user-name" id="user-name">사용자</span>
-                    <button class="nav-button" id="chat-button" title="AI 도우미">
-                        <svg class="icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-                        </svg>
-                    </button>
-                    <button class="nav-button" id="logout-button">
-                        <svg class="icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
-                            <polyline points="16,17 21,12 16,7"></polyline>
-                            <line x1="21" y1="12" x2="9" y2="12"></line>
-                        </svg>
-                    </button>
+            
+            
                 </div>
             </div>
         </nav>
@@ -224,14 +214,30 @@
                         </div>
                     </div>
                     <div class="form-group">
-                        <label class="form-label" for="event-category">카테고리</label>
-                        <select class="form-input" id="event-category" required>
-                            <option value="">카테고리 선택</option>
-                            <option value="study">공부관련</option>
-                            <option value="daily">일상관련</option>
-                            <option value="entertainment">놀이관련</option>
-                            <option value="other">기타</option>
-                        </select>
+                        <label class="form-label" for="event-description">설명</label>
+                        <textarea class="form-textarea" id="event-description" placeholder="일정에 대한 설명을 입력하세요"></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">카테고리</label>
+                        <div class="radio-group">
+                            <label class="radio-option">
+                                <input type="radio" name="category" value="study" required>
+                                공부관련
+                            </label>
+                            <label class="radio-option">
+                                <input type="radio" name="category" value="daily" required>
+                                일상관련
+                            </label>
+                            <label class="radio-option">
+                                <input type="radio" name="category" value="entertainment" required>
+                                놀이관련
+                            </label>
+                            <label class="radio-option">
+                                <input type="radio" name="category" value="other" required>
+                                기타
+                            </label>
+                        </div>
                     </div>
                     <div class="form-group">
                         <label class="form-label">중요도</label>
@@ -251,19 +257,33 @@
                         </div>
                     </div>
                     <div class="form-group">
-                        <label class="form-label" for="event-description">설명</label>
-                        <textarea class="form-textarea" id="event-description" placeholder="일정에 대한 설명을 입력하세요"></textarea>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label" for="event-reminder">알림</label>
-                        <select class="form-input" id="event-reminder">
-                            <option value="">알림 없음</option>
-                            <option value="5">5분 전</option>
-                            <option value="15">15분 전</option>
-                            <option value="30">30분 전</option>
-                            <option value="60">1시간 전</option>
-                            <option value="1440">1일 전</option>
-                        </select>
+                        <label class="form-label">알림</label>
+                        <div class="radio-group vertical">
+                            <label class="radio-option">
+                                <input type="radio" name="reminder" value="" checked>
+                                알림 없음
+                            </label>
+                            <label class="radio-option">
+                                <input type="radio" name="reminder" value="5">
+                                5분 전
+                            </label>
+                            <label class="radio-option">
+                                <input type="radio" name="reminder" value="15">
+                                15분 전
+                            </label>
+                            <label class="radio-option">
+                                <input type="radio" name="reminder" value="30">
+                                30분 전
+                            </label>
+                            <label class="radio-option">
+                                <input type="radio" name="reminder" value="60">
+                                1시간 전
+                            </label>
+                            <label class="radio-option">
+                                <input type="radio" name="reminder" value="1440">
+                                1일 전
+                            </label>
+                        </div>
                     </div>
                 </form>
             </div>
@@ -307,6 +327,9 @@
             </div>
         </div>
     </div>
+
+    <!-- Toast Container -->
+    <div id="toast-container"></div>
 
     <script src="config.js"></script>
     <script src="script.js"></script>
