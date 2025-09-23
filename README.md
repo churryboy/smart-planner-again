@@ -66,14 +66,20 @@ A full-stack Korean calendar and planning application with AI-powered schedule c
    # - OPENAI_API_KEY: Your OpenAI API key
    ```
 
-5. **Start the development server**
+5. **Configure client-side settings**
+   ```bash
+   cp public/config.example.js public/config.js
+   # Edit public/config.js with your OpenAI API key for AI chat features
+   ```
+
+6. **Start the development server**
    ```bash
    npm run dev  # Uses nodemon for auto-restart
    # or
    npm start    # Standard start
    ```
 
-6. **Access the application**
+7. **Access the application**
    - Open http://localhost:3000
    - Create an account or login
    - Start planning your schedule!
