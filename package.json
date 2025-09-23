@@ -1,0 +1,13 @@
+{
+  "name": "smart-planner",
+  "version": "1.0.0",
+  "description": "Mobile-optimized Korean calendar and planning application",
+  "main": "index.html",
+  "scripts": {
+    "start": "echo 'Static site deployed successfully'",
+    "build": "echo 'Static site - no build required'"
+  },
+  "keywords": ["calendar", "planner", "korean", "mobile"],
+  "author": "churryboy",
+  "license": "MIT"
+}
