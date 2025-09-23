@@ -1185,7 +1185,7 @@ body {
   line-height: 1.5;
   color: var(--neutral-30);
   margin: 0;
-  font-style: italic;
+  font-style: normal;
 }
 
 .analysis-loading {
@@ -1213,7 +1213,7 @@ body {
 .analysis-error {
   color: var(--red-50);
   font-size: 13px;
-  font-style: italic;
+  font-style: normal;
 }
 
 /* ==============================================
@@ -1379,7 +1379,7 @@ body {
   font-weight: 400;
   color: #7A7A7A; /* Neutral40 */
   margin: 0;
-  font-style: italic;
+  font-style: normal;
 }
 
 /* Loading State */
@@ -1420,7 +1420,7 @@ body {
   font-weight: 400;
   color: #3D3D3D; /* Neutral20 */
   margin: 0;
-  font-style: italic;
+  font-style: normal;
   letter-spacing: -0.01em;
   white-space: pre-line;
   word-wrap: break-word;
@@ -1438,7 +1438,7 @@ body {
   font-weight: 400;
   color: #FB2D36; /* Red50 */
   margin: 0;
-  font-style: italic;
+  font-style: normal;
 }
 
 /* Animation for spinner */
