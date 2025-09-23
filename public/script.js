@@ -5,193 +5,111 @@ const OPENAI_API_URL = 'https://api.openai.com/v1/chat/completions';
 
 // Global state
 let currentUser = null;
-let authToken = null;
 let currentEvents = [];
 let currentTodos = [];
 
+// Check if authentication is required
+const requireAuth = window.APP_CONFIG?.requireAuth ?? true;
+
 // ========================================
-// Authentication Manager
+// Storage Manager (localStorage fallback)
 // ========================================
-class AuthManager {
+class StorageManager {
+  static getEvents() {
+    const events = localStorage.getItem('smart-planner-events');
+    return events ? JSON.parse(events) : [];
+  }
+
+  static saveEvents(events) {
+    localStorage.setItem('smart-planner-events', JSON.stringify(events));
+  }
+
+  static getTodos() {
+    const todos = localStorage.getItem('smart-planner-todos');
+    return todos ? JSON.parse(todos) : [];
+  }
+
+  static saveTodos(todos) {
+    localStorage.setItem('smart-planner-todos', JSON.stringify(todos));
+  }
+
+  static addEvent(event) {
+    const events = this.getEvents();
+    event.id = Date.now().toString();
+    events.push(event);
+    this.saveEvents(events);
+    return event;
+  }
+
+  static addTodo(todo) {
+    const todos = this.getTodos();
+    todo.id = Date.now().toString();
+    todo.completed = false;
+    todos.push(todo);
+    this.saveTodos(todos);
+    return todo;
+  }
+
+  static updateTodo(todoId, updates) {
+    const todos = this.getTodos();
+    const index = todos.findIndex(t => t.id === todoId);
+    if (index !== -1) {
+      todos[index] = { ...todos[index], ...updates };
+      this.saveTodos(todos);
+      return todos[index];
+    }
+    return null;
+  }
+}
+
+// ========================================
+// App Manager
+// ========================================
+class AppManager {
   constructor() {
-    this.checkAuthStatus();
-    this.initializeEventListeners();
-  }
-
-  async checkAuthStatus() {
-    const token = localStorage.getItem('authToken');
-    if (token) {
-      try {
-        const response = await fetch(`${API_BASE}/auth/me`, {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-          this.setAuthenticatedUser(data.user, token);
-          return;
-        }
-      } catch (error) {
-        console.error('Auth check failed:', error);
-      }
-      
-      localStorage.removeItem('authToken');
-    }
-    
-    this.showAuthModal();
-  }
-
-  initializeEventListeners() {
-    const authForm = document.getElementById('auth-form');
-    const authSwitchBtn = document.getElementById('auth-switch-btn');
-    const authClose = document.getElementById('auth-close');
-    const logoutBtn = document.getElementById('logout-button');
-
-    authForm?.addEventListener('submit', (e) => this.handleAuthSubmit(e));
-    authSwitchBtn?.addEventListener('click', () => this.toggleAuthMode());
-    authClose?.addEventListener('click', () => this.hideAuthModal());
-    logoutBtn?.addEventListener('click', () => this.logout());
-  }
-
-  async handleAuthSubmit(e) {
-    e.preventDefault();
-    
-    const isLogin = document.getElementById('auth-title').textContent === '로그인';
-    const email = document.getElementById('auth-email').value;
-    const password = document.getElementById('auth-password').value;
-    const name = document.getElementById('auth-name').value;
-
-    const submitBtn = document.getElementById('auth-submit');
-    submitBtn.disabled = true;
-    submitBtn.textContent = isLogin ? '로그인 중...' : '회원가입 중...';
-
-    try {
-      const endpoint = isLogin ? '/auth/login' : '/auth/register';
-      const body = isLogin ? { email, password } : { email, password, name };
-
-      const response = await fetch(`${API_BASE}${endpoint}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(body)
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        this.setAuthenticatedUser(data.user, data.token);
-        this.showMessage(data.message, 'success');
-      } else {
-        this.showMessage(data.error, 'error');
-      }
-    } catch (error) {
-      console.error('Auth error:', error);
-      this.showMessage('네트워크 오류가 발생했습니다.', 'error');
-    } finally {
-      submitBtn.disabled = false;
-      submitBtn.textContent = isLogin ? '로그인' : '회원가입';
-    }
-  }
-
-  toggleAuthMode() {
-    const title = document.getElementById('auth-title');
-    const submitBtn = document.getElementById('auth-submit');
-    const nameGroup = document.getElementById('name-group');
-    const switchText = document.getElementById('auth-switch-text');
-    const switchBtn = document.getElementById('auth-switch-btn');
-
-    const isLogin = title.textContent === '로그인';
-
-    if (isLogin) {
-      title.textContent = '회원가입';
-      submitBtn.textContent = '회원가입';
-      nameGroup.style.display = 'block';
-      switchText.innerHTML = '이미 계정이 있으신가요? ';
-      switchBtn.textContent = '로그인';
-    } else {
-      title.textContent = '로그인';
-      submitBtn.textContent = '로그인';
-      nameGroup.style.display = 'none';
-      switchText.innerHTML = '계정이 없으신가요? ';
-      switchBtn.textContent = '회원가입';
-    }
-
-    // Clear form
-    document.getElementById('auth-form').reset();
-    this.clearMessages();
-  }
-
-  setAuthenticatedUser(user, token) {
-    currentUser = user;
-    authToken = token;
-    localStorage.setItem('authToken', token);
-    
-    document.getElementById('user-name').textContent = user.name;
-    document.getElementById('auth-overlay').style.display = 'none';
-    document.getElementById('app-container').style.display = 'block';
-    
-    // Initialize the app
     this.initializeApp();
   }
 
-  async initializeApp() {
-    // Initialize calendar and load data
+  initializeApp() {
+    if (requireAuth) {
+      // Show authentication modal
+      this.showAuthModal();
+    } else {
+      // Skip authentication, use static mode
+      this.setStaticUser();
+    }
+  }
+
+  setStaticUser() {
+    currentUser = window.APP_CONFIG?.defaultUser || {
+      id: 'local-user',
+      name: '사용자',
+      email: 'user@local.com'
+    };
+
+    // Hide auth modal and show app
+    document.getElementById('auth-overlay').style.display = 'none';
+    document.getElementById('app-container').style.display = 'block';
+    document.getElementById('user-name').textContent = currentUser.name;
+
+    // Initialize app components
+    this.initializeComponents();
+    this.loadLocalData();
+  }
+
+  initializeComponents() {
     window.globalCalendar = new Calendar();
     window.globalScheduleModal = new ScheduleModal();
     window.globalBottomSheet = new BottomSheet();
     window.globalChatManager = new ChatManager();
+  }
+
+  loadLocalData() {
+    currentEvents = StorageManager.getEvents();
+    currentTodos = StorageManager.getTodos();
     
-    // Load user data
-    await this.loadUserData();
-  }
-
-  async loadUserData() {
-    try {
-      // Load events and todos in parallel
-      await Promise.all([
-        this.loadEvents(),
-        this.loadTodos()
-      ]);
-    } catch (error) {
-      console.error('Failed to load user data:', error);
-    }
-  }
-
-  async loadEvents() {
-    try {
-      const response = await fetch(`${API_BASE}/events`, {
-        headers: {
-          'Authorization': `Bearer ${authToken}`
-        }
-      });
-
-      if (response.ok) {
-        currentEvents = await response.json();
-        window.globalCalendar?.renderCalendar();
-      }
-    } catch (error) {
-      console.error('Failed to load events:', error);
-    }
-  }
-
-  async loadTodos() {
-    try {
-      const response = await fetch(`${API_BASE}/todos`, {
-        headers: {
-          'Authorization': `Bearer ${authToken}`
-        }
-      });
-
-      if (response.ok) {
-        currentTodos = await response.json();
-        this.renderTodos();
-      }
-    } catch (error) {
-      console.error('Failed to load todos:', error);
-    }
+    window.globalCalendar?.renderCalendar();
+    this.renderTodos();
   }
 
   renderTodos() {
@@ -211,7 +129,7 @@ class AuthManager {
       todoItem.innerHTML = `
         <label class="todo-checkbox">
           <input type="checkbox" ${todo.completed ? 'checked' : ''} 
-                 onchange="authManager.toggleTodo('${todo.id}', this.checked)">
+                 onchange="appManager.toggleTodo('${todo.id}', this.checked)">
           <span class="checkmark"></span>
         </label>
         <div class="todo-content">
@@ -223,26 +141,14 @@ class AuthManager {
     });
   }
 
-  async toggleTodo(todoId, completed) {
-    try {
-      const response = await fetch(`${API_BASE}/todos/${todoId}`, {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${authToken}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ completed })
-      });
-
-      if (response.ok) {
-        const todo = currentTodos.find(t => t.id === todoId);
-        if (todo) {
-          todo.completed = completed;
-          this.renderTodos();
-        }
+  toggleTodo(todoId, completed) {
+    const updatedTodo = StorageManager.updateTodo(todoId, { completed });
+    if (updatedTodo) {
+      const todo = currentTodos.find(t => t.id === todoId);
+      if (todo) {
+        todo.completed = completed;
+        this.renderTodos();
       }
-    } catch (error) {
-      console.error('Failed to toggle todo:', error);
     }
   }
 
@@ -250,77 +156,10 @@ class AuthManager {
     document.getElementById('auth-overlay').style.display = 'flex';
     document.getElementById('app-container').style.display = 'none';
   }
-
-  hideAuthModal() {
-    // Only hide if user is authenticated
-    if (currentUser) {
-      document.getElementById('auth-overlay').style.display = 'none';
-    }
-  }
-
-  logout() {
-    currentUser = null;
-    authToken = null;
-    currentEvents = [];
-    currentTodos = [];
-    localStorage.removeItem('authToken');
-    
-    this.showAuthModal();
-    this.clearMessages();
-    document.getElementById('auth-form').reset();
-  }
-
-  showMessage(message, type) {
-    this.clearMessages();
-    
-    const messageDiv = document.createElement('div');
-    messageDiv.className = `${type}-message`;
-    messageDiv.textContent = message;
-    
-    const form = document.getElementById('auth-form');
-    form.insertBefore(messageDiv, form.firstChild);
-    
-    setTimeout(() => {
-      messageDiv.remove();
-    }, 5000);
-  }
-
-  clearMessages() {
-    const messages = document.querySelectorAll('.error-message, .success-message');
-    messages.forEach(msg => msg.remove());
-  }
 }
 
 // ========================================
-// API Helper Functions
-// ========================================
-async function apiRequest(endpoint, options = {}) {
-  const config = {
-    headers: {
-      'Content-Type': 'application/json',
-      ...(authToken && { 'Authorization': `Bearer ${authToken}` }),
-      ...options.headers
-    },
-    ...options
-  };
-
-  const response = await fetch(`${API_BASE}${endpoint}`, config);
-  
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || 'API request failed');
-  }
-  
-  return response.json();
-}
-
-// Initialize authentication when DOM is loaded
-document.addEventListener('DOMContentLoaded', () => {
-  window.authManager = new AuthManager();
-});
-
-// ========================================
-// Calendar Class (Updated for API)
+// Calendar Class
 // ========================================
 class Calendar {
   constructor() {
@@ -389,7 +228,7 @@ class Calendar {
       dayElement.innerHTML = `
         <span class="day-number">${day}</span>
         ${eventsForDay.length > 0 ? `<div class="event-indicators">${eventsForDay.slice(0, 3).map(event => 
-          `<div class="event-dot ${event.priority}"></div>`
+          `<div class="event-dot ${event.priority || 'medium'}"></div>`
         ).join('')}</div>` : ''}
       `;
 
@@ -403,7 +242,7 @@ class Calendar {
 
   getEventsForDate(dateStr) {
     return currentEvents.filter(event => {
-      const eventDate = new Date(event.start_date).toISOString().split('T')[0];
+      const eventDate = event.start_date?.split('T')[0] || event.start_date;
       return eventDate === dateStr;
     });
   }
@@ -475,7 +314,7 @@ class Calendar {
         <div class="hour-label">${hour}:00</div>
         <div class="hour-events">
           ${eventsForHour.map(event => `
-            <div class="timeline-event ${event.priority}">
+            <div class="timeline-event ${event.priority || 'medium'}">
               <div class="event-title">${event.title}</div>
               <div class="event-time">
                 ${event.start_time ? event.start_time.substring(0, 5) : ''} - 
@@ -501,7 +340,7 @@ class Calendar {
 }
 
 // ========================================
-// Schedule Modal (Updated for API)
+// Schedule Modal
 // ========================================
 class ScheduleModal {
   constructor() {
@@ -515,7 +354,6 @@ class ScheduleModal {
   initializeEventListeners() {
     const closeBtn = document.getElementById('schedule-close');
     const cancelBtn = document.getElementById('schedule-cancel');
-    const confirmBtn = document.getElementById('schedule-confirm');
 
     closeBtn?.addEventListener('click', () => this.close());
     cancelBtn?.addEventListener('click', () => this.close());
@@ -531,7 +369,7 @@ class ScheduleModal {
     // ESC key handler
     if (!this.escListenerBound) {
       document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape' && this.modal?.style.display === 'flex') {
+        if (e.key === 'Escape' && this.modal?.classList.contains('active')) {
           this.close();
         }
       });
@@ -563,11 +401,11 @@ class ScheduleModal {
       document.getElementById('event-end-date').value = selectedDate;
     }
 
-    this.modal.style.display = 'flex';
+    this.modal.classList.add('active');
   }
 
   close() {
-    this.modal.style.display = 'none';
+    this.modal.classList.remove('active');
     this.clearForm();
     this.selectedDate = null;
     this.editingEvent = null;
@@ -598,12 +436,11 @@ class ScheduleModal {
     }
   }
 
-  async handleSubmit(e) {
+  handleSubmit(e) {
     e.preventDefault();
 
-    const formData = new FormData(this.form);
     const eventData = {
-      title: formData.get('title') || document.getElementById('event-title').value,
+      title: document.getElementById('event-title').value,
       description: document.getElementById('event-description').value,
       start_date: document.getElementById('event-date').value,
       end_date: document.getElementById('event-end-date').value || document.getElementById('event-date').value,
@@ -620,49 +457,29 @@ class ScheduleModal {
     }
 
     try {
-      const confirmBtn = document.getElementById('schedule-confirm');
-      confirmBtn.disabled = true;
-      confirmBtn.textContent = this.editingEvent ? '수정 중...' : '추가 중...';
-
-      let response;
       if (this.editingEvent) {
         // Update existing event
-        response = await apiRequest(`/events/${this.editingEvent.id}`, {
-          method: 'PUT',
-          body: JSON.stringify(eventData)
-        });
-      } else {
-        // Create new event
-        response = await apiRequest('/events', {
-          method: 'POST',
-          body: JSON.stringify(eventData)
-        });
-      }
-
-      // Update local events array
-      if (this.editingEvent) {
         const index = currentEvents.findIndex(e => e.id === this.editingEvent.id);
         if (index !== -1) {
           currentEvents[index] = { ...currentEvents[index], ...eventData };
+          StorageManager.saveEvents(currentEvents);
         }
       } else {
-        currentEvents.push(response.event);
+        // Create new event
+        const newEvent = StorageManager.addEvent(eventData);
+        currentEvents.push(newEvent);
       }
 
       // Refresh calendar
       window.globalCalendar?.renderCalendar();
 
       // Show success message
-      alert(response.message);
+      alert('일정이 성공적으로 저장되었습니다!');
 
       this.close();
     } catch (error) {
       console.error('Failed to save event:', error);
-      alert('일정 저장 중 오류가 발생했습니다: ' + error.message);
-    } finally {
-      const confirmBtn = document.getElementById('schedule-confirm');
-      confirmBtn.disabled = false;
-      confirmBtn.textContent = this.editingEvent ? '일정 수정' : '일정 추가';
+      alert('일정 저장 중 오류가 발생했습니다.');
     }
   }
 }
@@ -678,10 +495,7 @@ class BottomSheet {
   }
 
   initializeEventListeners() {
-    const fab = document.getElementById('fab');
     const closeBtn = document.getElementById('chat-close');
-
-    fab?.addEventListener('click', () => this.open());
     closeBtn?.addEventListener('click', () => this.close());
 
     // Close on overlay click
@@ -694,7 +508,7 @@ class BottomSheet {
 
   open() {
     if (this.bottomSheet) {
-      this.bottomSheet.classList.add('open');
+      this.bottomSheet.classList.add('active');
       this.isOpen = true;
       
       // Focus on chat input
@@ -705,19 +519,18 @@ class BottomSheet {
 
   close() {
     if (this.bottomSheet) {
-      this.bottomSheet.classList.remove('open');
+      this.bottomSheet.classList.remove('active');
       this.isOpen = false;
     }
   }
 }
 
 // ========================================
-// Chat Manager (Updated for API)
+// Chat Manager
 // ========================================
 class ChatManager {
   constructor() {
     this.messages = [];
-    this.selectedDate = null;
     this.initializeEventListeners();
     this.initializeChat();
   }
@@ -930,9 +743,12 @@ class ChatManager {
 }
 
 // ========================================
-// Initialize App Components
+// Initialize App
 // ========================================
 document.addEventListener('DOMContentLoaded', () => {
+  // Initialize app manager
+  window.appManager = new AppManager();
+
   // Navigation functionality
   const navItems = document.querySelectorAll('.nav-item');
   navItems.forEach(item => {
@@ -947,23 +763,24 @@ document.addEventListener('DOMContentLoaded', () => {
   todoAddBtn?.addEventListener('click', () => {
     const title = prompt('할 일을 입력하세요:');
     if (title) {
-      addTodo(title);
+      const newTodo = StorageManager.addTodo({ title });
+      currentTodos.push(newTodo);
+      window.appManager?.renderTodos();
     }
   });
+
+  // FAB functionality - open schedule modal
+  const fab = document.getElementById('fab');
+  fab?.addEventListener('click', () => {
+    // Get today's date as default
+    const today = new Date();
+    const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+    window.globalScheduleModal?.open(todayStr);
+  });
+
+  // Chat button functionality - open chat bottom sheet
+  const chatButton = document.getElementById('chat-button');
+  chatButton?.addEventListener('click', () => {
+    window.globalBottomSheet?.open();
+  });
 });
-
-// Helper function to add todo
-async function addTodo(title) {
-  try {
-    const response = await apiRequest('/todos', {
-      method: 'POST',
-      body: JSON.stringify({ title })
-    });
-
-    currentTodos.push(response.todo);
-    window.authManager?.renderTodos();
-  } catch (error) {
-    console.error('Failed to add todo:', error);
-    alert('할 일 추가 중 오류가 발생했습니다.');
-  }
-}

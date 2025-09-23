@@ -4,20 +4,16 @@ const helmet = require('helmet');
 const path = require('path');
 require('dotenv').config();
 
-const { syncDatabase } = require('./server/models');
-
 const app = express();
 const PORT = process.env.PORT || 3000;
-
-// Initialize database
-syncDatabase();
 
 // Middleware
 app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
-      styleSrc: ["'self'", "'unsafe-inline'", "https://cdn.jsdelivr.net"],
+      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com", "https://cdn.jsdelivr.net"],
+      fontSrc: ["'self'", "https://fonts.gstatic.com"],
       scriptSrc: ["'self'", "'unsafe-inline'"],
       imgSrc: ["'self'", "data:", "https:"],
       connectSrc: ["'self'", "https://api.openai.com"]
@@ -31,14 +27,27 @@ app.use(express.urlencoded({ extended: true }));
 // Serve static files
 app.use(express.static(path.join(__dirname, 'public')));
 
-// API Routes
-app.use('/api/auth', require('./server/routes/auth'));
-app.use('/api/events', require('./server/routes/events'));
-app.use('/api/todos', require('./server/routes/todos'));
+// Initialize database only if DATABASE_URL is provided
+if (process.env.DATABASE_URL) {
+  const { syncDatabase } = require('./server/models');
+  syncDatabase();
+  
+  // API Routes (only if database is available)
+  app.use('/api/auth', require('./server/routes/auth'));
+  app.use('/api/events', require('./server/routes/events'));
+  app.use('/api/todos', require('./server/routes/todos'));
+} else {
+  console.log('⚠️  No DATABASE_URL found - running in static mode');
+  console.log('📝 User data will be stored locally in browser');
+}
 
 // Health check
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'OK', message: 'Smart Planner API is running' });
+  res.json({ 
+    status: 'OK', 
+    message: 'Smart Planner API is running',
+    mode: process.env.DATABASE_URL ? 'dynamic' : 'static'
+  });
 });
 
 // Serve frontend for all other routes
@@ -56,4 +65,7 @@ app.listen(PORT, () => {
   console.log(`🚀 Smart Planner server running on port ${PORT}`);
   console.log(`📅 Access your app at http://localhost:${PORT}`);
   console.log(`🔧 API health check: http://localhost:${PORT}/api/health`);
+  if (!process.env.DATABASE_URL) {
+    console.log('💡 To enable user accounts, set DATABASE_URL environment variable');
+  }
 });

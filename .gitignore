@@ -69,3 +69,6 @@ Thumbs.db
 *.sqlite
 *.sqlite3
 *.db
+
+# Configuration files with sensitive data
+public/config.js
