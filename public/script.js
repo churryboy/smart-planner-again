@@ -1,1212 +1,911 @@
-// API Configuration
-const API_BASE = window.location.origin + '/api';
-const OPENAI_API_KEY = window.OPENAI_API_KEY || 'your-api-key-here';
-const OPENAI_API_URL = 'https://api.openai.com/v1/chat/completions';
+/**
+ * Smart Planner - Optimized JavaScript
+ * Design System Compliant
+ * Version: 2.0.0
+ */
 
-// Global state
-let currentUser = null;
-let currentEvents = [];
-let currentTodos = [];
+// ==============================================
+// Application Configuration
+// ==============================================
+const APP_CONFIG = {
+  storageKey: 'smart-planner-events',
+  dateFormat: 'ko-KR',
+  categories: ['study', 'daily', 'entertainment', 'other'],
+  priorities: ['low', 'medium', 'high']
+};
 
-// Toast notification function
-function showToast(message, type = 'success', duration = 2000) {
-  const toastContainer = document.getElementById('toast-container');
-  if (!toastContainer) return;
-
-  const toast = document.createElement('div');
-  toast.className = `toast ${type}`;
-  toast.textContent = message;
-
-  toastContainer.appendChild(toast);
-
-  // Trigger animation
-  setTimeout(() => {
-    toast.classList.add('show');
-  }, 10);
-
-  // Remove toast after duration
-  setTimeout(() => {
-    toast.classList.remove('show');
-    setTimeout(() => {
-      if (toast.parentNode) {
-        toast.parentNode.removeChild(toast);
-      }
-    }, 300);
-  }, duration);
-}
-
-// Check if authentication is required
-const requireAuth = window.APP_CONFIG?.requireAuth ?? true;
-
-// ========================================
-// Storage Manager (localStorage fallback)
-// ========================================
-class StorageManager {
-  static getEvents() {
-    const events = localStorage.getItem('smart-planner-events');
-    return events ? JSON.parse(events) : [];
+// ==============================================
+// Main Application Class
+// ==============================================
+class SmartPlannerApp {
+  constructor() {
+    this.events = [];
+    this.currentDate = new Date();
+    this.selectedDate = null;
+    this.currentSection = 'calendar';
+    this.editingEvent = null;
+    
+    // Cache DOM elements for performance
+    this.elements = this.cacheElements();
+    
+    // Initialize app
+    this.init();
   }
-
-  static saveEvents(events) {
-    localStorage.setItem('smart-planner-events', JSON.stringify(events));
+  
+  // ==============================================
+  // Initialization
+  // ==============================================
+  init() {
+    this.loadEvents();
+    this.renderCalendar();
+    this.attachEventListeners();
+    this.updateStats();
   }
-
-  static getTodos() {
-    const todos = localStorage.getItem('smart-planner-todos');
-    return todos ? JSON.parse(todos) : [];
+  
+  cacheElements() {
+    return {
+      // Calendar elements
+      calendarDays: document.getElementById('calendar-days'),
+      currentMonth: document.getElementById('current-month'),
+      calendarSection: document.getElementById('calendar-section'),
+      
+      // Timeline elements
+      timelineSection: document.getElementById('timeline-section'),
+      timelineContent: document.getElementById('timeline-content'),
+      timelineTitle: document.getElementById('timeline-title'),
+      
+      // Tasks elements
+      tasksSection: document.getElementById('tasks-section'),
+      tasksList: document.getElementById('tasks-list'),
+      
+      // Stats elements
+      statsSection: document.getElementById('stats-section'),
+      monthEvents: document.getElementById('month-events'),
+      completedEvents: document.getElementById('completed-events'),
+      categoryStats: document.getElementById('category-stats'),
+      
+      // Settings elements
+      settingsSection: document.getElementById('settings-section'),
+      
+      // Modal elements
+      modal: document.getElementById('schedule-modal'),
+      modalTitle: document.getElementById('modal-title'),
+      form: document.getElementById('schedule-form'),
+      eventTitle: document.getElementById('event-title'),
+      eventDate: document.getElementById('event-date'),
+      eventEndDate: document.getElementById('event-end-date'),
+      eventStartTime: document.getElementById('event-start-time'),
+      eventEndTime: document.getElementById('event-end-time'),
+      eventDescription: document.getElementById('event-description'),
+      
+      // Toast container
+      toastContainer: document.getElementById('toast-container')
+    };
   }
-
-  static saveTodos(todos) {
-    localStorage.setItem('smart-planner-todos', JSON.stringify(todos));
+  
+  // ==============================================
+  // Event Management
+  // ==============================================
+  loadEvents() {
+    try {
+      const stored = localStorage.getItem(APP_CONFIG.storageKey);
+      this.events = stored ? JSON.parse(stored) : [];
+    } catch (error) {
+      console.error('Failed to load events:', error);
+      this.events = [];
+      this.showToast('Failed to load saved events', 'error');
+    }
   }
-
-  static addEvent(event) {
-    const events = this.getEvents();
-    event.id = Date.now().toString();
-    events.push(event);
-    this.saveEvents(events);
+  
+  saveEvents() {
+    try {
+      localStorage.setItem(APP_CONFIG.storageKey, JSON.stringify(this.events));
+    } catch (error) {
+      console.error('Failed to save events:', error);
+      this.showToast('Failed to save events', 'error');
+    }
+  }
+  
+  addEvent(eventData) {
+    const event = {
+      ...eventData,
+      id: Date.now().toString(),
+      created: new Date().toISOString(),
+      completed: false
+    };
+    
+    this.events.push(event);
+    this.saveEvents();
+    this.updateStats();
+    
     return event;
   }
-
-  static addTodo(todo) {
-    const todos = this.getTodos();
-    todo.id = Date.now().toString();
-    todo.completed = false;
-    todos.push(todo);
-    this.saveTodos(todos);
-    return todo;
-  }
-
-  static updateTodo(todoId, updates) {
-    const todos = this.getTodos();
-    const index = todos.findIndex(t => t.id === todoId);
+  
+  updateEvent(eventId, eventData) {
+    const index = this.events.findIndex(e => e.id === eventId);
     if (index !== -1) {
-      todos[index] = { ...todos[index], ...updates };
-      this.saveTodos(todos);
-      return todos[index];
+      this.events[index] = {
+        ...this.events[index],
+        ...eventData,
+        updated: new Date().toISOString()
+      };
+      this.saveEvents();
+      this.updateStats();
+      return this.events[index];
     }
     return null;
   }
-}
-
-// ========================================
-// App Manager
-// ========================================
-class AppManager {
-  constructor() {
-    this.initializeApp();
-  }
-
-  initializeApp() {
-    if (requireAuth) {
-      // Show authentication modal
-      this.showAuthModal();
-    } else {
-      // Skip authentication, use static mode
-      this.setStaticUser();
+  
+  deleteEvent(eventId) {
+    const index = this.events.findIndex(e => e.id === eventId);
+    if (index !== -1) {
+      this.events.splice(index, 1);
+      this.saveEvents();
+      this.updateStats();
+      return true;
     }
+    return false;
   }
-
-  setStaticUser() {
-    currentUser = window.APP_CONFIG?.defaultUser || {
-      id: 'local-user',
-      name: '사용자',
-      email: 'user@local.com'
-    };
-
-    // Hide auth modal and show app
-    document.getElementById('auth-overlay').style.display = 'none';
-    document.getElementById('app-container').style.display = 'block';
-    document.getElementById('user-name').textContent = currentUser.name;
-
-    // Initialize app components
-    this.initializeComponents();
-    this.loadLocalData();
-  }
-
-  initializeComponents() {
-    window.globalCalendar = new Calendar();
-    window.globalScheduleModal = new ScheduleModal();
-    window.globalBottomSheet = new BottomSheet();
-    window.globalChatManager = new ChatManager();
-  }
-
-  loadLocalData() {
-    currentEvents = StorageManager.getEvents();
-    currentTodos = StorageManager.getTodos();
-    
-    window.globalCalendar?.renderCalendar();
-    this.renderTodos();
-  }
-
-  renderTodos() {
-    const todoList = document.getElementById('todo-list');
-    if (!todoList) return;
-
-    todoList.innerHTML = '';
-
-    if (currentTodos.length === 0) {
-      todoList.innerHTML = '<p class="empty-state">할 일이 없습니다.</p>';
-      return;
-    }
-
-    currentTodos.forEach(todo => {
-      const todoItem = document.createElement('div');
-      todoItem.className = 'todo-item';
-      todoItem.innerHTML = `
-        <label class="todo-checkbox">
-          <input type="checkbox" ${todo.completed ? 'checked' : ''} 
-                 onchange="appManager.toggleTodo('${todo.id}', this.checked)">
-          <span class="checkmark"></span>
-        </label>
-        <div class="todo-content">
-          <div class="todo-title ${todo.completed ? 'completed' : ''}">${todo.title}</div>
-          ${todo.due_date ? `<div class="todo-time">${new Date(todo.due_date).toLocaleDateString('ko-KR')}</div>` : ''}
-        </div>
-      `;
-      todoList.appendChild(todoItem);
+  
+  getEventsForDate(dateStr) {
+    return this.events.filter(event => {
+      const eventDate = event.date || event.start_date;
+      return eventDate === dateStr;
     });
   }
-
-  toggleTodo(todoId, completed) {
-    const updatedTodo = StorageManager.updateTodo(todoId, { completed });
-    if (updatedTodo) {
-      const todo = currentTodos.find(t => t.id === todoId);
-      if (todo) {
-        todo.completed = completed;
-        this.renderTodos();
-      }
+  
+  getEventsForMonth(year, month) {
+    return this.events.filter(event => {
+      const eventDate = new Date(event.date || event.start_date);
+      return eventDate.getFullYear() === year && eventDate.getMonth() === month;
+    });
+  }
+  
+  // ==============================================
+  // Calendar Rendering
+  // ==============================================
+  renderCalendar() {
+    const year = this.currentDate.getFullYear();
+    const month = this.currentDate.getMonth();
+    
+    // Update month title
+    this.elements.currentMonth.textContent = 
+      `${year}년 ${month + 1}월`;
+    
+    // Clear calendar
+    this.elements.calendarDays.innerHTML = '';
+    
+    // Calculate days
+    const firstDay = new Date(year, month, 1).getDay();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    
+    // Add empty cells for alignment
+    for (let i = 0; i < firstDay; i++) {
+      const emptyDay = document.createElement('div');
+      emptyDay.className = 'calendar-day empty';
+      this.elements.calendarDays.appendChild(emptyDay);
+    }
+    
+    // Add days of the month
+    const today = new Date();
+    for (let day = 1; day <= daysInMonth; day++) {
+      const dayEl = this.createCalendarDay(year, month, day, today);
+      this.elements.calendarDays.appendChild(dayEl);
     }
   }
-
-  showAuthModal() {
-    document.getElementById('auth-overlay').style.display = 'flex';
-    document.getElementById('app-container').style.display = 'none';
+  
+  createCalendarDay(year, month, day, today) {
+    const dayEl = document.createElement('div');
+    dayEl.className = 'calendar-day';
+    
+    const dateStr = this.formatDate(year, month, day);
+    const events = this.getEventsForDate(dateStr);
+    
+    // Check if today
+    if (year === today.getFullYear() && 
+        month === today.getMonth() && 
+        day === today.getDate()) {
+      dayEl.classList.add('today');
+    }
+    
+    // Check if selected
+    if (this.selectedDate === dateStr) {
+      dayEl.classList.add('selected');
+    }
+    
+    // Create day content
+    const dayNumber = document.createElement('span');
+    dayNumber.textContent = day;
+    dayEl.appendChild(dayNumber);
+    
+    // Add event indicators
+    if (events.length > 0) {
+      const indicators = document.createElement('div');
+      indicators.className = 'event-indicators';
+      
+      events.slice(0, 3).forEach(event => {
+        const dot = document.createElement('div');
+        dot.className = 'event-dot';
+        dot.style.backgroundColor = `var(--category-${event.category || 'other'})`;
+        indicators.appendChild(dot);
+      });
+      
+      dayEl.appendChild(indicators);
+    }
+    
+    // Add click handler
+    dayEl.addEventListener('click', () => this.selectDate(dateStr));
+    
+    return dayEl;
   }
-}
-
-// ========================================
-// Calendar Class
-// ========================================
-class Calendar {
-  constructor() {
-    this.currentDate = new Date();
-    this.selectedDate = null;
-    this.initializeEventListeners();
+  
+  formatDate(year, month, day) {
+    return `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+  }
+  
+  selectDate(dateStr) {
+    this.selectedDate = dateStr;
+    this.showTimeline(dateStr);
+  }
+  
+  // ==============================================
+  // Timeline Rendering
+  // ==============================================
+  showTimeline(dateStr) {
+    // Update selected date
+    this.selectedDate = dateStr;
+    
+    // Hide other sections and show timeline
+    this.hideAllSections();
+    this.elements.timelineSection.classList.remove('hidden');
+    
+    // Update title
+    const date = new Date(dateStr);
+    this.elements.timelineTitle.textContent = 
+      date.toLocaleDateString(APP_CONFIG.dateFormat, {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+    
+    // Render timeline
+    this.renderTimeline(dateStr);
+  }
+  
+  renderTimeline(dateStr) {
+    const events = this.getEventsForDate(dateStr);
+    this.elements.timelineContent.innerHTML = '';
+    
+    // Group events by time
+    const allDayEvents = events.filter(e => !e.start_time);
+    const timedEvents = events.filter(e => e.start_time);
+    
+    // Show all-day events
+    if (allDayEvents.length > 0) {
+      const allDayHour = this.createTimelineHour('종일', allDayEvents);
+      this.elements.timelineContent.appendChild(allDayHour);
+    }
+    
+    // Create hourly timeline (6 AM to 11 PM)
+    for (let hour = 6; hour <= 23; hour++) {
+      const hourEvents = timedEvents.filter(event => {
+        const eventHour = parseInt(event.start_time.split(':')[0]);
+        return eventHour === hour;
+      });
+      
+      const hourEl = this.createTimelineHour(`${hour}:00`, hourEvents);
+      this.elements.timelineContent.appendChild(hourEl);
+    }
+  }
+  
+  createTimelineHour(label, events) {
+    const hourEl = document.createElement('div');
+    hourEl.className = 'timeline-hour';
+    
+    const labelEl = document.createElement('div');
+    labelEl.className = 'hour-label text-caption1';
+    labelEl.textContent = label;
+    
+    const eventsEl = document.createElement('div');
+    eventsEl.className = 'hour-events';
+    
+    events.forEach(event => {
+      const eventEl = this.createTimelineEvent(event);
+      eventsEl.appendChild(eventEl);
+    });
+    
+    hourEl.appendChild(labelEl);
+    hourEl.appendChild(eventsEl);
+    
+    return hourEl;
+  }
+  
+  createTimelineEvent(event) {
+    const eventEl = document.createElement('div');
+    eventEl.className = 'timeline-event';
+    eventEl.style.borderLeftColor = `var(--category-${event.category || 'other'})`;
+    
+    const titleEl = document.createElement('div');
+    titleEl.className = 'event-title';
+    titleEl.textContent = event.title;
+    
+    eventEl.appendChild(titleEl);
+    
+    if (event.start_time) {
+      const timeEl = document.createElement('div');
+      timeEl.className = 'event-time';
+      timeEl.textContent = event.end_time ? 
+        `${event.start_time} - ${event.end_time}` : 
+        event.start_time;
+      eventEl.appendChild(timeEl);
+    }
+    
+    // Add click handler for editing
+    eventEl.addEventListener('click', () => {
+      this.openModal(null, event);
+    });
+    
+    return eventEl;
+  }
+  
+  // ==============================================
+  // Tasks Rendering
+  // ==============================================
+  renderTasks() {
+    // Sort events by date
+    const sortedEvents = [...this.events].sort((a, b) => {
+      const dateA = new Date(a.date || a.start_date);
+      const dateB = new Date(b.date || b.start_date);
+      return dateA - dateB;
+    });
+    
+    this.elements.tasksList.innerHTML = '';
+    
+    if (sortedEvents.length === 0) {
+      this.elements.tasksList.innerHTML = 
+        '<p class="empty-state">등록된 일정이 없습니다.</p>';
+      return;
+    }
+    
+    // Group events by month
+    const groupedEvents = this.groupEventsByMonth(sortedEvents);
+    
+    // Render grouped events
+    Object.entries(groupedEvents).forEach(([monthKey, events]) => {
+      // Create month header
+      const monthHeader = document.createElement('h3');
+      monthHeader.className = 'text-headline';
+      monthHeader.style.marginTop = 'var(--space-lg)';
+      monthHeader.style.marginBottom = 'var(--space-base)';
+      monthHeader.textContent = monthKey;
+      this.elements.tasksList.appendChild(monthHeader);
+      
+      // Render events for this month
+      events.forEach(event => {
+        const taskEl = this.createTaskItem(event);
+        this.elements.tasksList.appendChild(taskEl);
+      });
+    });
+  }
+  
+  groupEventsByMonth(events) {
+    const grouped = {};
+    
+    events.forEach(event => {
+      const date = new Date(event.date || event.start_date);
+      const monthKey = date.toLocaleDateString(APP_CONFIG.dateFormat, {
+        year: 'numeric',
+        month: 'long'
+      });
+      
+      if (!grouped[monthKey]) {
+        grouped[monthKey] = [];
+      }
+      grouped[monthKey].push(event);
+    });
+    
+    return grouped;
+  }
+  
+  createTaskItem(event) {
+    const taskEl = document.createElement('div');
+    taskEl.className = 'task-item';
+    
+    // Category indicator
+    const indicator = document.createElement('div');
+    indicator.className = 'task-indicator';
+    indicator.style.backgroundColor = `var(--category-${event.category || 'other'})`;
+    
+    // Content
+    const content = document.createElement('div');
+    content.className = 'task-content';
+    
+    const title = document.createElement('div');
+    title.className = 'task-title';
+    title.textContent = event.title;
+    
+    const meta = document.createElement('div');
+    meta.className = 'task-meta';
+    const date = new Date(event.date || event.start_date);
+    meta.textContent = date.toLocaleDateString(APP_CONFIG.dateFormat);
+    
+    if (event.start_time) {
+      meta.textContent += ` ${event.start_time}`;
+    }
+    
+    content.appendChild(title);
+    content.appendChild(meta);
+    
+    // Actions
+    const actions = document.createElement('div');
+    actions.className = 'task-actions';
+    
+    const editBtn = document.createElement('button');
+    editBtn.className = 'task-btn';
+    editBtn.innerHTML = '<svg class="icon" style="width:16px;height:16px" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>';
+    editBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.openModal(null, event);
+    });
+    
+    const deleteBtn = document.createElement('button');
+    deleteBtn.className = 'task-btn';
+    deleteBtn.innerHTML = '<svg class="icon" style="width:16px;height:16px" viewBox="0 0 24 24"><path d="M3 6h18"></path><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"></path><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>';
+    deleteBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (confirm('이 일정을 삭제하시겠습니까?')) {
+        this.deleteEvent(event.id);
+        this.renderTasks();
+        this.renderCalendar();
+        this.showToast('일정이 삭제되었습니다', 'success');
+      }
+    });
+    
+    actions.appendChild(editBtn);
+    actions.appendChild(deleteBtn);
+    
+    taskEl.appendChild(indicator);
+    taskEl.appendChild(content);
+    taskEl.appendChild(actions);
+    
+    // Add click handler to entire task item
+    taskEl.addEventListener("click", () => {
+      this.openModal(null, event);
+    });
+    
+    // Prevent event bubbling on action buttons
+    actions.addEventListener("click", (e) => {
+      e.stopPropagation();
+    });    
+    return taskEl;
+  }
+  
+  // ==============================================
+  // Stats Rendering
+  // ==============================================
+  updateStats() {
+    // Calculate stats
+    const currentMonth = new Date();
+    const monthEvents = this.getEventsForMonth(
+      currentMonth.getFullYear(),
+      currentMonth.getMonth()
+    );
+    
+    const completedEvents = this.events.filter(e => e.completed).length;
+    
+    // Update stat numbers
+    if (this.elements.monthEvents) {
+      this.elements.monthEvents.textContent = monthEvents.length;
+    }
+    
+    if (this.elements.completedEvents) {
+      this.elements.completedEvents.textContent = completedEvents;
+    }
+    
+    // Update category stats
+    if (this.elements.categoryStats) {
+      this.renderCategoryStats();
+    }
+  }
+  
+  renderCategoryStats() {
+    const categoryCount = {};
+    const total = this.events.length;
+    
+    // Count events by category
+    this.events.forEach(event => {
+      const category = event.category || 'other';
+      categoryCount[category] = (categoryCount[category] || 0) + 1;
+    });
+    
+    // Clear existing stats
+    this.elements.categoryStats.innerHTML = '';
+    
+    // Render each category
+    APP_CONFIG.categories.forEach(category => {
+      const count = categoryCount[category] || 0;
+      const percentage = total > 0 ? (count / total * 100).toFixed(1) : 0;
+      
+      const statEl = document.createElement('div');
+      statEl.className = 'category-stat';
+      
+      statEl.innerHTML = `
+        <span class="text-caption1">${this.getCategoryLabel(category)}</span>
+        <div class="category-bar">
+          <div class="category-fill" style="
+            width: ${percentage}%;
+            background-color: var(--category-${category});
+          "></div>
+        </div>
+        <span class="text-caption1">${count}</span>
+      `;
+      
+      this.elements.categoryStats.appendChild(statEl);
+    });
+  }
+  
+  getCategoryLabel(category) {
+    const labels = {
+      study: '공부',
+      daily: '일상',
+      entertainment: '놀이',
+      other: '기타'
+    };
+    return labels[category] || category;
+  }
+  
+  // ==============================================
+  // Modal Management
+  // ==============================================
+  openModal(date = null, eventData = null) {
+    this.editingEvent = eventData;
+    
+    // Update modal title
+    this.elements.modalTitle.textContent = eventData ? '일정 수정' : '일정 추가';
+    
+    // Clear or fill form
+    if (eventData) {
+      this.fillForm(eventData);
+    } else {
+      this.clearForm();
+      if (date) {
+        this.elements.eventDate.value = date;
+      }
+    }
+    
+    // Show/hide delete button
+    const deleteBtn = document.getElementById("modal-delete");
+    if (deleteBtn) {
+      deleteBtn.style.display = eventData ? "inline-flex" : "none";
+    }    // Show modal
+    this.elements.modal.classList.add('active');
+    this.elements.eventTitle.focus();
+  }
+  
+  closeModal() {
+    this.elements.modal.classList.remove('active');
+    this.clearForm();
+    this.editingEvent = null;
+  }
+  
+  fillForm(eventData) {
+    this.elements.eventTitle.value = eventData.title || '';
+    this.elements.eventDate.value = eventData.date || eventData.start_date || '';
+    this.elements.eventEndDate.value = eventData.end_date || '';
+    this.elements.eventStartTime.value = eventData.start_time || '';
+    this.elements.eventEndTime.value = eventData.end_time || '';
+    this.elements.eventDescription.value = eventData.description || '';
+    
+    // Set radio buttons
+    const categoryRadio = document.querySelector(`input[name="category"][value="${eventData.category || 'other'}"]`);
+    if (categoryRadio) categoryRadio.checked = true;
+    
+    const priorityRadio = document.querySelector(`input[name="priority"][value="${eventData.priority || 'medium'}"]`);
+    if (priorityRadio) priorityRadio.checked = true;
+  }
+  
+  clearForm() {
+    this.elements.form.reset();
+    
+    // Set defaults
+    document.querySelector('input[name="category"][value="other"]').checked = true;
+    document.querySelector('input[name="priority"][value="medium"]').checked = true;
+  }
+  
+  handleSubmit() {
+    // Validate form
+    if (!this.elements.form.checkValidity()) {
+      this.elements.form.reportValidity();
+      return;
+    }
+    
+    // Collect form data
+    const eventData = {
+      title: this.elements.eventTitle.value.trim(),
+      date: this.elements.eventDate.value,
+      end_date: this.elements.eventEndDate.value || this.elements.eventDate.value,
+      start_time: this.elements.eventStartTime.value,
+      end_time: this.elements.eventEndTime.value,
+      description: this.elements.eventDescription.value.trim(),
+      category: document.querySelector('input[name="category"]:checked')?.value || 'other',
+      priority: document.querySelector('input[name="priority"]:checked')?.value || 'medium'
+    };
+    
+    // Additional validation
+    if (!eventData.title) {
+      this.showToast('제목을 입력해주세요', 'error');
+      return;
+    }
+    
+    if (!eventData.date) {
+      this.showToast('날짜를 선택해주세요', 'error');
+      return;
+    }
+    
+    // Save event
+    if (this.editingEvent) {
+      this.updateEvent(this.editingEvent.id, eventData);
+      this.showToast('일정이 수정되었습니다', 'success');
+    } else {
+      this.addEvent(eventData);
+      this.showToast('일정이 추가되었습니다', 'success');
+    }
+    
+    // Update views
     this.renderCalendar();
+    if (this.currentSection === 'tasks') {
+      this.renderTasks();
+    }
+    
+    // Close modal
+    this.closeModal();
   }
-
-  initializeEventListeners() {
-    const prevBtn = document.getElementById('prev-month');
-    const nextBtn = document.getElementById('next-month');
-
-    prevBtn?.addEventListener('click', () => {
+  
+  // ==============================================
+  // Navigation
+  // ==============================================
+  switchSection(section) {
+    this.currentSection = section;
+    
+    // Hide all sections
+    this.hideAllSections();
+    
+    // Show selected section
+    switch (section) {
+      case 'calendar':
+        this.elements.calendarSection.classList.remove('hidden');
+        this.renderCalendar();
+        break;
+      case 'tasks':
+        this.elements.tasksSection.classList.remove('hidden');
+        this.renderTasks();
+        break;
+      case 'stats':
+        this.elements.statsSection.classList.remove('hidden');
+        this.updateStats();
+        break;
+      case 'settings':
+        this.elements.settingsSection.classList.remove('hidden');
+        break;
+    }
+    
+    // Update navigation
+    document.querySelectorAll('.nav-item').forEach(item => {
+      item.classList.toggle('active', 
+        item.getAttribute('data-section') === section);
+    });
+  }
+  
+  hideAllSections() {
+    this.elements.calendarSection.classList.add('hidden');
+    this.elements.timelineSection.classList.add('hidden');
+    this.elements.tasksSection.classList.add('hidden');
+    this.elements.statsSection.classList.add('hidden');
+    this.elements.settingsSection.classList.add('hidden');
+  }
+  
+  // ==============================================
+  // Settings Management
+  // ==============================================
+  handleBackup() {
+    const data = {
+      version: '2.0.0',
+      timestamp: new Date().toISOString(),
+      events: this.events
+    };
+    
+    const blob = new Blob([JSON.stringify(data, null, 2)], {
+      type: 'application/json'
+    });
+    
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `smart-planner-backup-${Date.now()}.json`;
+    link.click();
+    
+    URL.revokeObjectURL(url);
+    this.showToast('백업 파일이 다운로드되었습니다', 'success');
+  }
+  
+  handleRestore() {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'application/json';
+    
+    input.onchange = (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        try {
+          const data = JSON.parse(event.target.result);
+          if (data.events && Array.isArray(data.events)) {
+            this.events = data.events;
+            this.saveEvents();
+            this.renderCalendar();
+            this.updateStats();
+            this.showToast('데이터가 복원되었습니다', 'success');
+          } else {
+            throw new Error('Invalid backup file');
+          }
+        } catch (error) {
+          this.showToast('유효하지 않은 백업 파일입니다', 'error');
+        }
+      };
+      reader.readAsText(file);
+    };
+    
+    input.click();
+  }
+  
+  handleClearData() {
+    if (confirm('모든 데이터를 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.')) {
+      this.events = [];
+      this.saveEvents();
+      this.renderCalendar();
+      this.updateStats();
+      this.switchSection('calendar');
+      this.showToast('모든 데이터가 삭제되었습니다', 'success');
+    }
+  }
+  
+  // ==============================================
+  // Utilities
+  // ==============================================
+  showToast(message, type = 'success', duration = 3000) {
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    toast.textContent = message;
+    
+    this.elements.toastContainer.appendChild(toast);
+    
+    // Trigger animation
+    requestAnimationFrame(() => {
+      toast.classList.add('show');
+    });
+    
+    // Remove toast
+    setTimeout(() => {
+      toast.classList.remove('show');
+      setTimeout(() => toast.remove(), 300);
+    }, duration);
+  }
+  
+  // ==============================================
+  // Event Listeners
+  // ==============================================
+  attachEventListeners() {
+    // Calendar navigation
+    document.getElementById('prev-month').addEventListener('click', () => {
       this.currentDate.setMonth(this.currentDate.getMonth() - 1);
       this.renderCalendar();
     });
-
-    nextBtn?.addEventListener('click', () => {
+    
+    document.getElementById('next-month').addEventListener('click', () => {
       this.currentDate.setMonth(this.currentDate.getMonth() + 1);
       this.renderCalendar();
     });
-  }
-
-  renderCalendar() {
-    const monthTitle = document.getElementById('current-month');
-    const calendarDays = document.getElementById('calendar-days');
-
-    if (!monthTitle || !calendarDays) return;
-
-    // Update month title
-    const year = this.currentDate.getFullYear();
-    const month = this.currentDate.getMonth();
-    monthTitle.textContent = `${year}년 ${month + 1}월`;
-
-    // Clear previous days
-    calendarDays.innerHTML = '';
-
-    // Get first day of month and number of days
-    const firstDay = new Date(year, month, 1);
-    const lastDay = new Date(year, month + 1, 0);
-    const daysInMonth = lastDay.getDate();
-    const startingDayOfWeek = firstDay.getDay();
-
-    // Add empty cells for days before month starts
-    for (let i = 0; i < startingDayOfWeek; i++) {
-      const emptyDay = document.createElement('div');
-      emptyDay.className = 'calendar-day empty';
-      calendarDays.appendChild(emptyDay);
-    }
-
-    // Add days of the month
-    for (let day = 1; day <= daysInMonth; day++) {
-      const dayElement = document.createElement('div');
-      dayElement.className = 'calendar-day';
-      
-      const currentDateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-      const eventsForDay = this.getEventsForDate(currentDateStr);
-      
-      // Check if it's today
-      const today = new Date();
-      if (year === today.getFullYear() && month === today.getMonth() && day === today.getDate()) {
-        dayElement.classList.add('today');
-      }
-
-      dayElement.innerHTML = `
-        <span class="day-number">${day}</span>
-        ${eventsForDay.length > 0 ? `<div class="event-indicators">${eventsForDay.slice(0, 3).map(event => 
-          `<div class="event-dot ${event.category || 'other'}"></div>`
-        ).join('')}</div>` : ''}
-      `;
-
-      dayElement.addEventListener('click', (e) => {
-        this.selectDate(currentDateStr, e.target);
-      });
-
-      calendarDays.appendChild(dayElement);
-    }
-  }
-
-  getEventsForDate(dateStr) {
-    const events = currentEvents.filter(event => {
-      const eventDate = event.start_date?.split('T')[0] || event.start_date;
-      return eventDate === dateStr;
+    
+    // Timeline navigation
+    document.getElementById('timeline-back').addEventListener('click', () => {
+      this.switchSection('calendar');
     });
-    console.log(`Events for ${dateStr}:`, events);
-    return events;
-  }
-
-  selectDate(dateStr, targetElement = null) {
-    console.log('selectDate called with:', dateStr);
-    this.selectedDate = dateStr;
     
-    // Remove previous selection
-    document.querySelectorAll('.calendar-day.selected').forEach(day => {
-      day.classList.remove('selected');
+    document.getElementById('timeline-prev').addEventListener('click', () => {
+      const date = new Date(this.selectedDate);
+      date.setDate(date.getDate() - 1);
+      this.showTimeline(this.formatDate(
+        date.getFullYear(),
+        date.getMonth(),
+        date.getDate()
+      ));
     });
-
-    // Add selection to clicked day
-    if (targetElement) {
-      targetElement.closest('.calendar-day').classList.add('selected');
-    }
-
-    // Show timeline view
-    console.log('Calling showTimelineView');
-    this.showTimelineView(dateStr);
-  }
-
-  showTimelineView(dateStr) {
-    console.log('showTimelineView called with:', dateStr);
-    const timelineSection = document.getElementById('timeline-section');
-    const calendarSection = document.querySelector('.calendar-section');
-    const todoSection = document.querySelector('.todo-section');
-    const timelineTitle = document.getElementById('timeline-title');
-
-    console.log('Timeline elements found:', {
-      timelineSection: !!timelineSection,
-      calendarSection: !!calendarSection,
-      todoSection: !!todoSection,
-      timelineTitle: !!timelineTitle
+    
+    document.getElementById('timeline-next').addEventListener('click', () => {
+      const date = new Date(this.selectedDate);
+      date.setDate(date.getDate() + 1);
+      this.showTimeline(this.formatDate(
+        date.getFullYear(),
+        date.getMonth(),
+        date.getDate()
+      ));
     });
-
-    if (!timelineSection) {
-      console.error('Timeline section not found!');
-      return;
-    }
-
-    // Reload events from localStorage to ensure we have the latest data
-    currentEvents = StorageManager.getEvents();
-
-    // Hide calendar section and show timeline
-    console.log('Hiding calendar and showing timeline');
-    if (calendarSection) calendarSection.style.display = 'none';
-    if (todoSection) todoSection.style.display = 'none';
-    timelineSection.style.display = 'block';
-    console.log('Timeline display set to block');
-
-    // Update timeline title
-    const date = new Date(dateStr);
-    timelineTitle.textContent = `${date.getFullYear()}년 ${date.getMonth() + 1}월 ${date.getDate()}일`;
-
-    // Render timeline
-    this.renderTimeline(dateStr);
-
-    // Setup back button
-    const backBtn = document.getElementById('timeline-back-btn');
-    backBtn.onclick = () => {
-      timelineSection.style.display = 'none';
-      if (calendarSection) calendarSection.style.display = 'block';
-      if (todoSection) todoSection.style.display = 'block';
-    };
-
-    // Setup navigation buttons
-    const prevBtn = document.getElementById('timeline-prev-day');
-    const nextBtn = document.getElementById('timeline-next-day');
     
-    prevBtn.onclick = () => {
-      const currentDate = new Date(dateStr);
-      currentDate.setDate(currentDate.getDate() - 1);
-      const newDateStr = currentDate.toISOString().split('T')[0];
-      this.showTimelineView(newDateStr);
-    };
-    
-    nextBtn.onclick = () => {
-      const currentDate = new Date(dateStr);
-      currentDate.setDate(currentDate.getDate() + 1);
-      const newDateStr = currentDate.toISOString().split('T')[0];
-      this.showTimelineView(newDateStr);
-    };
-
-    // Setup swipe navigation
-    this.setupSwipeNavigation(timelineSection, dateStr);
-  }
-
-  renderTimeline(dateStr) {
-    const timelineContent = document.getElementById('timeline-content');
-    if (!timelineContent) return;
-
-    timelineContent.innerHTML = '';
-
-    // Get all events for the day
-    const allDayEvents = this.getEventsForDate(dateStr);
-    
-    // Show all-day events (events without specific times) at the top
-    const allDayEventsWithoutTime = allDayEvents.filter(event => !event.start_time);
-    if (allDayEventsWithoutTime.length > 0) {
-      const allDaySection = document.createElement('div');
-      allDaySection.className = 'timeline-all-day';
-      allDaySection.innerHTML = `
-        <div class="hour-label">종일</div>
-        <div class="hour-events">
-          ${allDayEventsWithoutTime.map(event => `
-            <div class="timeline-event ${event.category || 'other'}">
-              <div class="event-title">${event.title}</div>
-              <div class="event-time">종일 일정</div>
-            </div>
-          `).join('')}
-        </div>
-      `;
-      timelineContent.appendChild(allDaySection);
-    }
-
-    // Create timeline hours (6 AM to 11 PM)
-    for (let hour = 6; hour <= 23; hour++) {
-      const hourElement = document.createElement('div');
-      hourElement.className = 'timeline-hour';
-      
-      const eventsForHour = this.getEventsForHour(dateStr, hour);
-      
-      hourElement.innerHTML = `
-        <div class="hour-label">${hour}:00</div>
-        <div class="hour-events">
-          ${eventsForHour.map(event => `
-            <div class="timeline-event ${event.category || 'other'}">
-              <div class="event-title">${event.title}</div>
-              <div class="event-time">
-                ${event.start_time ? event.start_time.substring(0, 5) : ''} - 
-                ${event.end_time ? event.end_time.substring(0, 5) : ''}
-              </div>
-            </div>
-          `).join('')}
-        </div>
-      `;
-
-      timelineContent.appendChild(hourElement);
-    }
-  }
-
-  getEventsForHour(dateStr, hour) {
-    const eventsForDay = this.getEventsForDate(dateStr);
-    return eventsForDay.filter(event => {
-      if (!event.start_time) return false;
-      const eventHour = parseInt(event.start_time.split(':')[0]);
-      return eventHour === hour;
-    });
-  }
-
-  setupSwipeNavigation(element, currentDateStr) {
-    let startX = 0;
-    let startY = 0;
-    let endX = 0;
-    let endY = 0;
-
-    element.addEventListener('touchstart', (e) => {
-      startX = e.touches[0].clientX;
-      startY = e.touches[0].clientY;
-    });
-
-    element.addEventListener('touchend', (e) => {
-      endX = e.changedTouches[0].clientX;
-      endY = e.changedTouches[0].clientY;
-      
-      const deltaX = endX - startX;
-      const deltaY = endY - startY;
-      
-      // Check if horizontal swipe is more significant than vertical
-      if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 50) {
-        const currentDate = new Date(currentDateStr);
-        
-        if (deltaX > 0) {
-          // Swipe right - previous day
-          currentDate.setDate(currentDate.getDate() - 1);
-        } else {
-          // Swipe left - next day
-          currentDate.setDate(currentDate.getDate() + 1);
-        }
-        
-        const newDateStr = currentDate.toISOString().split('T')[0];
-        this.showTimelineView(newDateStr);
-      }
-    });
-  }
-}
-
-// ========================================
-// Schedule Modal
-// ========================================
-class ScheduleModal {
-  constructor() {
-    this.modal = document.getElementById('schedule-modal');
-    this.form = document.getElementById('schedule-form');
-    this.selectedDate = null;
-    this.editingEvent = null;
-    this.initializeEventListeners();
-  }
-
-  initializeEventListeners() {
-    const closeBtn = document.getElementById('schedule-close');
-    const cancelBtn = document.getElementById('schedule-cancel');
-
-    closeBtn?.addEventListener('click', () => this.close());
-    cancelBtn?.addEventListener('click', () => this.close());
-    this.form?.addEventListener('submit', (e) => this.handleSubmit(e));
-
-    // Close on overlay click
-    this.modal?.addEventListener('click', (e) => {
-      if (e.target === this.modal) {
-        this.close();
-      }
-    });
-
-    // ESC key handler
-    if (!this.escListenerBound) {
-      document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape' && this.modal?.classList.contains('active')) {
-          this.close();
-        }
-      });
-      this.escListenerBound = true;
-    }
-  }
-
-  open(selectedDate = null, eventData = null) {
-    this.selectedDate = selectedDate;
-    this.editingEvent = eventData;
-    
-    // Set modal title
-    const title = document.querySelector('.modal-title');
-    const confirmBtn = document.getElementById('schedule-confirm');
-    
-    if (eventData) {
-      title.textContent = '일정 수정';
-      confirmBtn.textContent = '일정 수정';
-      this.fillForm(eventData);
-    } else {
-      title.textContent = '일정 추가';
-      confirmBtn.textContent = '일정 추가';
-      this.clearForm();
-      
-      // Set default date only if provided, otherwise leave empty
-      if (selectedDate) {
-        document.getElementById('event-date').value = selectedDate;
-      }
-    }
-
-    this.modal.classList.add('active');
-  }
-
-  close() {
-    this.modal.classList.remove('active');
-    this.clearForm();
-    this.selectedDate = null;
-    this.editingEvent = null;
-  }
-
-  fillForm(eventData) {
-    document.getElementById('event-title').value = eventData.title || '';
-    document.getElementById('event-date').value = eventData.start_date?.split('T')[0] || '';
-    document.getElementById('event-end-date').value = eventData.end_date?.split('T')[0] || '';
-    document.getElementById('event-start-time').value = eventData.start_time || '';
-    document.getElementById('event-end-time').value = eventData.end_time || '';
-    document.getElementById('event-description').value = eventData.description || '';
-    
-    // Set category radio button
-    const categoryRadio = document.querySelector(`input[name="category"][value="${eventData.category || ''}"]`);
-    if (categoryRadio) {
-      categoryRadio.checked = true;
-    }
-    
-    // Set priority radio button
-    const priorityRadio = document.querySelector(`input[name="priority"][value="${eventData.priority || 'medium'}"]`);
-    if (priorityRadio) {
-      priorityRadio.checked = true;
-    }
-    
-    // Set reminder radio button
-    const reminderRadio = document.querySelector(`input[name="reminder"][value="${eventData.reminder || ''}"]`);
-    if (reminderRadio) {
-      reminderRadio.checked = true;
-    }
-  }
-
-  clearForm() {
-    this.form.reset();
-    
-    // Set default priority to medium
-    const mediumPriority = document.querySelector('input[name="priority"][value="medium"]');
-    if (mediumPriority) {
-      mediumPriority.checked = true;
-    }
-    
-    // Set default reminder to none
-    const noReminder = document.querySelector('input[name="reminder"][value=""]');
-    if (noReminder) {
-      noReminder.checked = true;
-    }
-  }
-
-  handleSubmit(e) {
-    e.preventDefault();
-
-    const eventData = {
-      title: document.getElementById('event-title').value,
-      description: document.getElementById('event-description').value,
-      start_date: document.getElementById('event-date').value,
-      end_date: document.getElementById('event-end-date').value || document.getElementById('event-date').value,
-      start_time: document.getElementById('event-start-time').value || null,
-      end_time: document.getElementById('event-end-time').value || null,
-      category: document.querySelector('input[name="category"]:checked')?.value,
-      priority: document.querySelector('input[name="priority"]:checked')?.value || 'medium',
-      reminder: parseInt(document.querySelector('input[name="reminder"]:checked')?.value) || null
-    };
-
-    // Use improved validation
-    if (!validateEventForm(eventData)) {
-      return;
-    }
-
-    // Debug validation
-    console.log("=== Form Validation Debug ===");
-    console.log("Title:", eventData.title);
-    console.log("Date:", eventData.start_date);
-    console.log("Category:", eventData.category);
-    console.log("=============================");
-
-    // Validation
-    if (!eventData.title || !eventData.start_date || !eventData.category) {
-      showToast('제목, 날짜, 카테고리는 필수입니다.', 'error');
-      return;
-    }
-
-    try {
-      if (this.editingEvent) {
-        // Update existing event
-        const index = currentEvents.findIndex(e => e.id === this.editingEvent.id);
-        if (index !== -1) {
-          currentEvents[index] = { ...currentEvents[index], ...eventData };
-          StorageManager.saveEvents(currentEvents);
-        }
-      } else {
-        // Create new event
-        const newEvent = StorageManager.addEvent(eventData);
-        currentEvents.push(newEvent);
-      }
-
-      // Refresh calendar
-      window.globalCalendar?.renderCalendar();
-
-      // Show success message
-      showToast('일정이 성공적으로 저장되었습니다!', 'success');
-
-      this.close();
-    } catch (error) {
-      console.error('Failed to save event:', error);
-      showToast('일정 저장 중 오류가 발생했습니다.', 'error');
-    }
-  }
-}
-
-// ========================================
-// Bottom Sheet Class
-// ========================================
-class BottomSheet {
-  constructor() {
-    this.bottomSheet = document.getElementById('bottom-sheet');
-    this.isOpen = false;
-    this.initializeEventListeners();
-  }
-
-  initializeEventListeners() {
-    const closeBtn = document.getElementById('chat-close');
-    closeBtn?.addEventListener('click', () => this.close());
-
-    // Close on overlay click
-    this.bottomSheet?.addEventListener('click', (e) => {
-      if (e.target === this.bottomSheet) {
-        this.close();
-      }
-    });
-  }
-
-  open() {
-    if (this.bottomSheet) {
-      this.bottomSheet.classList.add('active');
-      this.isOpen = true;
-      
-      // Focus on chat input
-      const chatInput = document.getElementById('chat-input');
-      setTimeout(() => chatInput?.focus(), 300);
-    }
-  }
-
-  close() {
-    if (this.bottomSheet) {
-      this.bottomSheet.classList.remove('active');
-      this.isOpen = false;
-    }
-  }
-}
-
-// ========================================
-// Chat Manager
-// ========================================
-class ChatManager {
-  constructor() {
-    this.messages = [];
-    this.initializeEventListeners();
-    this.initializeChat();
-  }
-
-  initializeEventListeners() {
-    const chatInput = document.getElementById('chat-input');
-    const sendBtn = document.getElementById('chat-send');
-
-    chatInput?.addEventListener('keypress', (e) => {
-      if (e.key === 'Enter') {
-        this.sendMessage();
-      }
-    });
-
-    sendBtn?.addEventListener('click', () => this.sendMessage());
-  }
-
-  initializeChat() {
-    const messagesContainer = document.getElementById('chat-messages');
-    if (!messagesContainer) return;
-
-    messagesContainer.innerHTML = `
-      <div class="message bot-message">
-        <div class="message-content">
-          안녕하세요! 일정을 추가해드릴게요. 어떤 일정을 만들어드릴까요?
-        </div>
-      </div>
-    `;
-  }
-
-  async sendMessage() {
-    const chatInput = document.getElementById('chat-input');
-    const message = chatInput?.value.trim();
-
-    if (!message) return;
-
-    // Add user message to chat
-    this.addMessage(message, 'user');
-    chatInput.value = '';
-
-    // Show typing indicator
-    this.showTypingIndicator();
-
-    try {
-      // Get AI response
-      const aiResponse = await this.getAIResponse(message);
-      
-      // Remove typing indicator
-      this.hideTypingIndicator();
-      
-      // Add AI response to chat
-      this.addMessage(aiResponse, 'bot');
-
-      // Check if this is a schedule creation request
-      if (this.isScheduleCreationRequest(aiResponse)) {
-        setTimeout(() => {
-          this.handleScheduleCreation(aiResponse);
-        }, 1000);
-      }
-    } catch (error) {
-      console.error('Chat error:', error);
-      this.hideTypingIndicator();
-      this.addMessage('죄송합니다. 오류가 발생했습니다. 다시 시도해주세요.', 'bot');
-    }
-  }
-
-  addMessage(content, sender) {
-    const messagesContainer = document.getElementById('chat-messages');
-    if (!messagesContainer) return;
-
-    const messageDiv = document.createElement('div');
-    messageDiv.className = `message ${sender}-message`;
-    messageDiv.innerHTML = `<div class="message-content">${content}</div>`;
-
-    messagesContainer.appendChild(messageDiv);
-    messagesContainer.scrollTop = messagesContainer.scrollHeight;
-  }
-
-  showTypingIndicator() {
-    const messagesContainer = document.getElementById('chat-messages');
-    if (!messagesContainer) return;
-
-    const typingDiv = document.createElement('div');
-    typingDiv.className = 'message bot-message typing-indicator';
-    typingDiv.innerHTML = `
-      <div class="message-content">
-        <div class="typing-dots">
-          <span></span>
-          <span></span>
-          <span></span>
-        </div>
-      </div>
-    `;
-
-    messagesContainer.appendChild(typingDiv);
-    messagesContainer.scrollTop = messagesContainer.scrollHeight;
-  }
-
-  hideTypingIndicator() {
-    const typingIndicator = document.querySelector('.typing-indicator');
-    if (typingIndicator) {
-      typingIndicator.remove();
-    }
-  }
-
-  async getAIResponse(userMessage) {
-    const systemPrompt = `당신은 한국어 일정 관리 도우미입니다. 사용자가 일정을 추가하고 싶어할 때, 다음 정보를 한 번에 모두 물어보세요:
-
-1) 일정 제목
-2) 시작 날짜와 종료 날짜 (YYYY-MM-DD 형식)
-3) 시작 시간과 종료 시간 (HH:MM 형식, 선택사항)
-4) 중요도 (낮음/보통/높음)
-5) 세부 내용 (선택사항)
-
-사용자가 모든 정보를 제공하면, 다음 형식으로 정확히 응답하세요:
-"일정을 추가하겠습니다:
-제목: [제목]
-날짜: [시작날짜] ~ [종료날짜]
-시간: [시작시간] ~ [종료시간]
-중요도: [중요도]
-내용: [내용]
-
-이 정보로 일정을 추가할까요?"
-
-간단하고 친근하게 대화하세요.`;
-
-    const response = await fetch(OPENAI_API_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${OPENAI_API_KEY}`
-      },
-      body: JSON.stringify({
-        model: 'gpt-3.5-turbo',
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: userMessage }
-        ],
-        max_tokens: 500,
-        temperature: 0.7
-      })
-    });
-
-    if (!response.ok) {
-      throw new Error('AI API request failed');
-    }
-
-    const data = await response.json();
-    return data.choices[0].message.content;
-  }
-
-  isScheduleCreationRequest(aiResponse) {
-    return aiResponse.includes('일정을 추가하겠습니다:') || 
-           aiResponse.includes('이 정보로 일정을 추가할까요?');
-  }
-
-  handleScheduleCreation(aiResponse) {
-    try {
-      // Parse the AI response to extract schedule data
-      const scheduleData = this.parseScheduleFromAI(aiResponse);
-      
-      if (scheduleData) {
-        // Close bottom sheet
-        window.globalBottomSheet?.close();
-        
-        // Open schedule modal with pre-filled data
-        window.globalScheduleModal?.open(scheduleData.start_date, scheduleData);
-      }
-    } catch (error) {
-      console.error('Failed to parse schedule data:', error);
-    }
-  }
-
-  parseScheduleFromAI(aiResponse) {
-    try {
-      const lines = aiResponse.split('\n');
-      const scheduleData = {};
-
-      lines.forEach(line => {
-        if (line.includes('제목:')) {
-          scheduleData.title = line.split('제목:')[1]?.trim();
-        } else if (line.includes('날짜:')) {
-          const dateStr = line.split('날짜:')[1]?.trim();
-          const dates = dateStr.split('~').map(d => d.trim());
-          scheduleData.start_date = dates[0];
-          scheduleData.end_date = dates[1] || dates[0];
-        } else if (line.includes('시간:')) {
-          const timeStr = line.split('시간:')[1]?.trim();
-          if (timeStr && !timeStr.includes('없음')) {
-            const times = timeStr.split('~').map(t => t.trim());
-            scheduleData.start_time = times[0];
-            scheduleData.end_time = times[1] || times[0];
-          }
-        } else if (line.includes('중요도:')) {
-          const priority = line.split('중요도:')[1]?.trim();
-          if (priority.includes('높음')) scheduleData.priority = 'high';
-          else if (priority.includes('낮음')) scheduleData.priority = 'low';
-          else scheduleData.priority = 'medium';
-        } else if (line.includes('내용:')) {
-          scheduleData.description = line.split('내용:')[1]?.trim();
-        }
-      });
-
-      return scheduleData;
-    } catch (error) {
-      console.error('Failed to parse AI response:', error);
-      return null;
-    }
-  }
-}
-
-// ========================================
-// Initialize App
-// ========================================
-document.addEventListener('DOMContentLoaded', () => {
-  // Initialize app manager
-  window.appManager = new AppManager();
-
-  // Navigation functionality is now handled by NavigationManager
-  // See the end of the file for the updated initialization  });
-
-  // Add todo functionality
-  const todoAddBtn = document.getElementById('todo-add-btn');
-  todoAddBtn?.addEventListener('click', () => {
-    const title = prompt('할 일을 입력하세요:');
-    if (title) {
-      const newTodo = StorageManager.addTodo({ title });
-      currentTodos.push(newTodo);
-      window.appManager?.renderTodos();
-    }
-  });
-
-  // FAB functionality - open schedule modal
-  const fab = document.getElementById('fab');
-  fab?.addEventListener('click', () => {
-    // Open modal without pre-filling date
-    window.globalScheduleModal?.open();
-  });
-
-  // Chat button functionality - open chat bottom sheet
-  const chatButton = document.getElementById('chat-button');
-  chatButton?.addEventListener('click', () => {
-    window.globalBottomSheet?.open();
-  });
-});
-// ========================================
-// Navigation Manager
-// ========================================
-class NavigationManager {
-  constructor() {
-    this.currentSection = 'calendar';
-    this.initializeNavigation();
-  }
-
-  initializeNavigation() {
-    const navItems = document.querySelectorAll('.nav-item');
-    navItems.forEach(item => {
+    // Bottom navigation
+    document.querySelectorAll('.nav-item').forEach(item => {
       item.addEventListener('click', () => {
-        const section = item.getAttribute('data-section');
-        this.switchSection(section);
+        this.switchSection(item.getAttribute('data-section'));
       });
     });
-  }
-
-  switchSection(section) {
-    // Update navigation active state
-    document.querySelectorAll('.nav-item').forEach(nav => {
-      nav.classList.remove('active');
+    
+    // Modal controls
+    document.getElementById('fab').addEventListener('click', () => {
+      this.openModal(this.selectedDate);
     });
-    document.querySelector(`[data-section="${section}"]`).classList.add('active');
-
-    // Hide all sections
-    document.getElementById('calendar-section').style.display = 'none';
-    document.getElementById('todo-section').style.display = 'none';
-    document.getElementById('timeline-section').style.display = 'none';
-
-    // Show selected section
-    if (section === 'calendar') {
-      document.getElementById('calendar-section').style.display = 'block';
-    } else if (section === 'tasks') {
-      document.getElementById('todo-section').style.display = 'block';
-      this.renderEventsAsTodos();
-    }
-
-    this.currentSection = section;
-  }
-
-  renderEventsAsTodos() {
-    const todoList = document.getElementById("todo-list");
-    if (!todoList) return;
-
-    // Reload events from localStorage
-    currentEvents = StorageManager.getEvents();
-
-    // Sort events by date
-    const sortedEvents = currentEvents.sort((a, b) => {
-      const dateA = new Date(a.start_date);
-      const dateB = new Date(b.start_date);
-      return dateA - dateB;
+    
+    document.getElementById('add-task').addEventListener('click', () => {
+      this.openModal();
     });
-
-    todoList.innerHTML = "";
-
-    if (sortedEvents.length === 0) {
-      todoList.innerHTML = "<p class=\"empty-state\">등록된 일정이 없습니다.</p>";
-      return;
-    }
-
-    // Group events by month and week
-    const groupedEvents = this.groupEventsByMonthAndWeek(sortedEvents);
-
-    // Render grouped events
-    Object.keys(groupedEvents).forEach(monthKey => {
-      // Create month header
-      const monthHeader = document.createElement("div");
-      monthHeader.className = "month-header";
-      monthHeader.innerHTML = `<h3 class="month-title">${monthKey}</h3>`;
-      todoList.appendChild(monthHeader);
-
-      // Render weeks within this month
-      Object.keys(groupedEvents[monthKey]).forEach(weekKey => {
-        // Create week header
-        const weekHeader = document.createElement("div");
-        weekHeader.className = "week-header";
-        weekHeader.innerHTML = `<h4 class="week-title">${weekKey}</h4>`;
-        todoList.appendChild(weekHeader);
-
-        // Create week container
-        const weekContainer = document.createElement("div");
-        weekContainer.className = "week-container";
-
-        // Render events in this week
-        groupedEvents[monthKey][weekKey].forEach(event => {
-          const todoItem = document.createElement("div");
-          todoItem.className = "todo-item";
-          
-          const eventDate = new Date(event.start_date);
-          const dayName = eventDate.toLocaleDateString("ko-KR", { weekday: "short" });
-          const dayNumber = eventDate.getDate();
-
-          const timeInfo = event.start_time ? 
-            `${event.start_time.substring(0, 5)}${event.end_time ? ` - ${event.end_time.substring(0, 5)}` : ""}` : 
-            "종일";
-
-          const categoryColors = {
-            study: "var(--category-study)",
-            daily: "var(--category-daily)",
-            entertainment: "var(--category-entertainment)",
-            other: "var(--category-other)"
-          };
-
-          todoItem.innerHTML = `
-            <div class="todo-date">
-              <div class="day-number">${dayNumber}</div>
-              <div class="day-name">${dayName}</div>
-            </div>
-            <div class="todo-checkbox">
-              <div class="category-indicator" style="background-color: ${categoryColors[event.category] || categoryColors.other}"></div>
-            </div>
-            <div class="todo-content">
-              <div class="todo-title">${event.title}</div>
-              <div class="todo-time">${timeInfo}</div>
-              ${event.description ? `<div class="todo-description">${event.description}</div>` : ""}
-            </div>
-            <div class="todo-actions">
-              <button class="todo-edit-btn" onclick="editEvent('${event.id}')">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-                </svg>
-              </button>
-              <button class="todo-delete-btn" onclick="deleteEvent('${event.id}')">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                  <path d="M3 6h18"></path>
-                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"></path>
-                  <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                </svg>
-              </button>
-            </div>
-          `;
-          weekContainer.appendChild(todoItem);
-        });
-
-        todoList.appendChild(weekContainer);
-      });
+    
+    document.getElementById('modal-close').addEventListener('click', () => {
+      this.closeModal();
     });
-  }
-
-  groupEventsByMonthAndWeek(events) {
-    const grouped = {};
-
-    events.forEach(event => {
-      const eventDate = new Date(event.start_date);
+    
+    document.getElementById('modal-cancel').addEventListener('click', () => {
+      this.closeModal();
+    });
+    
+    document.getElementById('modal-save').addEventListener('click', () => {
+      this.handleSubmit();
+    });
+    
+    // Form submission
+    this.elements.form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      this.handleSubmit();
+    });
+    
+    // Modal backdrop click
+    this.elements.modal.addEventListener('click', (e) => {
+      if (e.target === this.elements.modal) {
+        this.closeModal();
+      }
+    });
+    
+    // Settings handlers
+    document.getElementById('backup-data')?.addEventListener('click', () => {
+      this.handleBackup();
+    });
+    
+    document.getElementById('restore-data')?.addEventListener('click', () => {
+      this.handleRestore();
+    });
+    
+    document.getElementById('clear-data')?.addEventListener('click', () => {
+      this.handleClearData();
+    });
+    
+    // Keyboard shortcuts
+    document.addEventListener('keydown', (e) => {
+      // ESC to close modal
+      if (e.key === 'Escape' && this.elements.modal.classList.contains('active')) {
+        this.closeModal();
+      }
       
-      // Get month key (e.g., "2024년 12월")
-      const monthKey = eventDate.toLocaleDateString("ko-KR", {
-        year: "numeric",
-        month: "long"
-      });
-
-      // Get week range for this date
-      const weekKey = this.getWeekRange(eventDate);
-
-      // Initialize nested structure
-      if (!grouped[monthKey]) {
-        grouped[monthKey] = {};
+      // Ctrl/Cmd + N for new event
+      if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
+        e.preventDefault();
+        this.openModal();
       }
-      if (!grouped[monthKey][weekKey]) {
-        grouped[monthKey][weekKey] = [];
-      }
-
-      // Add event to the appropriate group
-      grouped[monthKey][weekKey].push(event);
     });
-
-    return grouped;
-  }
-
-  getWeekRange(date) {
-    // Get the start of the week (Sunday)
-    const startOfWeek = new Date(date);
-    startOfWeek.setDate(date.getDate() - date.getDay());
-    
-    // Get the end of the week (Saturday)
-    const endOfWeek = new Date(startOfWeek);
-    endOfWeek.setDate(startOfWeek.getDate() + 6);
-
-    // Format the week range
-    const startDay = startOfWeek.getDate();
-    const endDay = endOfWeek.getDate();
-    
-    // Handle month boundaries
-    if (startOfWeek.getMonth() === endOfWeek.getMonth()) {
-      return `${startDay}일 - ${endDay}일`;
-    } else {
-      const startMonth = startOfWeek.toLocaleDateString("ko-KR", { month: "short" });
-      const endMonth = endOfWeek.toLocaleDateString("ko-KR", { month: "short" });
-      return `${startMonth} ${startDay}일 - ${endMonth} ${endDay}일`;
-    }
-  }}
-
-// Global functions for event actions
-function editEvent(eventId) {
-  const event = currentEvents.find(e => e.id === eventId);
-  if (event) {
-    window.globalScheduleModal?.open(null, event);
   }
 }
 
-function deleteEvent(eventId) {
-  if (confirm('이 일정을 삭제하시겠습니까?')) {
-    const index = currentEvents.findIndex(e => e.id === eventId);
-    if (index !== -1) {
-      currentEvents.splice(index, 1);
-      StorageManager.saveEvents(currentEvents);
-      
-      // Refresh both calendar and todo list
-      window.globalCalendar?.renderCalendar();
-      if (window.navigationManager?.currentSection === 'tasks') {
-        window.navigationManager.renderEventsAsTodos();
-      }
-      
-      showToast('일정이 삭제되었습니다.', 'success');
-    }
-  }
-}
-
-// Update the existing initialization
+// ==============================================
+// Initialize Application
+// ==============================================
 document.addEventListener('DOMContentLoaded', () => {
-  // Initialize app manager
-  window.appManager = new AppManager();
-
-  // Initialize navigation manager
-  window.navigationManager = new NavigationManager();
-
-  // Update existing navigation functionality
-  const navItems = document.querySelectorAll('.nav-item');
-  navItems.forEach(item => {
-    item.addEventListener('click', () => {
-      const section = item.getAttribute('data-section');
-      window.navigationManager.switchSection(section);
-    });
-  });
-
-  // Add todo functionality - open schedule modal
-  const todoAddBtn = document.getElementById('todo-add-btn');
-  todoAddBtn?.addEventListener('click', () => {
-    window.globalScheduleModal?.open();
-  });
-
-  // FAB functionality - open schedule modal
-  const fab = document.getElementById('fab');
-  fab?.addEventListener('click', () => {
-    window.globalScheduleModal?.open();
-  });
+  window.smartPlanner = new SmartPlannerApp();
 });
-// Improved validation function
-// Fixed validation function that uses the collected eventData
-function validateEventForm(eventData) {
-  console.log("=== Form Validation Debug ===");
-  console.log("Title:", eventData.title);
-  console.log("Date:", eventData.start_date);
-  console.log("Category:", eventData.category);
-  console.log("=============================");
-  
-  // Check if values are empty or just whitespace
-  if (!eventData.title || eventData.title.trim() === "") {
-    showToast("제목을 입력해주세요.", "error");
-    const titleField = document.getElementById("event-title");
-    if (titleField) titleField.focus();
-    return false;
-  }
-  
-  if (!eventData.start_date) {
-    showToast("날짜를 선택해주세요.", "error");
-    const dateField = document.getElementById("event-date");
-    if (dateField) dateField.focus();
-    return false;
-  }
-  
-  if (!eventData.category) {
-    showToast("카테고리를 선택해주세요.", "error");
-    return false;
-  }
-  
-  return true;
-}
