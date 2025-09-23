@@ -861,6 +861,22 @@ class SmartPlannerApp {
       this.handleSubmit();
     });
     
+    // Delete button event listener
+    document.getElementById('modal-delete').addEventListener('click', () => {
+      if (this.editingEvent && confirm('이 일정을 삭제하시겠습니까?')) {
+        this.deleteEvent(this.editingEvent.id);
+        this.renderCalendar();
+        this.renderTasks();
+        
+        // Also refresh timeline if it's currently visible
+        if (!this.elements.timelineSection.classList.contains('hidden') && this.selectedDate) {
+          this.renderTimeline(this.selectedDate);
+        }
+        
+        this.closeModal();
+      }
+    });
+    
     // Form submission
     this.elements.form.addEventListener('submit', (e) => {
       e.preventDefault();
