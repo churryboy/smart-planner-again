@@ -62,6 +62,12 @@
   --z-overlay: 1000;
   --z-bottom-sheet: 1001;
   --z-nav: 1002;
+
+  /* Category Colors */
+  --category-study: #7E53E3;
+  --category-daily: #0D9974;
+  --category-entertainment: #FB2D36;
+  --category-other: #999999;
 }
 
 /* Reset and Base Styles */
@@ -280,16 +286,35 @@ body {
   color: var(--neutral-50);
 }
 
-.calendar-day.has-event::after {
-  content: '';
+.calendar-day .event-indicators {
   position: absolute;
   bottom: 4px;
   left: 50%;
   transform: translateX(-50%);
+  display: flex;
+  gap: 2px;
+}
+
+.calendar-day .event-dot {
   width: 4px;
   height: 4px;
-  background-color: var(--orange-50);
   border-radius: var(--radius-full);
+}
+
+.event-dot.study {
+  background-color: var(--category-study);
+}
+
+.event-dot.daily {
+  background-color: var(--category-daily);
+}
+
+.event-dot.entertainment {
+  background-color: var(--category-entertainment);
+}
+
+.event-dot.other {
+  background-color: var(--category-other);
 }
 
 /* Timeline Section */
@@ -329,13 +354,28 @@ body {
   color: var(--neutral-10);
 }
 
-.timeline-add-btn {
-  background-color: var(--orange-50);
-  color: var(--neutral-100);
+.timeline-nav-buttons {
+  display: flex;
+  gap: var(--space-sm);
 }
 
-.timeline-add-btn:hover {
-  background-color: var(--orange-60);
+.timeline-nav-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: none;
+  border: none;
+  border-radius: var(--radius-large);
+  color: var(--neutral-20);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.timeline-nav-btn:hover {
+  background-color: var(--neutral-80);
+  color: var(--neutral-10);
 }
 
 .timeline-title {
@@ -383,13 +423,33 @@ body {
 }
 
 .timeline-event {
-  background-color: var(--orange-90);
-  border-left: 3px solid var(--orange-50);
+  background-color: var(--neutral-90);
+  border-left: 3px solid var(--neutral-60);
   border-radius: var(--radius-medium);
   padding: var(--space-sm);
   margin-bottom: var(--space-xs);
   font-size: 12px;
   line-height: 16px;
+}
+
+.timeline-event.study {
+  background-color: rgba(126, 83, 227, 0.1);
+  border-left-color: var(--category-study);
+}
+
+.timeline-event.daily {
+  background-color: rgba(13, 153, 116, 0.1);
+  border-left-color: var(--category-daily);
+}
+
+.timeline-event.entertainment {
+  background-color: rgba(251, 45, 54, 0.1);
+  border-left-color: var(--category-entertainment);
+}
+
+.timeline-event.other {
+  background-color: rgba(153, 153, 153, 0.1);
+  border-left-color: var(--category-other);
 }
 
 .timeline-event:last-child {

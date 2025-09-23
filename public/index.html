@@ -136,12 +136,18 @@
                         </svg>
                     </button>
                     <h3 class="timeline-title" id="timeline-title">2024년 12월 15일</h3>
-                    <button class="timeline-add-btn" id="timeline-add-btn">
-                        <svg class="icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                            <line x1="12" y1="5" x2="12" y2="19"></line>
-                            <line x1="5" y1="12" x2="19" y2="12"></line>
-                        </svg>
-                    </button>
+                    <div class="timeline-nav-buttons">
+                        <button class="timeline-nav-btn" id="timeline-prev-day">
+                            <svg class="icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <polyline points="15,18 9,12 15,6"></polyline>
+                            </svg>
+                        </button>
+                        <button class="timeline-nav-btn" id="timeline-next-day">
+                            <svg class="icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <polyline points="9,18 15,12 9,6"></polyline>
+                            </svg>
+                        </button>
+                    </div>
                 </div>
                 <div class="timeline-content" id="timeline-content">
                     <!-- 타임라인 내용이 여기에 동적으로 생성됩니다 -->
@@ -230,6 +236,16 @@
                             <label class="form-label" for="event-end-time">종료 시간</label>
                             <input class="form-input" type="time" id="event-end-time">
                         </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="event-category">카테고리</label>
+                        <select class="form-input" id="event-category" required>
+                            <option value="">카테고리 선택</option>
+                            <option value="study">공부관련</option>
+                            <option value="daily">일상관련</option>
+                            <option value="entertainment">놀이관련</option>
+                            <option value="other">기타</option>
+                        </select>
                     </div>
                     <div class="form-group">
                         <label class="form-label">중요도</label>

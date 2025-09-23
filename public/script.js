@@ -228,7 +228,7 @@ class Calendar {
       dayElement.innerHTML = `
         <span class="day-number">${day}</span>
         ${eventsForDay.length > 0 ? `<div class="event-indicators">${eventsForDay.slice(0, 3).map(event => 
-          `<div class="event-dot ${event.priority || 'medium'}"></div>`
+          `<div class="event-dot ${event.category || 'other'}"></div>`
         ).join('')}</div>` : ''}
       `;
 
@@ -290,11 +290,26 @@ class Calendar {
       todoSection.style.display = 'block';
     };
 
-    // Setup add button
-    const addBtn = document.getElementById('timeline-add-btn');
-    addBtn.onclick = () => {
-      window.globalScheduleModal?.open(dateStr);
+    // Setup navigation buttons
+    const prevBtn = document.getElementById('timeline-prev-day');
+    const nextBtn = document.getElementById('timeline-next-day');
+    
+    prevBtn.onclick = () => {
+      const currentDate = new Date(dateStr);
+      currentDate.setDate(currentDate.getDate() - 1);
+      const newDateStr = currentDate.toISOString().split('T')[0];
+      this.showTimelineView(newDateStr);
     };
+    
+    nextBtn.onclick = () => {
+      const currentDate = new Date(dateStr);
+      currentDate.setDate(currentDate.getDate() + 1);
+      const newDateStr = currentDate.toISOString().split('T')[0];
+      this.showTimelineView(newDateStr);
+    };
+
+    // Setup swipe navigation
+    this.setupSwipeNavigation(timelineSection, dateStr);
   }
 
   renderTimeline(dateStr) {
@@ -314,7 +329,7 @@ class Calendar {
         <div class="hour-label">${hour}:00</div>
         <div class="hour-events">
           ${eventsForHour.map(event => `
-            <div class="timeline-event ${event.priority || 'medium'}">
+            <div class="timeline-event ${event.category || 'other'}">
               <div class="event-title">${event.title}</div>
               <div class="event-time">
                 ${event.start_time ? event.start_time.substring(0, 5) : ''} - 
@@ -335,6 +350,42 @@ class Calendar {
       if (!event.start_time) return false;
       const eventHour = parseInt(event.start_time.split(':')[0]);
       return eventHour === hour;
+    });
+  }
+
+  setupSwipeNavigation(element, currentDateStr) {
+    let startX = 0;
+    let startY = 0;
+    let endX = 0;
+    let endY = 0;
+
+    element.addEventListener('touchstart', (e) => {
+      startX = e.touches[0].clientX;
+      startY = e.touches[0].clientY;
+    });
+
+    element.addEventListener('touchend', (e) => {
+      endX = e.changedTouches[0].clientX;
+      endY = e.changedTouches[0].clientY;
+      
+      const deltaX = endX - startX;
+      const deltaY = endY - startY;
+      
+      // Check if horizontal swipe is more significant than vertical
+      if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 50) {
+        const currentDate = new Date(currentDateStr);
+        
+        if (deltaX > 0) {
+          // Swipe right - previous day
+          currentDate.setDate(currentDate.getDate() - 1);
+        } else {
+          // Swipe left - next day
+          currentDate.setDate(currentDate.getDate() + 1);
+        }
+        
+        const newDateStr = currentDate.toISOString().split('T')[0];
+        this.showTimelineView(newDateStr);
+      }
     });
   }
 }
@@ -393,12 +444,11 @@ class ScheduleModal {
       title.textContent = '일정 추가';
       confirmBtn.textContent = '일정 추가';
       this.clearForm();
-    }
-
-    // Set default date
-    if (selectedDate) {
-      document.getElementById('event-date').value = selectedDate;
-      document.getElementById('event-end-date').value = selectedDate;
+      
+      // Set default date only if provided, otherwise leave empty
+      if (selectedDate) {
+        document.getElementById('event-date').value = selectedDate;
+      }
     }
 
     this.modal.classList.add('active');
@@ -417,6 +467,7 @@ class ScheduleModal {
     document.getElementById('event-end-date').value = eventData.end_date?.split('T')[0] || '';
     document.getElementById('event-start-time').value = eventData.start_time || '';
     document.getElementById('event-end-time').value = eventData.end_time || '';
+    document.getElementById('event-category').value = eventData.category || '';
     document.getElementById('event-description').value = eventData.description || '';
     document.getElementById('event-reminder').value = eventData.reminder || '';
     
@@ -446,13 +497,14 @@ class ScheduleModal {
       end_date: document.getElementById('event-end-date').value || document.getElementById('event-date').value,
       start_time: document.getElementById('event-start-time').value || null,
       end_time: document.getElementById('event-end-time').value || null,
+      category: document.getElementById('event-category').value,
       priority: document.querySelector('input[name="priority"]:checked')?.value || 'medium',
       reminder: parseInt(document.getElementById('event-reminder').value) || null
     };
 
     // Validation
-    if (!eventData.title || !eventData.start_date) {
-      alert('제목과 날짜는 필수입니다.');
+    if (!eventData.title || !eventData.start_date || !eventData.category) {
+      alert('제목, 날짜, 카테고리는 필수입니다.');
       return;
     }
 
@@ -772,10 +824,8 @@ document.addEventListener('DOMContentLoaded', () => {
   // FAB functionality - open schedule modal
   const fab = document.getElementById('fab');
   fab?.addEventListener('click', () => {
-    // Get today's date as default
-    const today = new Date();
-    const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
-    window.globalScheduleModal?.open(todayStr);
+    // Open modal without pre-filling date
+    window.globalScheduleModal?.open();
   });
 
   // Chat button functionality - open chat bottom sheet
