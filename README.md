@@ -66,10 +66,11 @@ A full-stack Korean calendar and planning application with AI-powered schedule c
    # - OPENAI_API_KEY: Your OpenAI API key
    ```
 
-5. **Configure client-side settings**
+5. **Configure client-side settings (Optional)**
    ```bash
-   cp public/config.example.js public/config.js
-   # Edit public/config.js with your OpenAI API key for AI chat features
+   # The app works out of the box with localStorage mode
+   # To enable AI chat features, edit public/config.js and add your OpenAI API key
+   # Or copy from template: cp public/config.example.js public/config.js
    ```
 
 6. **Start the development server**

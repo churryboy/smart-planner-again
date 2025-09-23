@@ -71,4 +71,4 @@ Thumbs.db
 *.db
 
 # Configuration files with sensitive data
-public/config.js
+# public/config.js - now using production-safe version
