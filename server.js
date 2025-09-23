@@ -48,19 +48,49 @@ app.get('/api/health', (req, res) => {
     message: 'Smart Planner API is running',
     mode: process.env.DATABASE_URL ? 'dynamic' : 'static'
   });
-});
 
+// Configuration endpoint
+app.get("/api/config", (req, res) => {
+  res.json({
+    openaiApiKey: process.env.OPENAI_API_KEY || "your-api-key-here"
+  });
+});});
+
+// Configuration endpoint
+app.get("/api/config", (req, res) => {
+  res.json({
+    openaiApiKey: process.env.OPENAI_API_KEY || "your-api-key-here"
+  });
+});
 // Serve frontend for all other routes
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
+// Configuration endpoint
+app.get("/api/config", (req, res) => {
+  res.json({
+    openaiApiKey: process.env.OPENAI_API_KEY || "your-api-key-here"
+  });
+});
 // Error handling middleware
 app.use((err, req, res, next) => {
   console.error(err.stack);
   res.status(500).json({ error: 'Something went wrong!' });
-});
 
+// Configuration endpoint
+app.get("/api/config", (req, res) => {
+  res.json({
+    openaiApiKey: process.env.OPENAI_API_KEY || "your-api-key-here"
+  });
+});});
+
+// Configuration endpoint
+app.get("/api/config", (req, res) => {
+  res.json({
+    openaiApiKey: process.env.OPENAI_API_KEY || "your-api-key-here"
+  });
+});
 app.listen(PORT, () => {
   console.log(`🚀 Smart Planner server running on port ${PORT}`);
   console.log(`📅 Access your app at http://localhost:${PORT}`);
@@ -68,4 +98,11 @@ app.listen(PORT, () => {
   if (!process.env.DATABASE_URL) {
     console.log('💡 To enable user accounts, set DATABASE_URL environment variable');
   }
+});
+
+// Configuration endpoint
+app.get("/api/config", (req, res) => {
+  res.json({
+    openaiApiKey: process.env.OPENAI_API_KEY || "your-api-key-here"
+  });
 });

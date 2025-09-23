@@ -380,6 +380,9 @@ class SmartPlannerApp {
       monthHeader.textContent = monthKey;
       this.elements.tasksList.appendChild(monthHeader);
       
+      // Add ChatGPT analysis panel
+      const analysisPanel = this.createAnalysisPanel(monthKey, events);
+      this.elements.tasksList.appendChild(analysisPanel);      
       // Render events for this month
       events.forEach(event => {
         const taskEl = this.createTaskItem(event);
@@ -917,7 +920,127 @@ class SmartPlannerApp {
       }
     });
   }
-}
+  // ==============================================
+  // LLM Analysis Methods
+  // ==============================================
+  async analyzeTasksWithChatGPT(events, monthKey) {
+    if (!events || events.length === 0) {
+      return "이번 달에는 등록된 일정이 없습니다.";
+    }
+
+    // Prepare task data for analysis
+    const taskSummary = events.map(event => {
+      const date = new Date(event.date || event.start_date);
+      const timeInfo = event.start_time ? 
+        `${event.start_time.substring(0, 5)}` : 
+        "종일";
+      const categoryNames = {
+        "study": "공부",
+        "daily": "일상",
+        "entertainment": "놀이",
+        "other": "기타"
+      };
+      return `${date.getDate()}일 ${timeInfo} - ${event.title} (${categoryNames[event.category] || event.category})`;
+    }).join("\n");
+
+    const prompt = `다음은 ${monthKey}의 일정 목록입니다. 일정 관리 전문가로서 3문장 이내로 간단하고 유용한 분석을 제공해주세요:
+
+${taskSummary}
+
+분석 포인트:
+- 일정의 분포와 패턴 분석
+- 카테고리별 균형 평가
+- 시간 관리 개선 조언
+
+한국어로 친근하고 실용적인 조언을 해주세요.`;
+
+    try {
+      const response = await fetch("/api/config");
+      const config = await response.json();
+      
+      if (!config.openaiApiKey || config.openaiApiKey === "your-api-key-here") {
+        return "ChatGPT 분석을 위해 OpenAI API 키를 설정해주세요.";
+      }
+
+      const chatResponse = await fetch("https://api.openai.com/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${config.openaiApiKey}`
+        },
+        body: JSON.stringify({
+          model: "gpt-3.5-turbo",
+          messages: [
+            {
+              role: "system",
+              content: "당신은 친근하고 실용적인 일정 관리 전문가입니다. 사용자의 일정을 분석하고 구체적이고 실행 가능한 조언을 3문장 이내로 제공합니다."
+            },
+            {
+              role: "user",
+              content: prompt
+            }
+          ],
+          max_tokens: 200,
+          temperature: 0.7
+        })
+      });
+
+      if (!chatResponse.ok) {
+        throw new Error(`ChatGPT API Error: ${chatResponse.status}`);
+      }
+
+      const data = await chatResponse.json();
+      return data.choices[0].message.content.trim();
+    } catch (error) {
+      console.error("ChatGPT Analysis Error:", error);
+      return "분석을 불러오는 중 문제가 발생했습니다. 잠시 후 다시 시도해주세요.";
+    }
+  }
+
+  createAnalysisPanel(monthKey, events) {
+    const panel = document.createElement("div");
+    panel.className = "analysis-panel";
+    
+    // Create panel structure following design system
+    panel.innerHTML = `
+      <div class="analysis-header">
+        <div class="analysis-icon-wrapper">
+          <svg class="analysis-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path>
+          </svg>
+        </div>
+        <div class="analysis-title-wrapper">
+          <h4 class="analysis-title">${monthKey} AI 분석</h4>
+          <p class="analysis-subtitle">ChatGPT가 일정을 분석합니다</p>
+        </div>
+      </div>
+      <div class="analysis-content-wrapper">
+        <div class="analysis-loading">
+          <div class="loading-spinner"></div>
+          <span class="loading-text">AI가 일정을 분석하고 있습니다...</span>
+        </div>
+      </div>
+    `;
+
+    // Load analysis asynchronously
+    this.analyzeTasksWithChatGPT(events, monthKey).then(analysis => {
+      const contentWrapper = panel.querySelector(".analysis-content-wrapper");
+      contentWrapper.innerHTML = `
+        <div class="analysis-content">
+          <p class="analysis-text">${analysis}</p>
+        </div>
+      `;
+    }).catch(error => {
+      const contentWrapper = panel.querySelector(".analysis-content-wrapper");
+      contentWrapper.innerHTML = `
+        <div class="analysis-error">
+          <p class="analysis-error-text">분석을 불러올 수 없습니다. API 설정을 확인해주세요.</p>
+        </div>
+      `;
+    });
+
+    return panel;
+  }}
 
 // ==============================================
 // Initialize Application

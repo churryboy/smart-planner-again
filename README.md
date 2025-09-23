@@ -255,3 +255,43 @@ If the automatic deployment fails:
 4. **Deploy**
 
 The database connection requires SSL in production, which is automatically handled by the updated configuration.
+
+## Environment Variables Setup
+
+### 1. Create Environment File
+Copy the example environment file and add your API keys:
+
+```bash
+cp .env.example .env
+```
+
+### 2. Configure OpenAI API Key
+Edit the `.env` file and add your OpenAI API key:
+
+```bash
+# OpenAI API Configuration
+OPENAI_API_KEY=sk-your-actual-openai-api-key-here
+
+# App Configuration
+NODE_ENV=development
+PORT=3000
+```
+
+### 3. Get OpenAI API Key
+1. Go to [OpenAI API Keys](https://platform.openai.com/api-keys)
+2. Create a new API key
+3. Copy the key and paste it in your `.env` file
+
+### 4. Security Notes
+- Never commit your `.env` file to version control
+- The `.env` file is already included in `.gitignore`
+- Use `.env.example` as a template for others
+
+### 5. LLM Analysis Features
+With a valid OpenAI API key, you'll get:
+- Intelligent analysis of your monthly tasks
+- Pattern recognition in your schedule
+- Time management insights
+- Category-based recommendations
+
+Without a valid API key, the analysis panels will show a placeholder message.

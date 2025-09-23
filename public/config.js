@@ -1,7 +1,7 @@
-// Configuration file for Smart Planner - Production Safe
-// This file contains no sensitive information and is safe to commit
+// Configuration file for Smart Planner - Client-side
+// This file will be populated by the server with environment variables
 
-// OpenAI API key - will be loaded from environment or set to placeholder
+// OpenAI API key - will be loaded from server endpoint
 window.OPENAI_API_KEY = window.OPENAI_API_KEY || 'your-api-key-here';
 
 // App configuration
@@ -20,4 +20,13 @@ window.APP_CONFIG = {
   }
 };
 
-console.log('📱 Smart Planner configuration loaded (production safe)');
+// Load configuration from server
+fetch('/api/config')
+  .then(response => response.json())
+  .then(config => {
+    window.OPENAI_API_KEY = config.openaiApiKey;
+    console.log('📱 Smart Planner configuration loaded from server');
+  })
+  .catch(error => {
+    console.log('📱 Smart Planner configuration loaded (fallback)');
+  });

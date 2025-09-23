@@ -1134,3 +1134,287 @@ body {
 .btn-danger:active {
   transform: translateY(0);
 }
+
+/* ==============================================
+   LLM Analysis Panel
+   ============================================== */
+.analysis-panel {
+  background: linear-gradient(135deg, var(--neutral-95) 0%, var(--neutral-90) 100%);
+  border: 1px solid var(--neutral-80);
+  border-radius: var(--radius-lg);
+  padding: var(--space-lg);
+  margin: var(--space-base) 0 var(--space-lg) 0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  position: relative;
+  overflow: hidden;
+}
+
+.analysis-panel::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--orange-50), var(--blue-50), var(--green-50));
+}
+
+.analysis-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-base);
+  margin-bottom: var(--space-base);
+}
+
+.analysis-icon {
+  width: 20px;
+  height: 20px;
+  color: var(--orange-50);
+  flex-shrink: 0;
+}
+
+.analysis-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--neutral-20);
+  margin: 0;
+}
+
+.analysis-content {
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--neutral-30);
+  margin: 0;
+  font-style: italic;
+}
+
+.analysis-loading {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  font-size: 13px;
+  color: var(--neutral-40);
+}
+
+.analysis-loading .spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid var(--neutral-80);
+  border-top: 2px solid var(--orange-50);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.analysis-error {
+  color: var(--red-50);
+  font-size: 13px;
+  font-style: italic;
+}
+
+/* ==============================================
+   LLM Analysis Panel - Design System Compliant
+   ============================================== */
+
+.analysis-panel {
+  /* Layout */
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-base);
+  
+  /* Spacing - following design system */
+  padding: var(--space-lg);
+  margin: var(--space-base) 0 var(--space-lg) 0;
+  
+  /* Colors - using design system tokens */
+  background: linear-gradient(135deg, 
+    rgba(255, 85, 0, 0.02) 0%, 
+    rgba(255, 85, 0, 0.01) 100%);
+  border: 1px solid rgba(255, 85, 0, 0.1);
+  
+  /* Border radius - following design system */
+  border-radius: var(--radius-lg);
+  
+  /* Shadow - subtle elevation */
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  
+  /* Position for accent border */
+  position: relative;
+  overflow: hidden;
+}
+
+.analysis-panel::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, 
+    #FF5500 0%, 
+    #0785F2 50%, 
+    #0D9974 100%);
+}
+
+.analysis-header {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-base);
+}
+
+.analysis-icon-wrapper {
+  /* Icon container */
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 85, 0, 0.08);
+  border-radius: var(--radius-base);
+  flex-shrink: 0;
+}
+
+.analysis-icon {
+  width: 20px;
+  height: 20px;
+  color: #ED5000; /* Orange50 from design system */
+  stroke-width: 1.5px; /* Following icon design guidelines */
+}
+
+.analysis-title-wrapper {
+  flex: 1;
+  min-width: 0;
+}
+
+.analysis-title {
+  /* Typography - Headline from design system */
+  font-size: 16px;
+  line-height: 24px;
+  font-weight: 600; /* SemiBold */
+  color: var(--neutral-10);
+  margin: 0 0 var(--space-xs) 0;
+}
+
+.analysis-subtitle {
+  /* Typography - Caption1 from design system */
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 400; /* Regular */
+  color: var(--neutral-40);
+  margin: 0;
+}
+
+.analysis-content-wrapper {
+  /* Content container */
+  min-height: 60px;
+  display: flex;
+  align-items: center;
+}
+
+.analysis-loading {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  width: 100%;
+}
+
+.loading-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 85, 0, 0.2);
+  border-top: 2px solid #ED5000; /* Orange50 */
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  flex-shrink: 0;
+}
+
+.loading-text {
+  /* Typography - Subheadline from design system */
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 400; /* Regular */
+  color: var(--neutral-30);
+}
+
+.analysis-content {
+  width: 100%;
+}
+
+.analysis-text {
+  /* Typography - Body from design system */
+  font-size: 16px;
+  line-height: 24px;
+  font-weight: 400; /* Regular */
+  color: var(--neutral-20);
+  margin: 0;
+  
+  /* Text styling */
+  font-style: italic;
+  letter-spacing: -0.01em;
+}
+
+.analysis-error {
+  width: 100%;
+}
+
+.analysis-error-text {
+  /* Typography - Subheadline from design system */
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 400; /* Regular */
+  color: #FB2D36; /* Red50 from design system */
+  margin: 0;
+  font-style: italic;
+}
+
+/* Animation for spinner */
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Responsive adjustments */
+@media (max-width: 640px) {
+  .analysis-panel {
+    padding: var(--space-base);
+    margin: var(--space-sm) 0 var(--space-base) 0;
+  }
+  
+  .analysis-header {
+    gap: var(--space-sm);
+  }
+  
+  .analysis-icon-wrapper {
+    width: 36px;
+    height: 36px;
+  }
+  
+  .analysis-icon {
+    width: 18px;
+    height: 18px;
+  }
+  
+  .analysis-title {
+    /* Slightly smaller on mobile */
+    font-size: 15px;
+    line-height: 22px;
+  }
+}
+
+/* Dark mode support (if implemented) */
+@media (prefers-color-scheme: dark) {
+  .analysis-panel {
+    background: linear-gradient(135deg, 
+      rgba(255, 85, 0, 0.05) 0%, 
+      rgba(255, 85, 0, 0.02) 100%);
+    border-color: rgba(255, 85, 0, 0.2);
+  }
+  
+  .analysis-icon-wrapper {
+    background: rgba(255, 85, 0, 0.15);
+  }
+}
