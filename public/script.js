@@ -943,16 +943,16 @@ class SmartPlannerApp {
       return `${date.getDate()}일 ${timeInfo} - ${event.title} (${categoryNames[event.category] || event.category})`;
     }).join("\n");
 
-    const prompt = `다음은 ${monthKey}의 일정 목록입니다. 일정 관리 전문가로서 3문장 이내로 간단하고 유용한 분석을 제공해주세요:
+    const prompt = `다음은 ${monthKey}의 일정 목록입니다. 공부를 잘하는 친한 같은 반 친구로서 5문장 이내로 격려와 동기부여가 포함된 분석을 제공해주세요:
 
 ${taskSummary}
 
-분석 포인트:
-- 일정의 분포와 패턴 분석
-- 카테고리별 균형 평가
-- 시간 관리 개선 조언
+분석 방법:
+- 먼저 일정 목록에 대한 한 문장 평가로 시작
+- task-indicator와 task-title을 스캔하여 충분한 공부시간과 공부-일상 균형 분석
+- 과제 달성을 위한 구체적인 할 일 제안과 각 할 일 및 과제 달성에 필요한 매우 상세한 시간 제공
 
-한국어로 친근하고 실용적인 조언을 해주세요.`;
+한국어로 격려와 동기부여가 담긴 조언을 해주세요. 각 문장 사이에 줄바꿈을 넣고, 적절한 이모지를 사용하여 가독성을 높여주세요.`;
 
     try {
       const response = await fetch("/api/config");
@@ -969,18 +969,18 @@ ${taskSummary}
           "Authorization": `Bearer ${config.openaiApiKey}`
         },
         body: JSON.stringify({
-          model: "gpt-3.5-turbo",
+          model: "gpt-4",
           messages: [
             {
               role: "system",
-              content: "당신은 친근하고 실용적인 일정 관리 전문가입니다. 사용자의 일정을 분석하고 구체적이고 실행 가능한 조언을 3문장 이내로 제공합니다."
+              content: "당신은 공부를 잘하는 친한 같은 반 친구입니다. 격려도 하지만 동기부여 자극을 주는 친구로서 사용자의 일정을 분석하고 구체적이고 실행 가능한 조언을 5문장 이내로 제공합니다."
             },
             {
               role: "user",
               content: prompt
             }
           ],
-          max_tokens: 200,
+          max_tokens: 400,
           temperature: 0.7
         })
       });
@@ -1001,45 +1001,80 @@ ${taskSummary}
     const panel = document.createElement("div");
     panel.className = "analysis-panel";
     
-    // Create panel structure following design system
+    // Create panel structure strictly following design system
     panel.innerHTML = `
       <div class="analysis-header">
-        <div class="analysis-icon-wrapper">
-          <svg class="analysis-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path>
+        <div class="analysis-header-content">
+          <div class="analysis-icon-container">
+            <svg class="analysis-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <circle cx="12" cy="12" r="3"></circle>
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+            </svg>
+          </div>
+          <div class="analysis-text-content">
+            <h3 class="analysis-title">${monthKey} AI 분석</h3>
+            <p class="analysis-subtitle">ChatGPT 일정 분석</p>
+          </div>
+        </div>
+        <button class="analysis-refresh-btn" type="button" aria-label="분석 새로고침">
+          <svg class="refresh-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"></path>
+            <path d="M21 3v5h-5"></path>
+            <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"></path>
+            <path d="M3 21v-5h5"></path>
           </svg>
-        </div>
-        <div class="analysis-title-wrapper">
-          <h4 class="analysis-title">${monthKey} AI 분석</h4>
-          <p class="analysis-subtitle">ChatGPT가 일정을 분석합니다</p>
-        </div>
+        </button>
       </div>
-      <div class="analysis-content-wrapper">
-        <div class="analysis-loading">
-          <div class="loading-spinner"></div>
-          <span class="loading-text">AI가 일정을 분석하고 있습니다...</span>
+      <div class="analysis-body">
+        <div class="analysis-initial-state">
+          <p class="analysis-prompt-text">새로고침 버튼을 클릭하여 AI 분석을 시작하세요.</p>
         </div>
       </div>
     `;
 
-    // Load analysis asynchronously
-    this.analyzeTasksWithChatGPT(events, monthKey).then(analysis => {
-      const contentWrapper = panel.querySelector(".analysis-content-wrapper");
-      contentWrapper.innerHTML = `
-        <div class="analysis-content">
-          <p class="analysis-text">${analysis}</p>
-        </div>
-      `;
-    }).catch(error => {
-      const contentWrapper = panel.querySelector(".analysis-content-wrapper");
-      contentWrapper.innerHTML = `
-        <div class="analysis-error">
-          <p class="analysis-error-text">분석을 불러올 수 없습니다. API 설정을 확인해주세요.</p>
-        </div>
-      `;
+    // Add click handler for refresh button
+    const refreshBtn = panel.querySelector(".analysis-refresh-btn");
+    refreshBtn.addEventListener("click", () => {
+      this.runAnalysis(panel, events, monthKey);
     });
 
     return panel;
+  }
+
+  runAnalysis(panel, events, monthKey) {
+    const bodyElement = panel.querySelector(".analysis-body");
+    const refreshBtn = panel.querySelector(".analysis-refresh-btn");
+    
+    // Show loading state
+    bodyElement.innerHTML = `
+      <div class="analysis-loading-state">
+        <div class="loading-spinner"></div>
+        <span class="loading-message">AI가 일정을 분석하고 있습니다...</span>
+      </div>
+    `;
+    
+    // Disable refresh button during analysis
+    refreshBtn.disabled = true;
+    refreshBtn.classList.add("disabled");
+
+    // Load analysis asynchronously
+    this.analyzeTasksWithChatGPT(events, monthKey).then(analysis => {
+      bodyElement.innerHTML = `
+        <div class="analysis-result">
+          <p class="analysis-result-text">${analysis.replace(/\n/g, "<br>")}</p>
+        </div>
+      `;
+    }).catch(error => {
+      bodyElement.innerHTML = `
+        <div class="analysis-error-state">
+          <p class="analysis-error-message">분석을 불러올 수 없습니다. API 설정을 확인해주세요.</p>
+        </div>
+      `;
+    }).finally(() => {
+      // Re-enable refresh button
+      refreshBtn.disabled = false;
+      refreshBtn.classList.remove("disabled");
+    });
   }}
 
 // ==============================================
