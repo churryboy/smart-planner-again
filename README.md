@@ -202,3 +202,49 @@ For issues and questions:
 ---
 
 Built with ❤️ for Korean users, powered by AI assistance.
+
+## Render Deployment Troubleshooting
+
+### Database Connection Issue
+
+If you see the error `Cannot read properties of null (reading 'replace')`, it means the `DATABASE_URL` environment variable is not set. Here's how to fix it:
+
+1. **Create PostgreSQL Database First**
+   - Go to Render Dashboard → "New +" → "PostgreSQL"
+   - **Name**: `smart-planner-db`
+   - **Database Name**: `smart_planner`
+   - **User**: `smart_planner_user`
+   - **Wait for database to be created**
+
+2. **Get Database Connection String**
+   - Go to your database dashboard
+   - Copy the "External Database URL" (starts with `postgresql://`)
+
+3. **Set DATABASE_URL in Web Service**
+   - Go to your web service → "Environment" tab
+   - Add environment variable:
+     - **Key**: `DATABASE_URL`
+     - **Value**: The connection string from step 2
+   - **Important**: Use the "External Database URL", not the internal one
+
+4. **Complete Environment Variables List**
+   ```
+   NODE_ENV=production
+   JWT_SECRET=your-generated-secret-key
+   OPENAI_API_KEY=your-openai-api-key
+   DATABASE_URL=postgresql://user:password@host:port/database
+   ```
+
+5. **Redeploy**
+   - Go to "Manual Deploy" and click "Deploy Latest Commit"
+
+### Manual Deployment Steps
+
+If the automatic deployment fails:
+
+1. **Create PostgreSQL Database**
+2. **Create Web Service** 
+3. **Set all environment variables manually**
+4. **Deploy**
+
+The database connection requires SSL in production, which is automatically handled by the updated configuration.
