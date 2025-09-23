@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>스마트 플래너</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- 로그인/회원가입 모달 -->
+    <div class="auth-overlay" id="auth-overlay">
+        <div class="auth-modal">
+            <div class="auth-header">
+                <h2 class="auth-title" id="auth-title">로그인</h2>
+                <button class="auth-close" id="auth-close">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            <form class="auth-form" id="auth-form">
+                <div class="form-group" id="name-group" style="display: none;">
+                    <label for="auth-name">이름</label>
+                    <input type="text" id="auth-name" placeholder="이름을 입력하세요">
+                </div>
+                <div class="form-group">
+                    <label for="auth-email">이메일</label>
+                    <input type="email" id="auth-email" placeholder="이메일을 입력하세요" required>
+                </div>
+                <div class="form-group">
+                    <label for="auth-password">비밀번호</label>
+                    <input type="password" id="auth-password" placeholder="비밀번호를 입력하세요" required>
+                </div>
+                <button type="submit" class="auth-submit" id="auth-submit">로그인</button>
+            </form>
+            <div class="auth-switch">
+                <p id="auth-switch-text">계정이 없으신가요? <button type="button" class="auth-switch-btn" id="auth-switch-btn">회원가입</button></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 메인 앱 (로그인 후 표시) -->
+    <div class="app-container" id="app-container" style="display: none;">
+        <!-- 상단 네비게이션 바 -->
+        <nav class="top-nav">
+            <div class="nav-container">
+                <div class="nav-left">
+                    <button class="nav-button" id="menu-button">
+                        <svg class="icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <line x1="3" y1="6" x2="21" y2="6"></line>
+                            <line x1="3" y1="12" x2="21" y2="12"></line>
+                            <line x1="3" y1="18" x2="21" y2="18"></line>
+                        </svg>
+                    </button>
+                </div>
+                <div class="nav-center">
+                    <h1 class="nav-title">스마트 플래너</h1>
+                </div>
+                <div class="nav-right">
+                    <span class="user-name" id="user-name">사용자</span>
+                    <button class="nav-button" id="logout-button">
+                        <svg class="icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                            <polyline points="16,17 21,12 16,7"></polyline>
+                            <line x1="21" y1="12" x2="9" y2="12"></line>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </nav>
+
+        <!-- 메인 콘텐츠 -->
+        <main class="main-content">
+            <!-- 캘린더 섹션 -->
+            <section class="calendar-section">
+                <div class="calendar-header">
+                    <button class="calendar-nav-btn" id="prev-month">
+                        <svg class="icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <polyline points="15,18 9,12 15,6"></polyline>
+                        </svg>
+                    </button>
+                    <h2 class="calendar-title" id="current-month">2024년 12월</h2>
+                    <button class="calendar-nav-btn" id="next-month">
+                        <svg class="icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <polyline points="9,18 15,12 9,6"></polyline>
+                        </svg>
+                    </button>
+                </div>
+                <div class="calendar-grid">
+                    <div class="calendar-weekdays">
+                        <div class="weekday">일</div>
+                        <div class="weekday">월</div>
+                        <div class="weekday">화</div>
+                        <div class="weekday">수</div>
+                        <div class="weekday">목</div>
+                        <div class="weekday">금</div>
+                        <div class="weekday">토</div>
+                    </div>
+                    <div class="calendar-days" id="calendar-days">
+                        <!-- 달력 날짜들이 여기에 동적으로 생성됩니다 -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- 할 일 섹션 -->
+            <section class="todo-section">
+                <div class="todo-header">
+                    <h3 class="todo-title">오늘의 할 일</h3>
+                    <button class="todo-add-btn" id="todo-add-btn">
+                        <svg class="icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <line x1="12" y1="5" x2="12" y2="19"></line>
+                            <line x1="5" y1="12" x2="19" y2="12"></line>
+                        </svg>
+                    </button>
+                </div>
+                <div class="todo-list" id="todo-list">
+                    <!-- 할 일 목록이 여기에 동적으로 생성됩니다 -->
+                </div>
+            </section>
+
+            <!-- 타임라인 섹션 (일간 보기) -->
+            <section class="timeline-section" id="timeline-section" style="display: none;">
+                <div class="timeline-header">
+                    <button class="timeline-back-btn" id="timeline-back-btn">
+                        <svg class="icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <polyline points="15,18 9,12 15,6"></polyline>
+                        </svg>
+                    </button>
+                    <h3 class="timeline-title" id="timeline-title">2024년 12월 15일</h3>
+                    <button class="timeline-add-btn" id="timeline-add-btn">
+                        <svg class="icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <line x1="12" y1="5" x2="12" y2="19"></line>
+                            <line x1="5" y1="12" x2="19" y2="12"></line>
+                        </svg>
+                    </button>
+                </div>
+                <div class="timeline-content" id="timeline-content">
+                    <!-- 타임라인 내용이 여기에 동적으로 생성됩니다 -->
+                </div>
+            </section>
+        </main>
+
+        <!-- 하단 네비게이션 바 -->
+        <nav class="bottom-nav">
+            <button class="nav-item active" data-section="calendar">
+                <svg class="nav-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                    <line x1="16" y1="2" x2="16" y2="6"></line>
+                    <line x1="8" y1="2" x2="8" y2="6"></line>
+                    <line x1="3" y1="10" x2="21" y2="10"></line>
+                </svg>
+                <span class="nav-label">캘린더</span>
+            </button>
+            <button class="nav-item" data-section="tasks">
+                <svg class="nav-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <polyline points="9,11 12,14 22,4"></polyline>
+                    <path d="M21,12v7a2,2 0,0 1,-2,2H5a2,2 0,0 1,-2,-2V5a2,2 0,0 1,2,-2h11"></path>
+                </svg>
+                <span class="nav-label">할 일</span>
+            </button>
+            <button class="nav-item" data-section="stats">
+                <svg class="nav-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <line x1="18" y1="20" x2="18" y2="10"></line>
+                    <line x1="12" y1="20" x2="12" y2="4"></line>
+                    <line x1="6" y1="20" x2="6" y2="14"></line>
+                </svg>
+                <span class="nav-label">통계</span>
+            </button>
+            <button class="nav-item" data-section="settings">
+                <svg class="nav-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <circle cx="12" cy="12" r="3"></circle>
+                    <path d="M19.4,15a1.65,1.65,0,0,0,.33,1.82l.06.06a2,2,0,0,1,0,2.83,2,2,0,0,1,-2.83,0l-.06-.06a1.65,1.65,0,0,0,-1.82-.33,1.65,1.65,0,0,0-1,1.51V21a2,2,0,0,1,-2,2,2,2,0,0,1,-2,-2v-.09A1.65,1.65,0,0,0,9,19.4a1.65,1.65,0,0,0,-1.82.33l-.06.06a2,2,0,0,1,-2.83,0,2,2,0,0,1,0,-2.83l.06-.06a1.65,1.65,0,0,0,.33-1.82,1.65,1.65,0,0,0,-1.51-1H3a2,2,0,0,1,-2,-2,2,2,0,0,1,2,-2h.09A1.65,1.65,0,0,0,4.6,9a1.65,1.65,0,0,0-.33-1.82L4.21,7.11a2,2,0,0,1,0-2.83,2,2,0,0,1,2.83,0L7.11,4.34A1.65,1.65,0,0,0,9,4.6a1.65,1.65,0,0,0,1-1.51V3a2,2,0,0,1,2-2,2,2,0,0,1,2,2v.09A1.65,1.65,0,0,0,15,4.6a1.65,1.65,0,0,0,1.82-.33l.06-.06a2,2,0,0,1,2.83,0,2,2,0,0,1,0,2.83L19.65,7.11A1.65,1.65,0,0,0,19.4,9a1.65,1.65,0,0,0,1.51,1H21a2,2,0,0,1,2,2,2,2,0,0,1,-2,2h-.09A1.65,1.65,0,0,0,19.4,15Z"></path>
+                </svg>
+                <span class="nav-label">설정</span>
+            </button>
+        </nav>
+
+        <!-- 플로팅 액션 버튼 -->
+        <button class="fab" id="fab">
+            <svg class="fab-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+        </button>
+    </div>
+
+    <!-- 일정 추가/수정 모달 -->
+    <div class="modal-overlay" id="schedule-modal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title">일정 추가</h3>
+                <button class="modal-close" id="schedule-close">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="schedule-form">
+                    <div class="form-group">
+                        <label for="event-title">제목</label>
+                        <input type="text" id="event-title" placeholder="일정 제목을 입력하세요" required>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="event-date">날짜</label>
+                            <input type="date" id="event-date" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="event-end-date">종료일</label>
+                            <input type="date" id="event-end-date">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="event-start-time">시작 시간</label>
+                            <input type="time" id="event-start-time">
+                        </div>
+                        <div class="form-group">
+                            <label for="event-end-time">종료 시간</label>
+                            <input type="time" id="event-end-time">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>중요도</label>
+                        <div class="radio-group">
+                            <label class="radio-label">
+                                <input type="radio" name="priority" value="low">
+                                <span class="radio-custom low"></span>
+                                낮음
+                            </label>
+                            <label class="radio-label">
+                                <input type="radio" name="priority" value="medium" checked>
+                                <span class="radio-custom medium"></span>
+                                보통
+                            </label>
+                            <label class="radio-label">
+                                <input type="radio" name="priority" value="high">
+                                <span class="radio-custom high"></span>
+                                높음
+                            </label>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="event-description">설명</label>
+                        <textarea id="event-description" placeholder="일정에 대한 설명을 입력하세요"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="event-reminder">알림</label>
+                        <select id="event-reminder">
+                            <option value="">알림 없음</option>
+                            <option value="5">5분 전</option>
+                            <option value="15">15분 전</option>
+                            <option value="30">30분 전</option>
+                            <option value="60">1시간 전</option>
+                            <option value="1440">1일 전</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-secondary" id="schedule-cancel">취소</button>
+                <button type="submit" class="btn-primary" id="schedule-confirm" form="schedule-form">일정 추가</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 바텀 시트 -->
+    <div class="bottom-sheet" id="bottom-sheet">
+        <div class="bottom-sheet-handle"></div>
+        <div class="bottom-sheet-content">
+            <div class="chat-header">
+                <h3>AI 일정 도우미</h3>
+                <button class="chat-close" id="chat-close">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            <div class="chat-messages" id="chat-messages">
+                <div class="message bot-message">
+                    <div class="message-content">
+                        안녕하세요! 일정을 추가해드릴게요. 어떤 일정을 만들어드릴까요?
+                    </div>
+                </div>
+            </div>
+            <div class="chat-input-container">
+                <input type="text" class="chat-input" id="chat-input" placeholder="일정에 대해 말씀해주세요...">
+                <button class="chat-send" id="chat-send">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="22" y1="2" x2="11" y2="13"></line>
+                        <polyline points="22,2 15,22 11,13 2,9 22,2"></polyline>
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="config.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
