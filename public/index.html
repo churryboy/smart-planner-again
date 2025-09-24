@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>스마트 플래너</title>
+    <title>타임 트래커</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -11,281 +11,37 @@
 </head>
 <body>
     <div class="app-container">
-        <!-- Top Navigation -->
-        <nav class="top-nav">
-            <button class="btn-icon" id="menu-button">
-                <svg class="icon" viewBox="0 0 24 24">
-                    <line x1="3" y1="6" x2="21" y2="6"></line>
-                    <line x1="3" y1="12" x2="21" y2="12"></line>
-                    <line x1="3" y1="18" x2="21" y2="18"></line>
-                </svg>
-            </button>
-            <h1 class="nav-title text-title2">스마트 플래너</h1>
-            <span class="user-name text-caption1" id="user-name">사용자</span>
-        </nav>
+        <header class="app-header">
+            <h1 class="header-title">타임 트래커</h1>
+        </header>
 
-        <!-- Main Content -->
         <main class="main-content">
-            <!-- Calendar Section -->
-            <section id="calendar-section" class="card">
-                <div class="calendar-header">
-                    <button class="btn-icon" id="prev-month">
-                        <svg class="icon" viewBox="0 0 24 24">
-                            <polyline points="15,18 9,12 15,6"></polyline>
-                        </svg>
-                    </button>
-                    <h2 id="current-month" class="text-title1">2024년 12월</h2>
-                    <button class="btn-icon" id="next-month">
-                        <svg class="icon" viewBox="0 0 24 24">
-                            <polyline points="9,18 15,12 9,6"></polyline>
-                        </svg>
-                    </button>
-                </div>
-                <div class="calendar-weekdays">
-                    <div class="weekday">일</div>
-                    <div class="weekday">월</div>
-                    <div class="weekday">화</div>
-                    <div class="weekday">수</div>
-                    <div class="weekday">목</div>
-                    <div class="weekday">금</div>
-                    <div class="weekday">토</div>
-                </div>
-                <div class="calendar-grid" id="calendar-days">
-                    <!-- Calendar days will be generated dynamically -->
-                </div>
-            </section>
-
-            <!-- Timeline Section -->
-            <section id="timeline-section" class="card hidden">
-                <div class="timeline-header">
-                    <button class="btn-icon" id="timeline-back">
-                        <svg class="icon" viewBox="0 0 24 24">
-                            <polyline points="15,18 9,12 15,6"></polyline>
-                        </svg>
-                    </button>
-                    <h2 id="timeline-title" class="text-title2">2024년 12월 15일</h2>
-                    <div class="timeline-nav">
-                        <button class="btn-icon" id="timeline-prev">
-                            <svg class="icon" viewBox="0 0 24 24">
-                                <polyline points="15,18 9,12 15,6"></polyline>
-                            </svg>
-                        </button>
-                        <button class="btn-icon" id="timeline-next">
-                            <svg class="icon" viewBox="0 0 24 24">
-                                <polyline points="9,18 15,12 9,6"></polyline>
-                            </svg>
-                        </button>
+            <div class="control-total-section">
+                <div class="total-time-display">
+                    <div class="status-indicator">
+                        <span class="status-dot" id="status-dot"></span>
+                        <span class="status-text" id="status-text">대기 중</span>
                     </div>
+                    <span class="total-label">총 시간</span>
+                    <span class="total-time" id="total-time">00:00:00</span>
+                    <span class="current-time" id="current-time">00:00:00</span>
                 </div>
-                <div class="timeline-content" id="timeline-content">
-                    <!-- Timeline will be generated dynamically -->
-                </div>
-            </section>
-
-            <!-- Tasks Section -->
-            <section id="tasks-section" class="card hidden">
-                <div class="tasks-header">
-                    <h2 class="text-title2">일정 목록</h2>
-                    <button class="btn-primary-icon" id="add-task">
-                        <svg class="icon" viewBox="0 0 24 24">
-                            <line x1="12" y1="5" x2="12" y2="19"></line>
-                            <line x1="5" y1="12" x2="19" y2="12"></line>
-                        </svg>
-                    </button>
-                </div>
-                <div class="tasks-list" id="tasks-list">
-                    <!-- Tasks will be generated dynamically -->
-                </div>
-            </section>
-
-            <!-- Stats Section -->
-            <section id="stats-section" class="card hidden">
-                <h2 class="text-title2">통계</h2>
-                <div class="stats-content" id="stats-content">
-                    <div class="stat-card">
-                        <h3 class="text-headline">이번 달 일정</h3>
-                        <p class="stat-number" id="month-events">0</p>
-                    </div>
-                    <div class="stat-card">
-                        <h3 class="text-headline">완료된 일정</h3>
-                        <p class="stat-number" id="completed-events">0</p>
-                    </div>
-                    <div class="stat-card">
-                        <h3 class="text-headline">카테고리별 분포</h3>
-                        <div class="category-stats" id="category-stats">
-                            <!-- Category stats will be generated dynamically -->
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Settings Section -->
-            <section id="settings-section" class="card hidden">
-                <h2 class="text-title2">설정</h2>
-                <div class="settings-content">
-                    <div class="setting-item">
-                        <label class="text-body">알림 설정</label>
-                        <input type="checkbox" class="toggle" id="notifications-toggle">
-                    </div>
-                    <div class="setting-item">
-                        <label class="text-body">다크 모드</label>
-                        <input type="checkbox" class="toggle" id="darkmode-toggle">
-                    </div>
-                    <div class="setting-item">
-                        <label class="text-body">데이터 백업</label>
-                        <button class="btn-secondary" id="backup-data">백업</button>
-                    </div>
-                    <div class="setting-item">
-                        <label class="text-body">데이터 복원</label>
-                        <button class="btn-secondary" id="restore-data">복원</button>
-                    </div>
-                    <div class="setting-item danger">
-                        <label class="text-body">모든 데이터 삭제</label>
-                        <button class="btn-danger" id="clear-data">삭제</button>
-                    </div>
-                </div>
-            </section>
-        </main>
-
-        <!-- Bottom Navigation -->
-        <nav class="bottom-nav">
-            <button class="nav-item active" data-section="calendar">
-                <svg class="icon" viewBox="0 0 24 24">
-                    <rect x="3" y="4" width="18" height="18" rx="2"></rect>
-                    <line x1="16" y1="2" x2="16" y2="6"></line>
-                    <line x1="8" y1="2" x2="8" y2="6"></line>
-                    <line x1="3" y1="10" x2="21" y2="10"></line>
-                </svg>
-                <span class="nav-label text-caption2">캘린더</span>
-            </button>
-            <button class="nav-item" data-section="tasks">
-                <svg class="icon" viewBox="0 0 24 24">
-                    <polyline points="9,11 12,14 22,4"></polyline>
-                    <path d="M21,12v7a2,2 0,0 1,-2,2H5a2,2 0,0 1,-2,-2V5a2,2 0,0 1,2,-2h11"></path>
-                </svg>
-                <span class="nav-label text-caption2">할 일</span>
-            </button>
-            <button class="nav-item" data-section="stats">
-                <svg class="icon" viewBox="0 0 24 24">
-                    <line x1="18" y1="20" x2="18" y2="10"></line>
-                    <line x1="12" y1="20" x2="12" y2="4"></line>
-                    <line x1="6" y1="20" x2="6" y2="14"></line>
-                </svg>
-                <span class="nav-label text-caption2">통계</span>
-            </button>
-            <button class="nav-item" data-section="settings">
-                <svg class="icon" viewBox="0 0 24 24">
-                    <circle cx="12" cy="12" r="3"></circle>
-                    <path d="M19.4,15a1.65,1.65,0,0,0,.33,1.82l.06.06a2,2,0,0,1,0,2.83,2,2,0,0,1,-2.83,0l-.06-.06a1.65,1.65,0,0,0,-1.82-.33,1.65,1.65,0,0,0-1,1.51V21a2,2,0,0,1,-2,2,2,2,0,0,1,-2,-2v-.09A1.65,1.65,0,0,0,9,19.4a1.65,1.65,0,0,0,-1.82.33l-.06.06a2,2,0,0,1,-2.83,0,2,2,0,0,1,0,-2.83l.06-.06a1.65,1.65,0,0,0,.33-1.82,1.65,1.65,0,0,0,-1.51-1H3a2,2,0,0,1,-2,-2,2,2,0,0,1,2,-2h.09A1.65,1.65,0,0,0,4.6,9a1.65,1.65,0,0,0-.33-1.82L4.21,7.11a2,2,0,0,1,0-2.83,2,2,0,0,1,2.83,0L7.11,4.34A1.65,1.65,0,0,0,9,4.6a1.65,1.65,0,0,0,1-1.51V3a2,2,0,0,1,2-2,2,2,0,0,1,2,2v.09A1.65,1.65,0,0,0,15,4.6a1.65,1.65,0,0,0,1.82-.33l.06-.06a2,2,0,0,1,2.83,0,2,2,0,0,1,0,2.83L19.65,7.11A1.65,1.65,0,0,0,19.4,9a1.65,1.65,0,0,0,1.51,1H21a2,2,0,0,1,2,2,2,2,0,0,1,-2,2h-.09A1.65,1.65,0,0,0,19.4,15Z"></path>
-                </svg>
-                <span class="nav-label text-caption2">설정</span>
-            </button>
-        </nav>
-
-        <!-- Floating Action Button -->
-        <button class="fab" id="fab">
-            <svg class="icon" viewBox="0 0 24 24">
-                <line x1="12" y1="5" x2="12" y2="19"></line>
-                <line x1="5" y1="12" x2="19" y2="12"></line>
-            </svg>
-        </button>
-
-        <!-- Schedule Modal -->
-        <div class="modal-overlay" id="schedule-modal">
-            <div class="modal">
-                <div class="modal-header">
-                    <h3 class="text-title2" id="modal-title">일정 추가</h3>
-                    <button class="btn-icon" id="modal-close">
-                        <svg class="icon" viewBox="0 0 24 24">
-                            <line x1="18" y1="6" x2="6" y2="18"></line>
-                            <line x1="6" y1="6" x2="18" y2="18"></line>
-                        </svg>
-                    </button>
-                </div>
-                <div class="modal-body">
-                    <form id="schedule-form">
-                        <div class="form-group">
-                            <label class="form-label">제목 *</label>
-                            <input class="form-input" type="text" id="event-title" required>
-                        </div>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label class="form-label">시작 날짜 *</label>
-                                <input class="form-input" type="date" id="event-date" required>
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">종료 날짜</label>
-                                <input class="form-input" type="date" id="event-end-date">
-                            </div>
-                        </div>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label class="form-label">시작 시간</label>
-                                <input class="form-input" type="time" id="event-start-time">
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">종료 시간</label>
-                                <input class="form-input" type="time" id="event-end-time">
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">설명</label>
-                            <textarea class="form-textarea" id="event-description" rows="3"></textarea>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">카테고리 *</label>
-                            <div class="radio-group">
-                                <label class="radio-option">
-                                    <input type="radio" name="category" value="study">
-                                    <span>공부</span>
-                                </label>
-                                <label class="radio-option">
-                                    <input type="radio" name="category" value="daily">
-                                    <span>일상</span>
-                                </label>
-                                <label class="radio-option">
-                                    <input type="radio" name="category" value="entertainment">
-                                    <span>놀이</span>
-                                </label>
-                                <label class="radio-option">
-                                    <input type="radio" name="category" value="other" checked>
-                                    <span>기타</span>
-                                </label>
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">중요도</label>
-                            <div class="radio-group">
-                                <label class="radio-option">
-                                    <input type="radio" name="priority" value="low">
-                                    <span>낮음</span>
-                                </label>
-                                <label class="radio-option">
-                                    <input type="radio" name="priority" value="medium" checked>
-                                    <span>보통</span>
-                                </label>
-                                <label class="radio-option">
-                                    <input type="radio" name="priority" value="high">
-                                    <span>높음</span>
-                                </label>
-                            </div>
-                        </div>
-                    </form>
-                </div>
-                <div class="modal-footer">
-                    <button class="btn-danger" id="modal-delete" style="display: none;">삭제</button>
-                    <div class="modal-footer-right">
-                        <button class="btn-secondary" id="modal-cancel">취소</button>
-                        <button class="btn-primary" id="modal-save">저장</button>
-                    </div>
-                </div>
+                <button class="record-button" id="record-button">
+                    <svg class="record-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <polygon points="10,8 16,12 10,16 10,8"></polygon>
+                    </svg>
+                    <span class="button-text">시작</span>
+                </button>
             </div>
-        </div>
 
-        <!-- Toast Container -->
-        <div id="toast-container"></div>
+            <div class="timeline-container">
+                <h2 class="timeline-title">오늘의 타임라인</h2>
+                <div class="timeline" id="timeline"></div>
+            </div>
+        </main>
     </div>
 
-    <script src="config.js"></script>    <script src="script.js"></script>
+    <script src="script.js"></script>
 </body>
 </html>

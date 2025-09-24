@@ -1,0 +1,378 @@
+// ==============================================
+// Time Tracker Application
+// ==============================================
+
+class TimeTracker {
+  constructor() {
+    this.isRecording = false;
+    this.currentStartTime = null;
+    this.currentHour = null;
+    this.timeData = {}; // Store time data for each hour
+    this.totalTime = 0; // Total accumulated time in milliseconds
+    this.currentSessionTime = 0;
+    this.updateInterval = null;
+    this.timelineOrder = Array.from({length: 24}, (_, i) => i); // Default order 0-23
+    this.draggedElement = null;
+    
+    this.elements = {
+      recordButton: document.getElementById("record-button"),
+      statusDot: document.querySelector(".status-dot"),
+      statusText: document.getElementById("status-text"),
+      currentTime: document.getElementById("current-time"),
+      totalTime: document.getElementById("total-time"),
+      timeline: document.getElementById("timeline")
+    };
+    
+    this.init();
+  }
+  
+  init() {
+    this.generateTimeline();
+    this.initializeEventListeners();
+    this.updateDisplay();
+    this.loadData();
+  }
+  
+  generateTimeline() {
+    const timeline = this.elements.timeline;
+    timeline.innerHTML = "";
+    
+    // Generate timeline items in current order
+    this.timelineOrder.forEach(hour => {
+      const timelineItem = document.createElement("div");
+      timelineItem.className = "timeline-item";
+      timelineItem.dataset.hour = hour;
+      timelineItem.draggable = true;
+      
+      const timeString = this.formatHour(hour);
+      
+      timelineItem.innerHTML = `
+        <div class="timeline-time">${timeString}</div>
+        <div class="timeline-content">
+          <div class="timeline-duration" id="duration-${hour}">00:00:00</div>
+          <div class="progress-bar">
+            <div class="progress-fill" id="progress-${hour}"></div>
+          </div>
+        </div>
+      `;
+      
+      // Add drag event listeners
+      this.addDragListeners(timelineItem);
+      
+      timeline.appendChild(timelineItem);
+    });
+  }        <div class="timeline-content">
+          <div class="timeline-duration" id="duration-${hour}">00:00:00</div>
+          <div class="progress-bar">
+            <div class="progress-fill" id="progress-${hour}"></div>
+          </div>
+        </div>
+      `;
+      
+      timeline.appendChild(timelineItem);
+    }
+  }
+  
+
+  addDragListeners(item) {
+    item.addEventListener("dragstart", (e) => {
+      this.draggedElement = item;
+      item.classList.add("dragging");
+      e.dataTransfer.effectAllowed = "move";
+      e.dataTransfer.setData("text/html", item.outerHTML);
+    });
+
+    item.addEventListener("dragend", (e) => {
+      item.classList.remove("dragging");
+      this.draggedElement = null;
+      // Remove all drag-over classes
+      document.querySelectorAll(".timeline-item").forEach(el => {
+        el.classList.remove("drag-over");
+      });
+    });
+
+    item.addEventListener("dragover", (e) => {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = "move";
+    });
+
+    item.addEventListener("dragenter", (e) => {
+      e.preventDefault();
+      if (item !== this.draggedElement) {
+        item.classList.add("drag-over");
+      }
+    });
+
+    item.addEventListener("dragleave", (e) => {
+      if (!item.contains(e.relatedTarget)) {
+        item.classList.remove("drag-over");
+      }
+    });
+
+    item.addEventListener("drop", (e) => {
+      e.preventDefault();
+      item.classList.remove("drag-over");
+      
+      if (this.draggedElement && item !== this.draggedElement) {
+        const draggedHour = parseInt(this.draggedElement.dataset.hour);
+        const targetHour = parseInt(item.dataset.hour);
+        
+        this.reorderTimeline(draggedHour, targetHour);
+      }
+    });
+  }
+
+  reorderTimeline(draggedHour, targetHour) {
+    // Find positions in current order
+    const draggedIndex = this.timelineOrder.indexOf(draggedHour);
+    const targetIndex = this.timelineOrder.indexOf(targetHour);
+    
+    // Remove dragged item from its current position
+    this.timelineOrder.splice(draggedIndex, 1);
+    
+    // Insert at new position
+    const newTargetIndex = targetIndex > draggedIndex ? targetIndex : targetIndex + 1;
+    this.timelineOrder.splice(newTargetIndex, 0, draggedHour);
+    
+    // Regenerate timeline with new order
+    this.generateTimeline();
+    this.updateDisplay();
+    
+    // Save the new order
+    this.saveData();
+  }
+
+  // Method to reset timeline to start from a specific hour
+  setTimelineStartHour(startHour) {
+    // Create new order starting from specified hour
+    this.timelineOrder = [];
+    
+    // Add hours from startHour to 23
+    for (let i = startHour; i < 24; i++) {
+      this.timelineOrder.push(i);
+    }
+    
+    // Add hours from 0 to startHour-1
+    for (let i = 0; i < startHour; i++) {
+      this.timelineOrder.push(i);
+    }
+    
+    this.generateTimeline();
+    this.updateDisplay();
+    this.saveData();
+  }
+  formatHour(hour) {
+    return hour.toString().padStart(2, '0') + ':00';
+  }
+  
+  formatTime(milliseconds) {
+    const totalSeconds = Math.floor(milliseconds / 1000);
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+    
+    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+  }
+  
+  getCurrentHour() {
+    return new Date().getHours();
+  }
+  
+  initializeEventListeners() {
+    this.elements.recordButton.addEventListener('click', () => {
+      this.toggleRecording();
+    });
+    
+    // Save data when page unloads
+    window.addEventListener('beforeunload', () => {
+      this.saveData();
+    });
+    
+    // Auto-save every 30 seconds
+    setInterval(() => {
+      this.saveData();
+    }, 30000);
+  }
+  
+  toggleRecording() {
+    if (this.isRecording) {
+      this.stopRecording();
+    } else {
+      this.startRecording();
+    }
+  }
+  
+  startRecording() {
+    this.isRecording = true;
+    this.currentStartTime = Date.now();
+    this.currentHour = this.getCurrentHour();
+    this.currentSessionTime = 0;
+    
+    // Update UI
+    this.elements.recordButton.classList.add('recording');
+    this.elements.recordButton.innerHTML = `<svg class="record-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="6" y="6" width="12" height="12"></rect></svg>정지`;
+    this.elements.statusDot.classList.add('recording');
+    this.elements.statusText.textContent = '기록 중';
+    
+    // Highlight current hour
+    this.highlightCurrentHour();
+    
+    // Start update interval
+    this.updateInterval = setInterval(() => {
+      this.updateCurrentSession();
+    }, 100);
+  }
+  
+  stopRecording() {
+    if (!this.isRecording) return;
+    
+    const endTime = Date.now();
+    const sessionDuration = endTime - this.currentStartTime;
+    
+    // Add session time to the current hour
+    if (!this.timeData[this.currentHour]) {
+      this.timeData[this.currentHour] = 0;
+    }
+    this.timeData[this.currentHour] += sessionDuration;
+    this.totalTime += sessionDuration;
+    
+    // Reset recording state
+    this.isRecording = false;
+    this.currentStartTime = null;
+    this.currentSessionTime = 0;
+    
+    // Update UI
+    this.elements.recordButton.classList.remove('recording');
+    this.elements.recordButton.innerHTML = `<svg class="record-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"></circle><polygon points="10,8 16,12 10,16 10,8"></polygon></svg>시작`;
+    this.elements.statusDot.classList.remove('recording');
+    this.elements.statusText.textContent = '대기 중';
+    this.elements.currentTime.textContent = '00:00:00';
+    
+    // Clear update interval
+    if (this.updateInterval) {
+      clearInterval(this.updateInterval);
+      this.updateInterval = null;
+    }
+    
+    // Remove highlight from current hour
+    this.removeHighlights();
+    
+    // Update displays
+    this.updateDisplay();
+    this.saveData();
+  }
+  
+  updateCurrentSession() {
+    if (!this.isRecording) return;
+    
+    this.currentSessionTime = Date.now() - this.currentStartTime;
+    this.elements.currentTime.textContent = this.formatTime(this.currentSessionTime);
+    
+    // Update current hour progress
+    this.updateHourProgress(this.currentHour, this.currentSessionTime, true);
+  }
+  
+  highlightCurrentHour() {
+    const currentItem = document.querySelector(`[data-hour="${this.currentHour}"]`);
+    if (currentItem) {
+      currentItem.classList.add('active');
+    }
+  }
+  
+  removeHighlights() {
+    const activeItems = document.querySelectorAll('.timeline-item.active');
+    activeItems.forEach(item => item.classList.remove('active'));
+  }
+  
+  updateDisplay() {
+    // Update total time
+    this.elements.totalTime.textContent = this.formatTime(this.totalTime);
+    
+    // Update each hour's display
+    for (let hour = 0; hour < 24; hour++) {
+      const timeForHour = this.timeData[hour] || 0;
+      this.updateHourProgress(hour, timeForHour, false);
+    }
+  }
+  
+  updateHourProgress(hour, timeInMs, isActive) {
+    const durationElement = document.getElementById(`duration-${hour}`);
+    const progressElement = document.getElementById(`progress-${hour}`);
+    
+    if (durationElement) {
+      const totalTimeForHour = (this.timeData[hour] || 0) + (isActive ? timeInMs : 0);
+      durationElement.textContent = this.formatTime(totalTimeForHour);
+    }
+    
+    if (progressElement) {
+      // Calculate progress as percentage of hour (max 60 minutes = 100%)
+      const totalTimeForHour = (this.timeData[hour] || 0) + (isActive ? timeInMs : 0);
+      const maxTime = 60 * 60 * 1000; // 1 hour in milliseconds
+      const percentage = Math.min((totalTimeForHour / maxTime) * 100, 100);
+      progressElement.style.width = `${percentage}%`;
+    }
+  }
+  
+  saveData() {
+    const data = {
+      timeData: this.timeData,
+      totalTime: this.totalTime,
+      timelineOrder: this.timelineOrder,
+      lastSaved: Date.now()
+    };
+    localStorage.setItem("timeTracker", JSON.stringify(data));
+  }    localStorage.setItem('timeTracker', JSON.stringify(data));
+  }
+  
+  loadData() {
+    const saved = localStorage.getItem('timeTracker');
+    if (saved) {
+      try {
+        const data = JSON.parse(saved);
+        
+        // Check if data is from today
+        const lastSaved = new Date(data.lastSaved);
+        const today = new Date();
+        
+        if (lastSaved.toDateString() === today.toDateString()) {
+          this.timeData = data.timeData || {};
+          this.totalTime = data.totalTime || 0;
+          this.timelineOrder = data.timelineOrder || Array.from({length: 24}, (_, i) => i);
+          this.updateDisplay();
+        } else {          // New day, reset data
+          this.resetData();
+        }
+      } catch (error) {
+        console.error('Error loading saved data:', error);
+        this.resetData();
+      }
+    }
+  }
+  
+  resetData() {
+    this.timeData = {};
+          this.timelineOrder = Array.from({length: 24}, (_, i) => i);    this.totalTime = 0;
+    this.updateDisplay();
+    this.saveData();
+  }
+  
+  // Public method to reset all data (for testing)
+  reset() {
+    if (this.isRecording) {
+      this.stopRecording();
+    }
+    this.resetData();
+  }
+}
+
+// ==============================================
+// Initialize Application
+// ==============================================
+document.addEventListener('DOMContentLoaded', () => {
+  window.timeTracker = new TimeTracker();
+  
+  // Add reset functionality for development (remove in production)
+  if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+    console.log('Development mode: Use timeTracker.reset() to clear all data');
+  }
+});
