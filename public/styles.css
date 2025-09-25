@@ -1242,3 +1242,71 @@ body {
   font-weight: 600;
   color: var(--orange-50);
 }
+/* Task Input Container */
+.task-input-container {
+  position: relative;
+  width: 100%;
+}
+
+/* Task Suggestions Dropdown */
+.task-suggestions {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: var(--neutral-100);
+  border: 1px solid var(--neutral-70);
+  border-top: none;
+  border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  z-index: 1000;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.task-suggestion-item {
+  padding: var(--space-sm) var(--space-base);
+  cursor: pointer;
+  transition: background-color var(--transition-base);
+  border-bottom: 1px solid var(--neutral-80);
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.task-suggestion-item:last-child {
+  border-bottom: none;
+}
+
+.task-suggestion-item:hover {
+  background-color: var(--neutral-90);
+}
+
+.task-suggestion-item.selected {
+  background-color: var(--orange-100);
+  color: var(--orange-50);
+}
+
+.task-suggestion-text {
+  flex: 1;
+  font-size: 14px;
+  color: var(--neutral-10);
+}
+
+.task-suggestion-count {
+  font-size: 12px;
+  color: var(--neutral-40);
+  background: var(--neutral-80);
+  padding: 2px var(--space-xs);
+  border-radius: var(--radius-sm);
+}
+
+.task-suggestion-item:hover .task-suggestion-count {
+  background: var(--neutral-70);
+}
+
+.task-suggestion-item.selected .task-suggestion-count {
+  background: var(--orange-50);
+  color: var(--neutral-100);
+}
+

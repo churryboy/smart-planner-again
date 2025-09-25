@@ -41,6 +41,7 @@ class TimeTracker {
       currentTaskNameDisplay: document.getElementById('current-task-name'),
       taskNameModal: document.getElementById('task-name-modal'),
       taskNameInput: document.getElementById('task-name-input'),
+      taskSuggestionsContainer: document.getElementById('task-suggestions'),
       taskCancelBtn: document.getElementById('task-cancel-btn'),
       taskConfirmBtn: document.getElementById('task-confirm-btn'),
       customTagInput: document.getElementById('custom-tag-input'),
@@ -333,13 +334,81 @@ class TimeTracker {
     }, 30000);
   }
 
-  showTaskModal() {
+    showTaskModal() {
     this.elements.taskNameModal.classList.add('visible');
     this.elements.taskNameInput.value = '';
     this.currentTaskTags = [];
     this.updateSelectedTags();
     this.resetPredefinedTags();
     this.elements.taskNameInput.focus();
+    
+    // Show all task history when modal opens
+    this.updateTaskSuggestions('');
+    
+    // Add event listeners for task suggestions
+    this.setupTaskInputListeners();
+  }
+
+  setupTaskInputListeners() {
+    const input = this.elements.taskNameInput;
+    const suggestionsContainer = document.getElementById('task-suggestions');
+    
+    if (!input || !suggestionsContainer) return;
+    
+    // Input event for showing suggestions
+    input.addEventListener('input', (e) => {
+      this.updateTaskSuggestions(e.target.value);
+    });
+    
+    // Click outside to hide suggestions
+    document.addEventListener('click', (e) => {
+      if (!input.contains(e.target) && !suggestionsContainer.contains(e.target)) {
+        this.hideTaskSuggestions();
+      }
+    });
+    
+    // Click on suggestions
+    suggestionsContainer.addEventListener('click', (e) => {
+      const suggestionItem = e.target.closest('.task-suggestion-item');
+      if (suggestionItem) {
+        const taskName = suggestionItem.dataset.task;
+        this.selectTaskSuggestion(taskName);
+      }
+    });
+    
+    // Keyboard navigation
+    input.addEventListener('keydown', (e) => {
+      const suggestions = suggestionsContainer.querySelectorAll('.task-suggestion-item');
+      const selected = suggestionsContainer.querySelector('.task-suggestion-item.selected');
+      
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        if (selected) {
+          const next = selected.nextElementSibling;
+          if (next) {
+            selected.classList.remove('selected');
+            next.classList.add('selected');
+          }
+        } else if (suggestions.length > 0) {
+          suggestions[0].classList.add('selected');
+        }
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        if (selected) {
+          const prev = selected.previousElementSibling;
+          if (prev) {
+            selected.classList.remove('selected');
+            prev.classList.add('selected');
+          }
+        }
+      } else if (e.key === 'Enter' && selected) {
+        e.preventDefault();
+        const taskName = selected.dataset.task;
+        this.selectTaskSuggestion(taskName);
+      } else if (e.key === 'Escape') {
+        this.hideTaskSuggestions();
+      }
+    });
   }
 
   hideTaskModal() {
@@ -503,6 +572,9 @@ class TimeTracker {
     const taskName = this.elements.taskNameInput.value.trim();
     if (taskName) {
       this.currentTaskName = taskName;
+      
+      // Add to task history
+      this.addToTaskHistory(taskName);
       
       // Debug: Log current task tags when starting recording
       console.log('🏷️ Starting recording with task:', {
@@ -895,6 +967,7 @@ class TimeTracker {
       timelineOrder: this.timelineOrder,
       taskSessions: this.taskSessions, // Save task sessions
       taskTagSessions: this.taskTagSessions, // Save task tag sessions
+      taskHistory: this.taskHistory, // Save task history
       lastSaved: Date.now()
     };
     localStorage.setItem('timeTracker', JSON.stringify(data));
@@ -914,7 +987,7 @@ class TimeTracker {
           this.totalTime = data.totalTime || 0;
           this.timelineOrder = this.generateTimelineOrder();
           this.taskSessions = data.taskSessions || {}; // Load task sessions
-          this.taskTagSessions = data.taskTagSessions || {}; // Load task tag sessions
+          this.taskHistory = data.taskHistory || []; // Load task history          this.taskTagSessions = data.taskTagSessions || {}; // Load task tag sessions
           this.updateDisplay();
           this.updateTaskLabels(); // Update labels after loading
         } else {
@@ -950,6 +1023,68 @@ class TimeTracker {
     
     this.resetData();
     console.log('✅ All minute blocks have been reset to empty');
+  }
+  // ==============================================
+  // Task History Methods
+  // ==============================================
+
+  addToTaskHistory(taskName) {
+    if (!taskName || taskName.trim() === "") return;
+    
+    // Remove if already exists to move to top
+    this.taskHistory = this.taskHistory.filter(item => item.name !== taskName);
+    this.taskHistory.unshift({ name: taskName, count: 1 });
+    
+    // Keep only the last 20 items
+    this.taskHistory = this.taskHistory.slice(0, 20);
+    this.saveData();
+  }
+
+  showTaskSuggestions(query) {
+    const suggestionsContainer = this.elements.taskSuggestionsContainer;
+    if (!suggestionsContainer) {
+      console.log('❌ Task suggestions container not found');
+      return;
+    }
+
+    console.log('📝 Showing task suggestions for query:', query);
+    console.log('📚 Task history:', this.taskHistory);
+
+    suggestionsContainer.innerHTML = "";
+    const filteredSuggestions = this.taskHistory.filter(item =>
+      item.name.toLowerCase().includes(query.toLowerCase())
+    );
+
+    if (filteredSuggestions.length > 0) {
+      suggestionsContainer.style.display = "block";
+      filteredSuggestions.forEach((item, index) => {
+        const suggestionElement = document.createElement("div");
+        suggestionElement.className = "task-suggestion-item";
+        suggestionElement.textContent = item.name;
+        suggestionElement.setAttribute("data-task-name", item.name);
+        suggestionElement.addEventListener("click", () => this.selectSuggestion(item.name));
+        suggestionsContainer.appendChild(suggestionElement);
+      });
+    } else {
+      suggestionsContainer.style.display = "none";
+    }
+  }
+
+  hideTaskSuggestions() {
+    const suggestionsContainer = this.elements.taskSuggestionsContainer;
+    if (suggestionsContainer) {
+      suggestionsContainer.style.display = "none";
+    }
+  }
+
+  selectSuggestion(taskName) {
+    this.elements.taskNameInput.value = taskName;
+    this.hideTaskSuggestions();
+    this.elements.taskNameInput.focus();
+  }
+
+  updateTaskSuggestions(query) {
+    this.showTaskSuggestions(query);
   }
 }
 

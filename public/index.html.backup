@@ -118,12 +118,7 @@
         <div class="task-modal card">
             <h3 class="text-title2">새로운 작업 시작</h3>
             <p class="text-body">이 작업의 이름을 입력해주세요.</p>
-            <div class="task-input-container">
-                <input type="text" id="task-name-input" class="text-body" placeholder="예: 수학 공부, 프로젝트 코딩" maxlength="50">
-                <div class="task-suggestions" id="task-suggestions" style="display: none;">
-                    <!-- Suggestions will be populated here -->
-                </div>
-            </div>
+            <input type="text" id="task-name-input" class="text-body" placeholder="예: 수학 공부, 프로젝트 코딩" maxlength="50">
             
             <div class="category-section">
                 <label class="category-label text-subheadline">카테고리 (하나 선택)</label>
