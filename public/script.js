@@ -279,6 +279,7 @@ class TimeTracker {
     });
 
     this.elements.taskCancelBtn.addEventListener('click', () => {
+      this.currentTaskTags = []; // Clear tags when cancelling
       this.hideTaskModal();
     });
 
@@ -343,7 +344,8 @@ class TimeTracker {
 
   hideTaskModal() {
     this.elements.taskNameModal.classList.remove('visible');
-    this.currentTaskTags = [];
+    // Don't clear currentTaskTags here - they need to be preserved for the recording session
+    // currentTaskTags will be cleared when recording stops
   }
 
   togglePredefinedTag(tag, buttonElement) {
@@ -360,10 +362,12 @@ class TimeTracker {
     if (this.currentTaskTags.includes(tag)) {
       // If clicking the same tag, just remove it (deselect)
       this.currentTaskTags = this.currentTaskTags.filter(t => t !== tag);
+      console.log(`🏷️ Removed tag "${tag}". Current tags:`, this.currentTaskTags);
     } else {
       // Add the new tag
       this.currentTaskTags.push(tag);
       buttonElement.classList.add('selected');
+      console.log(`🏷️ Added tag "${tag}". Current tags:`, this.currentTaskTags);
     }
     
     this.updateSelectedTags();
@@ -413,6 +417,13 @@ class TimeTracker {
 
   updateSelectedTags() {
     const container = this.elements.selectedTagsContainer;
+    
+    // Handle case where selected tags container doesn't exist (removed from HTML)
+    if (!container) {
+      console.log('🏷️ Selected tags container not found, skipping visual update');
+      return;
+    }
+    
     container.innerHTML = '';
     
     this.currentTaskTags.forEach(tag => {
@@ -431,7 +442,9 @@ class TimeTracker {
     const customTagCount = this.currentTaskTags.filter(t => 
       !['공부', '휴식', '식사', '이동'].includes(t)
     ).length;
-    this.elements.addCustomTagBtn.disabled = customTagCount >= 9;
+    if (this.elements.addCustomTagBtn) {
+      this.elements.addCustomTagBtn.disabled = customTagCount >= 9;
+    }
   }
 
   resetPredefinedTags() {
@@ -490,7 +503,19 @@ class TimeTracker {
     const taskName = this.elements.taskNameInput.value.trim();
     if (taskName) {
       this.currentTaskName = taskName;
+      
+      // Debug: Log current task tags when starting recording
+      console.log('🏷️ Starting recording with task:', {
+        taskName: this.currentTaskName,
+        currentTaskTags: this.currentTaskTags,
+        tagsLength: this.currentTaskTags.length
+      });
+      
       this.hideTaskModal();
+      
+      // Debug: Check tags after hiding modal
+      console.log('🔍 Tags after hideTaskModal:', this.currentTaskTags);
+      
       this.startRecording();
     } else {
       alert('작업 이름을 입력해주세요!'); // Simple alert for now
@@ -508,13 +533,22 @@ class TimeTracker {
   startRecording() {
     const timeInfo = this.getCurrentTimeInfo();
     
+    // Debug: Check tags at the very start of startRecording
+    console.log('🔍 Tags at start of startRecording:', this.currentTaskTags);
+    
     this.isRecording = true;
     this.currentStartTime = Date.now();
     this.currentHour = timeInfo.hour;
     this.currentStartMinute = timeInfo.minute;
     
+    // Debug: Check tags after setting recording state
+    console.log('🔍 Tags after setting recording state:', this.currentTaskTags);
+    
     // Initialize current hour data
     this.initializeCurrentHourProgress();
+    
+    // Debug: Check tags after initializeCurrentHourProgress
+    console.log('🔍 Tags after initializeCurrentHourProgress:', this.currentTaskTags);
     
     // Update UI
     this.elements.recordButton.classList.add('recording');
@@ -523,6 +557,12 @@ class TimeTracker {
     if (this.elements.statusText) this.elements.statusText.textContent = '기록 중';
     this.elements.currentTaskNameDisplay.textContent = this.currentTaskName;
     this.elements.currentTaskNameDisplay.classList.add('recording');
+    
+    // Debug: Check tags after UI updates
+    console.log('🔍 Tags after UI updates:', this.currentTaskTags);
+    
+    // Reset debug flag
+    this.loggedTagsOnce = false;
     
     // Start update interval
     this.updateInterval = setInterval(() => {
@@ -555,6 +595,13 @@ class TimeTracker {
     for (let m = startMinute; m <= endMinute; m++) {
       this.taskSessions[currentHour][m] = this.currentTaskName;
       this.taskTagSessions[currentHour][m] = [...this.currentTaskTags];
+      
+      // Debug: Log what's being saved
+      console.log(`💾 Saving for minute ${m}:`, {
+        taskName: this.currentTaskName,
+        tags: [...this.currentTaskTags],
+        hour: currentHour
+      });
     }
     
     // Add session time to total
@@ -713,6 +760,12 @@ class TimeTracker {
     
     const now = Date.now();
     this.currentSessionTime = now - this.currentStartTime;
+    
+    // Debug: Check if tags are still there during session update (only log once per session)
+    if (!this.loggedTagsOnce) {
+      console.log('🔍 Tags during updateCurrentSession:', this.currentTaskTags);
+      this.loggedTagsOnce = true;
+    }
     
     // Check if hour has changed
     const currentHour = this.getCurrentHour();
@@ -960,8 +1013,29 @@ class AnalyticsManager {
       refreshButton.disabled = true;
     }
 
+    // Debug: Log current TimeTracker data before refresh
+    console.log('🔍 TimeTracker data before refresh:', {
+      timeData: Object.keys(this.timeTracker.timeData),
+      taskSessions: Object.keys(this.timeTracker.taskSessions),
+      taskTagSessions: Object.keys(this.timeTracker.taskTagSessions)
+    });
+
+    // Force TimeTracker to save current state and ensure data is up to date
+    this.timeTracker.saveData();
+    
+    // Also ensure the TimeTracker display is updated (this might trigger data updates)
+    this.timeTracker.updateDisplay();
+    this.timeTracker.updateTaskLabels();
+
     // Simulate a brief loading state for better UX
     setTimeout(() => {
+      // Debug: Log TimeTracker data after forcing updates
+      console.log('🔍 TimeTracker data after forced updates:', {
+        timeData: Object.keys(this.timeTracker.timeData),
+        taskSessions: Object.keys(this.timeTracker.taskSessions),
+        taskTagSessions: Object.keys(this.timeTracker.taskTagSessions)
+      });
+      
       // Update analytics with fresh data
       this.updateAnalytics();
       
@@ -1020,10 +1094,23 @@ class AnalyticsManager {
     };
 
     // Aggregate data from timeTracker
+    console.log('📊 Aggregating data for period:', this.currentPeriod);
+    console.log('📊 Available hours in timeData:', Object.keys(this.timeTracker.timeData));
+    
     Object.keys(this.timeTracker.timeData).forEach(hour => {
       const hourData = this.timeTracker.timeData[hour];
       const hourTaskSessions = this.timeTracker.taskSessions[hour] || {};
       const hourTagSessions = this.timeTracker.taskTagSessions[hour] || {};
+      
+      // Debug: Log data for hours after 14:00
+      if (parseInt(hour) >= 14) {
+        console.log(`📊 Hour ${hour} data:`, {
+          totalMinutes: hourData.reduce((sum, time) => sum + (time > 0 ? 1 : 0), 0),
+          totalTime: hourData.reduce((sum, time) => sum + time, 0),
+          tasks: Object.keys(hourTaskSessions),
+          taskNames: Object.values(hourTaskSessions).filter(name => name)
+        });
+      }
 
       // Store timeline data for replica
       data.timelineData[hour] = {
@@ -1040,6 +1127,14 @@ class AnalyticsManager {
           const taskTags = hourTagSessions[minute] || [];
 
           if (taskName) {
+            // Debug: Log task and tags for specific tasks
+            if (taskName.includes('바이브') || taskName.includes('코딩')) {
+              console.log(`📋 Processing task "${taskName}" at ${hour}:${minute}:`, {
+                taskTags,
+                minuteTime
+              });
+            }
+            
             // Count unique tasks
             if (!data.tasks[taskName]) {
               data.tasks[taskName] = { time: 0, categories: new Set() };
@@ -1065,6 +1160,15 @@ class AnalyticsManager {
           data.dailyActivity[today] += minuteTime;
         }
       });
+    });
+
+    // Debug: Log final aggregated data
+    console.log('📊 Final aggregated data:', {
+      totalTime: data.totalTime,
+      totalTasks: data.totalTasks,
+      taskNames: Object.keys(data.tasks),
+      categories: Object.keys(data.categories),
+      timelineHours: Object.keys(data.timelineData)
     });
 
     return data;
@@ -1191,7 +1295,15 @@ class AnalyticsManager {
       .sort(([,a], [,b]) => b.time - a.time);
 
     summaryContainer.innerHTML = sortedTasks.map(([taskName, taskData]) => {
-      const categories = Array.from(taskData.categories).join(', ') || '카테고리 없음';
+      // Debug: Log task data to see what categories are available
+      console.log(`📋 Task "${taskName}":`, {
+        categories: taskData.categories,
+        categoriesType: typeof taskData.categories,
+        categoriesArray: Array.from(taskData.categories || []),
+        time: taskData.time
+      });
+      
+      const categories = Array.from(taskData.categories || []).join(', ') || '카테고리 없음';
       
       return `
         <div class="task-summary-item">
