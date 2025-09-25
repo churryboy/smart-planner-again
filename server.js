@@ -13,6 +13,13 @@ const PORT = process.env.PORT || 3000;
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
+// Analytics configuration endpoint
+app.get('/api/analytics-config', (req, res) => {
+  res.json({
+    mixpanelToken: process.env.MIXPANEL_PROJECT_TOKEN
+  });
+});
+
 // OpenAI API endpoint
 app.post('/api/generate-study-plan', async (req, res) => {
   try {
@@ -76,20 +83,33 @@ app.post('/api/generate-study-plan', async (req, res) => {
 function analyzeUserTasks(userData) {
   const { timeData = {}, taskSessions = {}, taskTagSessions = {}, taskHistory = [], totalTime = 0 } = userData || {};
   
+  console.log('🔍 Analyzing user data:', {
+    timeDataKeys: Object.keys(timeData),
+    taskSessionsKeys: Object.keys(taskSessions),
+    taskTagSessionsKeys: Object.keys(taskTagSessions),
+    totalTimeReceived: totalTime
+  });
+  
   // Calculate task statistics
   const taskStats = {};
   const categoryStats = {};
   const hourlyActivity = {};
+  let calculatedTotalTime = 0;
   
   // Process all task sessions
   Object.keys(taskSessions).forEach(hour => {
     const hourTasks = taskSessions[hour] || {};
     const hourTags = taskTagSessions[hour] || {};
     
-          Object.keys(hourTasks).forEach(minute => {
-        const taskName = hourTasks[minute];
-        const tags = hourTags[minute] || [];
-        const minuteTime = (timeData && timeData[hour] && timeData[hour][minute]) || 60000; // Default to 1 minute if no time data
+    Object.keys(hourTasks).forEach(minute => {
+      const taskName = hourTasks[minute];
+      const tags = hourTags[minute] || [];
+      // Get actual time data for this minute, default to 60000ms (1 minute) if not found
+      const minuteTime = (timeData[hour] && timeData[hour][minute]) || 60000;
+      
+      console.log(`📊 Processing ${hour}:${minute} - Task: ${taskName}, Time: ${minuteTime}ms, Tags: ${JSON.stringify(tags)}`);
+      
+      calculatedTotalTime += minuteTime;
         
         if (taskName) {
         // Task statistics
@@ -146,13 +166,16 @@ function analyzeUserTasks(userData) {
     }))
     .sort((a, b) => b.totalTime - a.totalTime);
   
+  // Use calculated total time instead of passed total time
+  const finalTotalTime = Math.max(calculatedTotalTime, totalTime);
+  
   // Sort categories by time
   const sortedCategories = Object.entries(categoryStats)
     .map(([category, time]) => ({
       category,
       time,
       formattedTime: formatTime(time),
-      percentage: totalTime > 0 ? Math.round((time / totalTime) * 100) : 0
+      percentage: finalTotalTime > 0 ? Math.round((time / finalTotalTime) * 100) : 0
     }))
     .sort((a, b) => b.time - a.time);
   
@@ -166,10 +189,18 @@ function analyzeUserTasks(userData) {
     ? `주로 ${activeHours.map(([hour, time]) => `${hour}시(${formatTime(time)})`).join(', ')} 시간대에 활동`
     : '시간대별 패턴 데이터 부족';
   
+  console.log('📊 Analysis results:', {
+    calculatedTotalTime,
+    passedTotalTime: totalTime,
+    finalTotalTime,
+    taskStatsCount: Object.keys(taskStats).length,
+    categoryStatsCount: Object.keys(categoryStats).length
+  });
+  
   // Generate summary
   const totalTasks = sortedTasks.length;
-  const totalStudyTime = formatTime(totalTime);
-  const avgSessionTime = totalTasks > 0 ? formatTime(Math.floor(totalTime / totalTasks)) : '0분';
+  const totalStudyTime = formatTime(finalTotalTime);
+  const avgSessionTime = totalTasks > 0 ? formatTime(Math.floor(finalTotalTime / totalTasks)) : '0분';
   const mostFrequentTask = sortedTasks[0]?.name || '아직 기록된 학습 활동이 없습니다';
   const longestTask = sortedTasks[0]?.name || '아직 기록된 학습 활동이 없습니다';
   const topCategory = sortedCategories[0]?.category || '미분류';
@@ -190,7 +221,8 @@ function analyzeUserTasks(userData) {
     longestTask,
     totalTasks,
     totalStudyTime,
-    avgSessionTime
+    avgSessionTime,
+    totalTime: finalTotalTime // Return the calculated total time
   };
 }
 

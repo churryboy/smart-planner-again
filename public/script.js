@@ -97,6 +97,13 @@ class TimeTracker {
       this.currentNickname = savedNickname;
       this.storageKey = `timeTracker_${savedNickname}`;
       this.updateNicknameDisplay();
+      
+      // Identify existing user for analytics
+      if (window.analytics) {
+        window.analytics.identify(savedNickname);
+        window.analytics.trackUserLogin(savedNickname);
+      }
+      
       return true;
     }
     return false;
@@ -156,6 +163,12 @@ class TimeTracker {
     this.currentNickname = nickname;
     this.storageKey = `timeTracker_${nickname}`;
     localStorage.setItem('userNickname', nickname);
+    
+    // Track user registration
+    if (window.analytics) {
+      window.analytics.identify(nickname);
+      window.analytics.trackUserRegistration(nickname);
+    }
     
     // Update display
     this.updateNicknameDisplay();
@@ -272,6 +285,11 @@ class TimeTracker {
     // Confirm logout
     if (confirm('정말 로그아웃하시겠습니까? 현재 진행 중인 작업이 있다면 저장됩니다.')) {
       console.log('👋 Logging out user:', this.currentNickname);
+      
+      // Track user logout
+      if (window.analytics && this.currentNickname) {
+        window.analytics.trackUserLogout(this.currentNickname);
+      }
       
       // Stop any active recording
       if (this.isRecording) {
@@ -912,6 +930,11 @@ class TimeTracker {
     this.currentHour = timeInfo.hour;
     this.currentStartMinute = timeInfo.minute;
     
+    // Track task start
+    if (window.analytics) {
+      window.analytics.trackTaskStart(this.currentTaskName, this.currentTaskTags);
+    }
+    
     // Debug: Check tags after setting recording state
     console.log('🔍 Tags after setting recording state:', this.currentTaskTags);
     
@@ -988,6 +1011,11 @@ class TimeTracker {
     
     // Add session time to total
     this.totalTime += sessionTime;
+    
+    // Track task stop
+    if (window.analytics) {
+      window.analytics.trackTaskStop(this.currentTaskName, sessionTime, this.currentTaskTags);
+    }
     
     // Distribute session time across minutes
     this.distributeSessionTime(sessionTime);
@@ -2015,9 +2043,18 @@ class AITodoManager {
       const userData = {
         timeData: this.timeTracker.timeData,
         taskSessions: this.timeTracker.taskSessions,
+        taskTagSessions: this.timeTracker.taskTagSessions,
         taskHistory: this.timeTracker.taskHistory || [],
         totalTime: this.timeTracker.totalTime
       };
+      
+      console.log('📊 Sending userData to AI:', {
+        timeDataKeys: Object.keys(userData.timeData || {}),
+        taskSessionsKeys: Object.keys(userData.taskSessions || {}),
+        taskTagSessionsKeys: Object.keys(userData.taskTagSessions || {}),
+        totalTime: userData.totalTime,
+        taskHistoryLength: userData.taskHistory.length
+      });
       
       // Call OpenAI API
       const response = await fetch('/api/generate-study-plan', {
@@ -2038,10 +2075,25 @@ class AITodoManager {
       }
       
       const data = await response.json();
+      
+      // Track AI recommendation generation
+      if (window.analytics) {
+        window.analytics.trackAIRecommendationGenerated(targetExam, examDate, data.recommendations.length);
+      }
+      
       this.displayRecommendations(data.recommendations, data.diagnosis);
       
     } catch (error) {
       console.error('AI recommendation error:', error);
+      
+      // Track error
+      if (window.analytics) {
+        window.analytics.trackError('AI Recommendation', error.message, {
+          targetExam,
+          examDate
+        });
+      }
+      
       this.showErrorState(error.message);
     }
   }
@@ -2188,6 +2240,12 @@ class AITodoManager {
 
   showTodoConfirmModal(todo) {
     console.log('🔔 showTodoConfirmModal called with:', todo);
+    
+    // Track AI recommendation click
+    if (window.analytics) {
+      window.analytics.trackAIRecommendationClicked(todo);
+    }
+    
     const modal = document.getElementById('todo-confirm-modal');
     const titleEl = document.getElementById('todo-preview-title');
     const descriptionEl = document.getElementById('todo-preview-description');
@@ -2268,6 +2326,11 @@ class AITodoManager {
   }
 
   startTrackingWithTodo(todo) {
+    // Track AI recommendation started
+    if (window.analytics) {
+      window.analytics.trackAIRecommendationStarted(todo);
+    }
+    
     // Switch to tracker view
     if (this.navigationManager) {
       this.navigationManager.switchView('tracker');
@@ -2305,6 +2368,11 @@ class NavigationManager {
   switchView(viewName) {
     if (this.currentView === viewName) return;
 
+    // Track view switch
+    if (window.analytics) {
+      window.analytics.trackViewSwitch(this.currentView, viewName);
+    }
+
     // Hide current view
     const currentViewElement = document.getElementById(`${this.currentView}-view`);
     if (currentViewElement) {
@@ -2323,9 +2391,17 @@ class NavigationManager {
     // Initialize analytics manager when switching to analyzer view
     if (viewName === 'analyzer' && !this.analyticsManager) {
       this.analyticsManager = new AnalyticsManager(this.timeTracker);
+      // Track analytics view
+      if (window.analytics) {
+        window.analytics.trackAnalyticsView('all');
+      }
     } else if (viewName === 'analyzer' && this.analyticsManager) {
       // Refresh analytics data when returning to analyzer view
       this.analyticsManager.updateAnalytics();
+      // Track analytics view
+      if (window.analytics) {
+        window.analytics.trackAnalyticsView('all');
+      }
     }
 
     // Initialize AI Todo manager when switching to ai-todo view
@@ -2367,8 +2443,26 @@ class NavigationManager {
   }
 }
 
+// Initialize analytics
+async function initializeAnalytics() {
+  try {
+    const response = await fetch('/api/analytics-config');
+    const config = await response.json();
+    
+    if (config.mixpanelToken && window.analytics) {
+      window.analytics.init(config.mixpanelToken);
+      window.analytics.trackSessionStart();
+    }
+  } catch (error) {
+    console.error('❌ Failed to initialize analytics:', error);
+  }
+}
+
 // Initialize the app when DOM is loaded
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
+  // Initialize analytics first
+  await initializeAnalytics();
+  
   window.timeTracker = new TimeTracker();
   window.navigationManager = new NavigationManager(window.timeTracker);
   
