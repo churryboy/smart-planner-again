@@ -946,10 +946,7 @@ class AnalyticsManager {
   updateAnalytics() {
     const data = this.getAnalyticsData(this.currentPeriod);
     this.updateTimelineReplica(data);
-    this.updateSummaryCards(data);
-    this.updateCategoryChart(data);
-    this.updateActivityChart(data);
-    this.updateTaskBreakdown(data);
+    this.updateTaskSummary(data);
   }
 
   getAnalyticsData(period) {
@@ -1136,6 +1133,33 @@ class AnalyticsManager {
 
   formatHour(hour) {
     return `${hour.toString().padStart(2, '0')}:00`;
+  }
+
+  updateTaskSummary(data) {
+    const summaryContainer = document.getElementById('task-summary-list');
+    
+    if (Object.keys(data.tasks).length === 0) {
+      summaryContainer.innerHTML = '<div class="no-data">데이터가 없습니다</div>';
+      return;
+    }
+
+    // Sort tasks by time spent (descending order)
+    const sortedTasks = Object.entries(data.tasks)
+      .sort(([,a], [,b]) => b.time - a.time);
+
+    summaryContainer.innerHTML = sortedTasks.map(([taskName, taskData]) => {
+      const categories = Array.from(taskData.categories).join(', ') || '카테고리 없음';
+      
+      return `
+        <div class="task-summary-item">
+          <div class="task-summary-info">
+            <div class="task-summary-name">${taskName}</div>
+            <div class="task-summary-categories">${categories}</div>
+          </div>
+          <div class="task-summary-time">${this.timeTracker.formatTime(taskData.time)}</div>
+        </div>
+      `;
+    }).join('');
   }
 
   updateSummaryCards(data) {
