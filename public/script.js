@@ -15,6 +15,8 @@ class TimeTracker {
     this.draggedElement = null;
     this.scrollTimer = null;
     this.timeUpdateInterval = null;
+    this.currentTaskName = ""; // Stores the name of the current task being recorded
+    this.taskSessions = {}; // Stores task names for recorded minutes: { hour: { minute: taskName } }
     
     this.elements = {
       recordButton: document.getElementById('record-button'),
@@ -22,7 +24,12 @@ class TimeTracker {
       statusText: document.getElementById('status-text'),
       currentTime: document.getElementById('current-time'),
       totalTime: document.getElementById('total-time'),
-      timeline: document.getElementById('timeline')
+      timeline: document.getElementById('timeline'),
+      currentTaskNameDisplay: document.getElementById('current-task-name'),
+      taskNameModal: document.getElementById('task-name-modal'),
+      taskNameInput: document.getElementById('task-name-input'),
+      taskCancelBtn: document.getElementById('task-cancel-btn'),
+      taskConfirmBtn: document.getElementById('task-confirm-btn')
     };
     
     this.init();
@@ -36,6 +43,7 @@ class TimeTracker {
     this.loadData();
     this.startTimeUpdateTimer();
     this.initializeCurrentHourProgress();
+    this.updateTaskLabels(); // Initial render of task labels
   }
   
   generateTimeline() {
@@ -50,10 +58,10 @@ class TimeTracker {
       
       const timeString = this.formatHour(hour);
       
-      // Create 60 minute blocks
+      // Create 60 minute blocks with task label containers
       const minuteBlocks = [];
       for (let minute = 0; minute < 60; minute++) {
-        minuteBlocks.push(`<div class="minute-block" data-minute="${minute}"></div>`);
+        minuteBlocks.push(`<div class="minute-block" data-minute="${minute}"><div class="task-label-container" id="task-label-${hour}-${minute}"></div></div>`);
       }
       
       timelineItem.innerHTML = `
@@ -247,7 +255,35 @@ class TimeTracker {
   
   initializeEventListeners() {
     this.elements.recordButton.addEventListener('click', () => {
-      this.toggleRecording();
+      if (this.isRecording) {
+        this.stopRecording();
+      } else {
+        this.showTaskModal(); // Show modal before starting recording
+      }
+    });
+
+    this.elements.taskCancelBtn.addEventListener('click', () => {
+      this.hideTaskModal();
+    });
+
+    this.elements.taskConfirmBtn.addEventListener('click', () => {
+      this.startRecordingWithTask();
+    });
+
+    this.elements.taskNameInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        this.startRecordingWithTask();
+      } else if (e.key === 'Escape') {
+        e.preventDefault();
+        this.hideTaskModal();
+      }
+    });
+
+    this.elements.taskNameModal.addEventListener('click', (e) => {
+      if (e.target === this.elements.taskNameModal) {
+        this.hideTaskModal();
+      }
     });
     
     window.addEventListener('beforeunload', () => {
@@ -259,12 +295,33 @@ class TimeTracker {
       this.saveData();
     }, 30000);
   }
+
+  showTaskModal() {
+    this.elements.taskNameModal.classList.add('visible');
+    this.elements.taskNameInput.value = '';
+    this.elements.taskNameInput.focus();
+  }
+
+  hideTaskModal() {
+    this.elements.taskNameModal.classList.remove('visible');
+  }
+
+  startRecordingWithTask() {
+    const taskName = this.elements.taskNameInput.value.trim();
+    if (taskName) {
+      this.currentTaskName = taskName;
+      this.hideTaskModal();
+      this.startRecording();
+    } else {
+      alert('작업 이름을 입력해주세요!'); // Simple alert for now
+    }
+  }
   
   toggleRecording() {
     if (this.isRecording) {
       this.stopRecording();
     } else {
-      this.startRecording();
+      this.showTaskModal();
     }
   }
   
@@ -282,8 +339,10 @@ class TimeTracker {
     // Update UI
     this.elements.recordButton.classList.add('recording');
     this.elements.recordButton.innerHTML = `<svg class="record-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="6" y="6" width="12" height="12"></rect></svg>정지`;
-    this.elements.statusDot.classList.add('recording');
-    this.elements.statusText.textContent = '기록 중';
+    if (this.elements.statusDot) this.elements.statusDot.classList.add('recording');
+    if (this.elements.statusText) this.elements.statusText.textContent = '기록 중';
+    this.elements.currentTaskNameDisplay.textContent = this.currentTaskName;
+    this.elements.currentTaskNameDisplay.classList.add('recording');
     
     // Start update interval
     this.updateInterval = setInterval(() => {
@@ -300,6 +359,19 @@ class TimeTracker {
     
     const endTime = Date.now();
     const sessionTime = endTime - this.currentStartTime;
+    
+    // Store task name for each minute recorded in this session
+    const startMinute = this.currentStartMinute;
+    const endMinute = new Date(endTime).getMinutes();
+    const currentHour = this.currentHour;
+
+    if (!this.taskSessions[currentHour]) {
+      this.taskSessions[currentHour] = {};
+    }
+
+    for (let m = startMinute; m <= endMinute; m++) {
+      this.taskSessions[currentHour][m] = this.currentTaskName;
+    }
     
     // Add session time to total
     this.totalTime += sessionTime;
@@ -322,14 +394,39 @@ class TimeTracker {
     // Update UI
     this.elements.recordButton.classList.remove('recording');
     this.elements.recordButton.innerHTML = `<svg class="record-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"></circle><polygon points="10,8 16,12 10,16 10,8"></polygon></svg>시작`;
-    this.elements.statusDot.classList.remove('recording');
-    this.elements.statusText.textContent = '대기 중';
+    if (this.elements.statusDot) this.elements.statusDot.classList.remove('recording');
+    if (this.elements.statusText) this.elements.statusText.textContent = '대기 중';
     this.elements.currentTime.textContent = '00:00:00';
+    this.elements.currentTaskNameDisplay.textContent = '작업을 시작하세요';
+    this.elements.currentTaskNameDisplay.classList.remove('recording');
+    this.currentTaskName = '';
     
     this.updateDisplay();
+    this.updateTaskLabels(); // Update labels after stopping
     this.saveData();
     
     console.log(`⏹️ Recording stopped - session time: ${this.formatTime(sessionTime)}`);
+  }
+
+  updateTaskLabels() {
+    this.timelineOrder.forEach(hour => {
+      const hourTaskSessions = this.taskSessions[hour] || {};
+      for (let minute = 0; minute < 60; minute++) {
+        const taskName = hourTaskSessions[minute];
+        const taskLabelContainer = document.getElementById(`task-label-${hour}-${minute}`);
+        if (taskLabelContainer) {
+          taskLabelContainer.innerHTML = ''; // Clear previous label
+
+          if (taskName) {
+            const taskLabelBox = document.createElement('div');
+            taskLabelBox.className = 'task-label-box text-caption2';
+            taskLabelBox.textContent = taskName;
+            taskLabelBox.title = taskName; // Full name on hover
+            taskLabelContainer.appendChild(taskLabelBox);
+          }
+        }
+      }
+    });
   }
   
   distributeSessionTime(sessionTime) {
@@ -469,6 +566,7 @@ class TimeTracker {
       timeData: this.timeData,
       totalTime: this.totalTime,
       timelineOrder: this.timelineOrder,
+      taskSessions: this.taskSessions, // Save task sessions
       lastSaved: Date.now()
     };
     localStorage.setItem('timeTracker', JSON.stringify(data));
@@ -487,7 +585,9 @@ class TimeTracker {
           this.timeData = data.timeData || {};
           this.totalTime = data.totalTime || 0;
           this.timelineOrder = this.generateTimelineOrder();
+          this.taskSessions = data.taskSessions || {}; // Load task sessions
           this.updateDisplay();
+          this.updateTaskLabels(); // Update labels after loading
         } else {
           this.resetData();
         }
@@ -502,7 +602,12 @@ class TimeTracker {
     this.timeData = {};
     this.totalTime = 0;
     this.timelineOrder = this.generateTimelineOrder();
+    this.taskSessions = {}; // Clear task sessions
+    this.currentTaskName = "";
+    this.elements.currentTaskNameDisplay.textContent = "작업을 시작하세요";
+    this.elements.currentTaskNameDisplay.classList.remove("recording");
     this.updateDisplay();
+    this.updateTaskLabels(); // Clear task labels from display
     this.saveData();
     console.log('🔄 All data reset - minute blocks cleared');
   }

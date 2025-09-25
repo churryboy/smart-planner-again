@@ -323,6 +323,7 @@ body {
   border-radius: 1px;
   transition: all 0.1s ease;
   min-width: 1px;
+  position: relative; /* Added for absolute positioning of task labels */
 }
 .minute-block.has-time {
   background: var(--orange-50);
@@ -343,4 +344,184 @@ body {
 @keyframes progress-pulse {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.7; }
+}
+
+/* Current Task Display */
+.current-task-display {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-xs);
+  margin-bottom: var(--space-base);
+}
+
+.task-label {
+  color: var(--neutral-40);
+}
+
+.task-name {
+  color: var(--neutral-10);
+  font-weight: 600; /* SemiBold */
+}
+
+.task-name.recording {
+  color: var(--orange-50);
+}
+
+/* Task Label Box in Progress Bar */
+.task-label-box {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(255, 255, 255, 0.9);
+  color: var(--neutral-0);
+  font-size: 10px;
+  line-height: 1;
+  padding: 1px 4px;
+  border-radius: 2px;
+  max-width: 60px; /* Fixed width */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  z-index: 10;
+  pointer-events: none; /* Allow clicks to pass through to minute blocks */
+}
+
+
+
+/* Task Name Modal */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+.modal-overlay.visible {
+  opacity: 1;
+  visibility: visible;
+}
+
+.task-modal {
+  background: var(--neutral-100);
+  border-radius: var(--radius-xl);
+  padding: var(--space-xl);
+  max-width: 400px;
+  width: 90%;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-base);
+  transform: translateY(-20px);
+  transition: transform 0.3s ease;
+}
+
+.modal-overlay.visible .task-modal {
+  transform: translateY(0);
+}
+
+.task-modal h3 {
+  color: var(--neutral-10);
+  margin: 0;
+}
+
+.task-modal p {
+  color: var(--neutral-40);
+  margin: 0;
+}
+
+#task-name-input {
+  width: 100%;
+  padding: var(--space-sm) var(--space-base);
+  border: 1px solid var(--neutral-70);
+  border-radius: var(--radius-lg);
+  background-color: var(--neutral-90);
+  color: var(--neutral-10);
+  font-family: var(--font-primary);
+  box-sizing: border-box;
+}
+
+#task-name-input::placeholder {
+  color: var(--neutral-50);
+}
+
+#task-name-input:focus {
+  outline: none;
+  border-color: var(--orange-50);
+  box-shadow: 0 0 0 2px rgba(237, 80, 0, 0.2);
+}
+
+.modal-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-base);
+  margin-top: var(--space-sm);
+}
+
+.modal-buttons button {
+  padding: var(--space-sm) var(--space-lg);
+  border-radius: var(--radius-lg);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-cancel {
+  background-color: var(--neutral-70);
+  color: var(--neutral-100);
+  border: none;
+}
+
+.btn-cancel:hover {
+  background-color: var(--neutral-60);
+}
+
+.btn-confirm {
+  background-color: var(--orange-50);
+  color: var(--neutral-100);
+  border: none;
+}
+
+.btn-confirm:hover {
+  background-color: var(--orange-60);
+}
+
+/* Typography Classes */
+.text-caption1 {
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 400;
+}
+
+.text-subheadline {
+  font-size: 15px;
+  line-height: 20px;
+  font-weight: 400;
+}
+
+.text-body {
+  font-size: 17px;
+  line-height: 22px;
+  font-weight: 400;
+}
+
+.text-title2 {
+  font-size: 22px;
+  line-height: 28px;
+  font-weight: 700;
+}
+
+.card {
+  background: var(--neutral-100);
+  border: 1px solid var(--neutral-70);
+  border-radius: var(--radius-xl);
 }

@@ -18,9 +18,9 @@
         <main class="main-content">
             <div class="control-total-section">
                 <div class="total-time-display">
-                    <div class="status-indicator">
-                        <span class="status-dot" id="status-dot"></span>
-                        <span class="status-text" id="status-text">대기 중</span>
+                    <div class="current-task-display">
+                        <span class="task-label text-caption1">현재 작업</span>
+                        <span class="task-name text-subheadline" id="current-task-name">작업을 시작하세요</span>
                     </div>
                     <span class="total-label">총 시간</span>
                     <span class="total-time" id="total-time">00:00:00</span>
@@ -40,6 +40,19 @@
                 <div class="timeline" id="timeline"></div>
             </div>
         </main>
+    </div>
+
+    <!-- Task Name Modal -->
+    <div class="modal-overlay" id="task-name-modal">
+        <div class="task-modal card">
+            <h3 class="text-title2">새로운 작업 시작</h3>
+            <p class="text-body">이 작업의 이름을 입력해주세요.</p>
+            <input type="text" id="task-name-input" class="text-body" placeholder="예: 수학 공부, 프로젝트 코딩" maxlength="50">
+            <div class="modal-buttons">
+                <button class="btn-cancel" id="task-cancel-btn">취소</button>
+                <button class="btn-confirm" id="task-confirm-btn">시작</button>
+            </div>
+        </div>
     </div>
 
     <script src="script.js"></script>
