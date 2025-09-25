@@ -244,6 +244,88 @@ body {
   gap: 8px;
 }
 
+/* Todo Confirmation Modal */
+#todo-confirm-modal .modal-content {
+  max-width: 480px;
+  width: 90%;
+}
+
+.modal-header {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.modal-header h3 {
+  margin: 0;
+  color: var(--text-primary);
+}
+
+.modal-body {
+  margin-bottom: 24px;
+}
+
+.todo-confirm-message {
+  text-align: center;
+  margin-bottom: 20px;
+  color: var(--text-secondary);
+}
+
+.todo-preview {
+  background: var(--bg-secondary);
+  border-radius: 8px;
+  padding: 16px;
+  border-left: 4px solid var(--orange-50);
+}
+
+.todo-preview h4 {
+  margin: 0 0 8px 0;
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.todo-preview p {
+  margin: 0 0 12px 0;
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+
+.todo-preview-meta {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.todo-preview-meta span {
+  background: var(--orange-10);
+  color: var(--orange-60);
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.modal-buttons {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+}
+
+.btn-secondary {
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-color);
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-secondary:hover {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+}
+
 .ai-todo-header {
   display: flex;
   flex-direction: column;
@@ -400,9 +482,37 @@ body {
   transition: all 0.2s ease;
 }
 
+.recommendation-item.clickable {
+  cursor: pointer;
+  position: relative;
+}
+
 .recommendation-item:hover {
   border-color: var(--orange-50);
   box-shadow: 0 2px 8px rgba(237, 80, 0, 0.1);
+}
+
+.recommendation-item.clickable:hover {
+  border-color: var(--orange-50);
+  box-shadow: 0 4px 12px rgba(255, 149, 0, 0.15);
+  transform: translateY(-2px);
+}
+
+.recommendation-action {
+  text-align: right;
+  margin-top: 12px;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.recommendation-item.clickable:hover .recommendation-action {
+  opacity: 1;
+}
+
+.action-hint {
+  font-size: 12px;
+  color: var(--orange-60);
+  font-weight: 500;
 }
 
 .recommendation-header {
@@ -897,6 +1007,11 @@ body {
 }
 
 .modal-overlay.visible {
+  opacity: 1;
+  visibility: visible;
+}
+
+#todo-confirm-modal.visible {
   opacity: 1;
   visibility: visible;
 }

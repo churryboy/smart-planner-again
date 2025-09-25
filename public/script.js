@@ -874,6 +874,24 @@ class TimeTracker {
       alert('작업 이름을 입력해주세요!'); // Simple alert for now
     }
   }
+
+  startTrackingWithTodoTitle(todoTitle) {
+    console.log('📋 Starting tracking with todo title:', todoTitle);
+    
+    // Set the task name directly
+    this.currentTaskName = todoTitle;
+    
+    // Set default tags for AI-generated todos
+    this.currentTaskTags = ['공부'];
+    
+    // Add to task history
+    this.addToTaskHistory(todoTitle);
+    
+    // Start recording immediately
+    this.startRecording();
+    
+    console.log('✅ Todo tracking started successfully');
+  }
   
   toggleRecording() {
     if (this.isRecording) {
@@ -1945,8 +1963,9 @@ class AnalyticsManager {
 // ==============================================
 
 class AITodoManager {
-  constructor(timeTracker) {
+  constructor(timeTracker, navigationManager) {
     this.timeTracker = timeTracker;
+    this.navigationManager = navigationManager;
     this.initializeAITodo();
   }
 
@@ -2091,6 +2110,9 @@ class AITodoManager {
     const container = document.getElementById('recommendations-container');
     if (!container) return;
 
+    // Store recommendations for later use
+    this.currentRecommendations = recommendations;
+
     // Generate diagnosis HTML if available
     let diagnosisHTML = '';
     if (diagnosis) {
@@ -2115,8 +2137,8 @@ class AITodoManager {
       `;
     }
 
-    const recommendationsHTML = recommendations.map(rec => `
-      <div class="recommendation-item">
+    const recommendationsHTML = recommendations.map((rec, index) => `
+      <div class="recommendation-item clickable" data-todo-index="${index}">
         <div class="recommendation-header">
           <h4 class="recommendation-title">${rec.title}</h4>
           <span class="recommendation-priority">${rec.priority}</span>
@@ -2126,6 +2148,9 @@ class AITodoManager {
           <span>예상 시간: ${rec.estimatedTime}</span>
           <span>카테고리: ${rec.category}</span>
           ${rec.improvementEffect ? `<span>개선효과: ${rec.improvementEffect}</span>` : ''}
+        </div>
+        <div class="recommendation-action">
+          <span class="action-hint">클릭하여 시작하기 →</span>
         </div>
       </div>
     `).join('');
@@ -2139,6 +2164,120 @@ class AITodoManager {
         </div>
       </div>
     `;
+
+    // Add click event listeners to recommendation items
+    this.setupRecommendationClickHandlers();
+  }
+
+  setupRecommendationClickHandlers() {
+    const recommendationItems = document.querySelectorAll('.recommendation-item.clickable');
+    console.log('🔍 Setting up click handlers for', recommendationItems.length, 'recommendation items');
+    
+    recommendationItems.forEach((item, index) => {
+      console.log('📋 Setting up handler for item', index, 'with dataset:', item.dataset);
+      item.addEventListener('click', (e) => {
+        console.log('🖱️ Recommendation item clicked!', e.currentTarget.dataset);
+        const todoIndex = parseInt(e.currentTarget.dataset.todoIndex);
+        const todo = this.currentRecommendations[todoIndex];
+        console.log('📝 Todo found:', todo);
+        if (todo) {
+          this.showTodoConfirmModal(todo);
+        } else {
+          console.error('❌ No todo found for index:', todoIndex);
+        }
+      });
+    });
+  }
+
+  showTodoConfirmModal(todo) {
+    console.log('🔔 showTodoConfirmModal called with:', todo);
+    const modal = document.getElementById('todo-confirm-modal');
+    const titleEl = document.getElementById('todo-preview-title');
+    const descriptionEl = document.getElementById('todo-preview-description');
+    const timeEl = document.getElementById('todo-preview-time');
+    const categoryEl = document.getElementById('todo-preview-category');
+
+    console.log('🔍 Modal elements found:', {
+      modal: !!modal,
+      titleEl: !!titleEl,
+      descriptionEl: !!descriptionEl,
+      timeEl: !!timeEl,
+      categoryEl: !!categoryEl
+    });
+
+    if (modal && titleEl && descriptionEl && timeEl && categoryEl) {
+      titleEl.textContent = todo.title;
+      descriptionEl.textContent = todo.description;
+      timeEl.textContent = `예상 시간: ${todo.estimatedTime}`;
+      categoryEl.textContent = `카테고리: ${todo.category}`;
+
+      // Store the todo for later use
+      this.selectedTodo = todo;
+
+      // Show modal
+      console.log('🔔 Showing modal, adding visible class');
+      modal.classList.add('visible');
+      console.log('🔔 Modal classes:', modal.className);
+      
+      // Check computed styles
+      const computedStyle = window.getComputedStyle(modal);
+      console.log('🔍 Modal computed styles:', {
+        display: computedStyle.display,
+        opacity: computedStyle.opacity,
+        visibility: computedStyle.visibility,
+        zIndex: computedStyle.zIndex,
+        position: computedStyle.position
+      });
+      
+      // Setup modal event listeners
+      this.setupTodoModalHandlers();
+      console.log('✅ Modal should now be visible');
+    }
+  }
+
+  setupTodoModalHandlers() {
+    const modal = document.getElementById('todo-confirm-modal');
+    const cancelBtn = document.getElementById('todo-cancel-btn');
+    const startBtn = document.getElementById('todo-start-btn');
+
+    // Remove existing listeners to prevent duplicates
+    const newCancelBtn = cancelBtn.cloneNode(true);
+    const newStartBtn = startBtn.cloneNode(true);
+    cancelBtn.parentNode.replaceChild(newCancelBtn, cancelBtn);
+    startBtn.parentNode.replaceChild(newStartBtn, startBtn);
+
+    // Cancel button
+    newCancelBtn.addEventListener('click', () => {
+      modal.classList.remove('visible');
+      this.selectedTodo = null;
+    });
+
+    // Start button
+    newStartBtn.addEventListener('click', () => {
+      if (this.selectedTodo) {
+        this.startTrackingWithTodo(this.selectedTodo);
+        modal.classList.remove('visible');
+        this.selectedTodo = null;
+      }
+    });
+
+    // Close on overlay click
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) {
+        modal.classList.remove('visible');
+        this.selectedTodo = null;
+      }
+    });
+  }
+
+  startTrackingWithTodo(todo) {
+    // Switch to tracker view
+    if (this.navigationManager) {
+      this.navigationManager.switchView('tracker');
+    }
+
+    // Start tracking with the todo title
+    this.timeTracker.startTrackingWithTodoTitle(todo.title);
   }
 }
 
@@ -2194,7 +2333,7 @@ class NavigationManager {
 
     // Initialize AI Todo manager when switching to ai-todo view
     if (viewName === 'ai-todo' && !this.aiTodoManager) {
-      this.aiTodoManager = new AITodoManager(this.timeTracker);
+      this.aiTodoManager = new AITodoManager(this.timeTracker, this);
     }
 
     // Update navigation active state

@@ -203,6 +203,32 @@
         </div>
     </div>
 
+    <!-- Todo Confirmation Modal -->
+    <div class="modal-overlay" id="todo-confirm-modal">
+        <div class="modal-content card">
+            <div class="modal-header">
+                <h3 class="text-title2">📋 할일 시작하기</h3>
+            </div>
+            
+            <div class="modal-body">
+                <p class="todo-confirm-message text-body">이 할일로 시간 추적을 시작하시겠습니까?</p>
+                <div class="todo-preview">
+                    <h4 class="text-subheadline" id="todo-preview-title"></h4>
+                    <p class="text-caption1" id="todo-preview-description"></p>
+                    <div class="todo-preview-meta">
+                        <span class="text-caption2" id="todo-preview-time"></span>
+                        <span class="text-caption2" id="todo-preview-category"></span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="modal-buttons">
+                <button class="btn-secondary" id="todo-cancel-btn">취소</button>
+                <button class="btn-confirm" id="todo-start-btn">시작하기</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Task Name Modal -->
     <div class="modal-overlay" id="task-name-modal">
         <div class="task-modal card">
