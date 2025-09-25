@@ -210,7 +210,6 @@ body {
   background: var(--bg-secondary);
   border-radius: 8px;
   padding: 16px;
-  border-left: 4px solid var(--orange-50);
 }
 
 .diagnosis-item h4 {
@@ -274,7 +273,6 @@ body {
   background: var(--bg-secondary);
   border-radius: 8px;
   padding: 16px;
-  border-left: 4px solid var(--orange-50);
 }
 
 .todo-preview h4 {
