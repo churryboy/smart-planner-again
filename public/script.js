@@ -16,7 +16,20 @@ class TimeTracker {
     this.scrollTimer = null;
     this.timeUpdateInterval = null;
     this.currentTaskName = ""; // Stores the name of the current task being recorded
+    this.currentTaskTags = []; // Stores the tags for the current task
     this.taskSessions = {}; // Stores task names for recorded minutes: { hour: { minute: taskName } }
+    this.taskTagSessions = {}; // Stores task tags for recorded minutes: { hour: { minute: [tags] } }
+    
+    // Tag color mapping
+    this.tagColors = {
+      '공부': '#3B82F6', // Blue
+      '휴식': '#10B981', // Green
+      '식사': '#F59E0B', // Amber
+      '이동': '#8B5CF6', // Purple
+      // Default colors for custom tags
+      'default': ['#EF4444', '#F97316', '#84CC16', '#06B6D4', '#6366F1', '#A855F7', '#EC4899', '#14B8A6', '#F97316', '#6B7280']
+    };
+    this.customTagColorIndex = 0;
     
     this.elements = {
       recordButton: document.getElementById('record-button'),
@@ -29,7 +42,10 @@ class TimeTracker {
       taskNameModal: document.getElementById('task-name-modal'),
       taskNameInput: document.getElementById('task-name-input'),
       taskCancelBtn: document.getElementById('task-cancel-btn'),
-      taskConfirmBtn: document.getElementById('task-confirm-btn')
+      taskConfirmBtn: document.getElementById('task-confirm-btn'),
+      customTagInput: document.getElementById('custom-tag-input'),
+      addCustomTagBtn: document.getElementById('add-custom-tag'),
+      selectedTagsContainer: document.getElementById('selected-tags')
     };
     
     this.init();
@@ -285,6 +301,26 @@ class TimeTracker {
         this.hideTaskModal();
       }
     });
+
+    // Tag functionality event listeners
+    this.elements.addCustomTagBtn.addEventListener('click', () => {
+      this.addCustomTag();
+    });
+
+    this.elements.customTagInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        this.addCustomTag();
+      }
+    });
+
+    // Predefined tag buttons
+    document.querySelectorAll('.tag-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const tag = e.target.dataset.tag;
+        this.togglePredefinedTag(tag, e.target);
+      });
+    });
     
     window.addEventListener('beforeunload', () => {
       this.stopTimeUpdateTimer();
@@ -299,11 +335,155 @@ class TimeTracker {
   showTaskModal() {
     this.elements.taskNameModal.classList.add('visible');
     this.elements.taskNameInput.value = '';
+    this.currentTaskTags = [];
+    this.updateSelectedTags();
+    this.resetPredefinedTags();
     this.elements.taskNameInput.focus();
   }
 
   hideTaskModal() {
     this.elements.taskNameModal.classList.remove('visible');
+    this.currentTaskTags = [];
+  }
+
+  togglePredefinedTag(tag, buttonElement) {
+    // For single selection, first clear all other predefined tags
+    document.querySelectorAll('.tag-btn').forEach(btn => {
+      btn.classList.remove('selected');
+    });
+    
+    // Remove all predefined tags from current selection
+    this.currentTaskTags = this.currentTaskTags.filter(t => 
+      !['공부', '휴식', '식사', '이동'].includes(t)
+    );
+
+    if (this.currentTaskTags.includes(tag)) {
+      // If clicking the same tag, just remove it (deselect)
+      this.currentTaskTags = this.currentTaskTags.filter(t => t !== tag);
+    } else {
+      // Add the new tag
+      this.currentTaskTags.push(tag);
+      buttonElement.classList.add('selected');
+    }
+    
+    this.updateSelectedTags();
+  }
+
+  addCustomTag() {
+    const tagText = this.elements.customTagInput.value.trim();
+    
+    if (!tagText) return;
+    
+    // Count only custom tags (not predefined categories)
+    const customTagCount = this.currentTaskTags.filter(t => 
+      !['공부', '휴식', '식사', '이동'].includes(t)
+    ).length;
+    
+    if (customTagCount >= 9) { // 9 custom tags + 1 category = 10 total
+      alert('최대 9개의 커스텀 태그만 추가할 수 있습니다.');
+      return;
+    }
+    
+    if (this.currentTaskTags.includes(tagText)) {
+      alert('이미 선택된 태그입니다.');
+      return;
+    }
+    
+    // Check if it's a predefined category name
+    if (['공부', '휴식', '식사', '이동'].includes(tagText)) {
+      alert('미리 정의된 카테고리 이름은 사용할 수 없습니다.');
+      return;
+    }
+    
+    this.currentTaskTags.push(tagText);
+    this.elements.customTagInput.value = '';
+    this.updateSelectedTags();
+  }
+
+  removeTag(tag) {
+    this.currentTaskTags = this.currentTaskTags.filter(t => t !== tag);
+    this.updateSelectedTags();
+    
+    // Update predefined tag button if it exists
+    const predefinedBtn = document.querySelector(`[data-tag="${tag}"]`);
+    if (predefinedBtn) {
+      predefinedBtn.classList.remove('selected');
+    }
+  }
+
+  updateSelectedTags() {
+    const container = this.elements.selectedTagsContainer;
+    container.innerHTML = '';
+    
+    this.currentTaskTags.forEach(tag => {
+      const tagElement = document.createElement('div');
+      tagElement.className = 'selected-tag';
+      const tagColor = this.getTagColor(tag);
+      tagElement.style.backgroundColor = tagColor;
+      tagElement.innerHTML = `
+        <span>${tag}</span>
+        <button class="remove-tag" onclick="timeTracker.removeTag('${tag}')">&times;</button>
+      `;
+      container.appendChild(tagElement);
+    });
+    
+    // Update add button state - disable if we have 9 custom tags (plus potentially 1 category)
+    const customTagCount = this.currentTaskTags.filter(t => 
+      !['공부', '휴식', '식사', '이동'].includes(t)
+    ).length;
+    this.elements.addCustomTagBtn.disabled = customTagCount >= 9;
+  }
+
+  resetPredefinedTags() {
+    document.querySelectorAll('.tag-btn').forEach(btn => {
+      btn.classList.remove('selected');
+    });
+  }
+
+  getTagColor(tag) {
+    // Check if it's a predefined tag
+    if (this.tagColors[tag]) {
+      return this.tagColors[tag];
+    }
+    
+    // For custom tags, assign a color from the default palette
+    const defaultColors = this.tagColors.default;
+    const colorIndex = this.customTagColorIndex % defaultColors.length;
+    this.customTagColorIndex++;
+    return defaultColors[colorIndex];
+  }
+
+  getTagsGradient(tags) {
+    if (!tags || tags.length === 0) {
+      return '#ED5000'; // Default orange color as hex
+    }
+    
+    if (tags.length === 1) {
+      return this.getTagColor(tags[0]);
+    }
+    
+    // Create gradient for multiple tags
+    const colors = tags.map(tag => this.getTagColor(tag));
+    const step = 100 / colors.length;
+    let gradientStops = [];
+    
+    colors.forEach((color, index) => {
+      const start = index * step;
+      const end = (index + 1) * step;
+      gradientStops.push(`${color} ${start}%`);
+      gradientStops.push(`${color} ${end}%`);
+    });
+    
+    return `linear-gradient(to right, ${gradientStops.join(', ')})`;
+  }
+
+  extractFirstColor(gradient) {
+    // Extract the first color from a gradient string
+    if (gradient.includes('linear-gradient')) {
+      const match = gradient.match(/#[0-9A-Fa-f]{6}|rgb\([^)]+\)|var\([^)]+\)/);
+      return match ? match[0] : '#ED5000';
+    }
+    return gradient;
   }
 
   startRecordingWithTask() {
@@ -360,7 +540,7 @@ class TimeTracker {
     const endTime = Date.now();
     const sessionTime = endTime - this.currentStartTime;
     
-    // Store task name for each minute recorded in this session
+    // Store task name and tags for each minute recorded in this session
     const startMinute = this.currentStartMinute;
     const endMinute = new Date(endTime).getMinutes();
     const currentHour = this.currentHour;
@@ -368,9 +548,13 @@ class TimeTracker {
     if (!this.taskSessions[currentHour]) {
       this.taskSessions[currentHour] = {};
     }
+    if (!this.taskTagSessions[currentHour]) {
+      this.taskTagSessions[currentHour] = {};
+    }
 
     for (let m = startMinute; m <= endMinute; m++) {
       this.taskSessions[currentHour][m] = this.currentTaskName;
+      this.taskTagSessions[currentHour][m] = [...this.currentTaskTags];
     }
     
     // Add session time to total
@@ -400,6 +584,7 @@ class TimeTracker {
     this.elements.currentTaskNameDisplay.textContent = '작업을 시작하세요';
     this.elements.currentTaskNameDisplay.classList.remove('recording');
     this.currentTaskName = '';
+    this.currentTaskTags = [];
     
     this.updateDisplay();
     this.updateTaskLabels(); // Update labels after stopping
@@ -418,6 +603,7 @@ class TimeTracker {
         
         minuteBlocks.forEach((block, minute) => {
           const taskName = hourTaskSessions[minute];
+          const taskTags = (this.taskTagSessions[hour] && this.taskTagSessions[hour][minute]) || [];
           
           // Remove existing click listeners
           block.replaceWith(block.cloneNode(true));
@@ -427,7 +613,7 @@ class TimeTracker {
             // Add click listener to show tooltip
             newBlock.addEventListener('click', (e) => {
               e.stopPropagation();
-              this.showTaskTooltip(e, taskName, hour, minute);
+              this.showTaskTooltip(e, taskName, taskTags, hour, minute);
             });
             
             // Add cursor pointer for clickable indication
@@ -444,14 +630,26 @@ class TimeTracker {
     });
   }
 
-  showTaskTooltip(event, taskName, hour, minute) {
+  showTaskTooltip(event, taskName, taskTags, hour, minute) {
     // Remove any existing tooltip
     this.hideTaskTooltip();
     
     const tooltip = document.createElement('div');
     tooltip.className = 'task-tooltip';
-    tooltip.textContent = taskName;
     tooltip.id = 'active-task-tooltip';
+    
+    // Create tooltip content with task name and tags
+    let tooltipContent = `<div class="tooltip-task-name">${taskName}</div>`;
+    if (taskTags && taskTags.length > 0) {
+      tooltipContent += `<div class="tooltip-tags">`;
+      taskTags.forEach(tag => {
+        const tagColor = this.getTagColor(tag);
+        tooltipContent += `<span class="tooltip-tag" style="background-color: ${tagColor};">${tag}</span>`;
+      });
+      tooltipContent += `</div>`;
+    }
+    
+    tooltip.innerHTML = tooltipContent;
     
     // Position tooltip near the clicked element
     const rect = event.target.getBoundingClientRect();
@@ -569,6 +767,12 @@ class TimeTracker {
           const minuteTime = hourData[minute] || 0;
           let displayTime = minuteTime;
           
+          // Get tag information for this minute
+          const minuteTags = (this.taskTagSessions[hour] && this.taskTagSessions[hour][minute]) || [];
+          let tagColor = '#ED5000'; // Default orange color
+          
+
+          
           // Add current session contribution if recording
           if (this.isRecording && hour === this.currentHour) {
             const currentMinute = this.getCurrentMinute();
@@ -576,10 +780,22 @@ class TimeTracker {
               // Add partial current session time for current minute
               const sessionInCurrentMinute = this.currentSessionTime % 60000; // Time in current minute
               displayTime += sessionInCurrentMinute;
+              // Use current session tags for color
+              tagColor = this.getTagsGradient(this.currentTaskTags);
+              console.log(`Current minute ${minute} - tags:`, this.currentTaskTags, `Color:`, tagColor);
             } else if (minute > this.currentStartMinute && minute < currentMinute) {
               // Full minutes between start and current
               displayTime += 60000; // Full minute
+              // Use current session tags for color
+              tagColor = this.getTagsGradient(this.currentTaskTags);
+              console.log(`Past minute ${minute} - tags:`, this.currentTaskTags, `Color:`, tagColor);
+            } else if (minuteTags.length > 0) {
+              // Use stored tags for color
+              tagColor = this.getTagsGradient(minuteTags);
             }
+          } else if (minuteTags.length > 0) {
+            // Use stored tags for color
+            tagColor = this.getTagsGradient(minuteTags);
           }
           
           // Calculate fill percentage (0-100% per minute)
@@ -587,11 +803,15 @@ class TimeTracker {
           
           // Update block appearance
           if (fillPercentage > 0) {
-            block.style.background = `linear-gradient(to right, var(--orange-50) ${fillPercentage}%, var(--neutral-80) ${fillPercentage}%)`;
-            block.style.borderColor = fillPercentage > 50 ? "var(--orange-50)" : "var(--neutral-80)";            block.classList.add('has-time');
+            block.style.background = `linear-gradient(to right, ${tagColor} ${fillPercentage}%, var(--neutral-80) ${fillPercentage}%)`;
+            // Extract first color for border (for gradients, use the first color)
+            const borderColor = tagColor.includes('linear-gradient') ? this.extractFirstColor(tagColor) : tagColor;
+            block.style.borderColor = fillPercentage > 50 ? borderColor : "var(--neutral-80)";
+            block.classList.add('has-time');
           } else {
             block.style.background = 'var(--neutral-80)';
-            block.style.borderColor = "var(--neutral-80)";            block.classList.remove('has-time');
+            block.style.borderColor = "var(--neutral-80)";
+            block.classList.remove('has-time');
           }
           
           // Highlight current minute if recording
@@ -621,6 +841,7 @@ class TimeTracker {
       totalTime: this.totalTime,
       timelineOrder: this.timelineOrder,
       taskSessions: this.taskSessions, // Save task sessions
+      taskTagSessions: this.taskTagSessions, // Save task tag sessions
       lastSaved: Date.now()
     };
     localStorage.setItem('timeTracker', JSON.stringify(data));
@@ -640,6 +861,7 @@ class TimeTracker {
           this.totalTime = data.totalTime || 0;
           this.timelineOrder = this.generateTimelineOrder();
           this.taskSessions = data.taskSessions || {}; // Load task sessions
+          this.taskTagSessions = data.taskTagSessions || {}; // Load task tag sessions
           this.updateDisplay();
           this.updateTaskLabels(); // Update labels after loading
         } else {
@@ -657,7 +879,9 @@ class TimeTracker {
     this.totalTime = 0;
     this.timelineOrder = this.generateTimelineOrder();
     this.taskSessions = {}; // Clear task sessions
+    this.taskTagSessions = {}; // Clear task tag sessions
     this.currentTaskName = "";
+    this.currentTaskTags = [];
     this.elements.currentTaskNameDisplay.textContent = "작업을 시작하세요";
     this.elements.currentTaskNameDisplay.classList.remove("recording");
     this.updateDisplay();

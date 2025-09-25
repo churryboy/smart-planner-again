@@ -48,6 +48,24 @@
             <h3 class="text-title2">새로운 작업 시작</h3>
             <p class="text-body">이 작업의 이름을 입력해주세요.</p>
             <input type="text" id="task-name-input" class="text-body" placeholder="예: 수학 공부, 프로젝트 코딩" maxlength="50">
+            
+            <div class="category-section">
+                <label class="category-label text-subheadline">카테고리 (하나 선택)</label>
+                <div class="predefined-tags">
+                    <button class="tag-btn" data-tag="공부">공부</button>
+                    <button class="tag-btn" data-tag="휴식">휴식</button>
+                    <button class="tag-btn" data-tag="식사">식사</button>
+                    <button class="tag-btn" data-tag="이동">이동</button>
+                </div>
+                <div class="custom-tag-input">
+                    <input type="text" id="custom-tag-input" class="text-body" placeholder="커스텀 태그 입력... (최대 9개)" maxlength="20">
+                    <button class="add-tag-btn" id="add-custom-tag">추가</button>
+                </div>
+                <div class="selected-tags" id="selected-tags">
+                    <!-- Selected tags will appear here -->
+                </div>
+            </div>
+
             <div class="modal-buttons">
                 <button class="btn-cancel" id="task-cancel-btn">취소</button>
                 <button class="btn-confirm" id="task-confirm-btn">시작</button>

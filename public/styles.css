@@ -375,13 +375,29 @@ body {
   border-radius: var(--radius-sm);
   font-size: 12px;
   line-height: 1.2;
-  max-width: 200px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  max-width: 250px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
   pointer-events: none;
   animation: tooltipFadeIn 0.2s ease-out;
+}
+
+.tooltip-task-name {
+  font-weight: 600;
+  margin-bottom: var(--space-xs);
+}
+
+.tooltip-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-xs);
+}
+
+.tooltip-tag {
+  color: var(--neutral-100);
+  padding: 2px var(--space-xs);
+  border-radius: var(--radius-sm);
+  font-size: 10px;
+  font-weight: 500;
 }
 
 @keyframes tooltipFadeIn {
@@ -501,6 +517,134 @@ body {
 
 .btn-confirm:hover {
   background-color: var(--orange-60);
+}
+
+/* Category Tags Section */
+.category-section {
+  margin: var(--space-base) 0;
+}
+
+.category-label {
+  display: block;
+  color: var(--neutral-10);
+  margin-bottom: var(--space-sm);
+  font-weight: 600;
+}
+
+.predefined-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-xs);
+  margin-bottom: var(--space-sm);
+}
+
+.tag-btn {
+  padding: var(--space-xs) var(--space-sm);
+  border: 1px solid var(--neutral-70);
+  border-radius: var(--radius-full);
+  background: var(--neutral-90);
+  color: var(--neutral-30);
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.tag-btn:hover {
+  border-color: var(--orange-50);
+  color: var(--orange-50);
+}
+
+.tag-btn.selected {
+  background: var(--orange-50);
+  border-color: var(--orange-50);
+  color: var(--neutral-100);
+}
+
+.custom-tag-input {
+  display: flex;
+  gap: var(--space-xs);
+  margin-bottom: var(--space-sm);
+}
+
+#custom-tag-input {
+  flex: 1;
+  padding: var(--space-xs) var(--space-sm);
+  border: 1px solid var(--neutral-70);
+  border-radius: var(--radius-lg);
+  background-color: var(--neutral-90);
+  color: var(--neutral-10);
+  font-family: var(--font-primary);
+  font-size: 14px;
+}
+
+#custom-tag-input:focus {
+  outline: none;
+  border-color: var(--orange-50);
+  box-shadow: 0 0 0 2px rgba(237, 80, 0, 0.2);
+}
+
+.add-tag-btn {
+  padding: var(--space-xs) var(--space-sm);
+  border: none;
+  border-radius: var(--radius-lg);
+  background: var(--orange-50);
+  color: var(--neutral-100);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.add-tag-btn:hover {
+  background: var(--orange-60);
+}
+
+.add-tag-btn:disabled {
+  background: var(--neutral-60);
+  cursor: not-allowed;
+}
+
+.selected-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-xs);
+  min-height: 32px;
+  padding: var(--space-xs);
+  border: 1px solid var(--neutral-70);
+  border-radius: var(--radius-lg);
+  background: var(--neutral-95);
+}
+
+.selected-tag {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: var(--space-xs) var(--space-sm);
+  color: var(--neutral-100);
+  border-radius: var(--radius-full);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.remove-tag {
+  background: none;
+  border: none;
+  color: var(--neutral-100);
+  cursor: pointer;
+  font-size: 16px;
+  line-height: 1;
+  padding: 0;
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: background-color 0.2s ease;
+}
+
+.remove-tag:hover {
+  background: rgba(255, 255, 255, 0.2);
 }
 
 /* Typography Classes */
