@@ -20,6 +20,12 @@ class TimeTracker {
     this.taskSessions = {}; // Stores task names for recorded minutes: { hour: { minute: taskName } }
     this.taskTagSessions = {}; // Stores task tags for recorded minutes: { hour: { minute: [tags] } }
     
+    // Nickname system
+    this.currentNickname = null;
+    this.storageKey = 'timeTracker'; // Will be updated with nickname
+    this.taskHistory = []; // Initialize task history
+    this.profileMenuSetup = false; // Track if profile menu is set up
+    
     // Tag color mapping
     this.tagColors = {
       '공부': '#3B82F6', // Blue
@@ -46,13 +52,32 @@ class TimeTracker {
       taskConfirmBtn: document.getElementById('task-confirm-btn'),
       customTagInput: document.getElementById('custom-tag-input'),
       addCustomTagBtn: document.getElementById('add-custom-tag'),
-      selectedTagsContainer: document.getElementById('selected-tags')
+      selectedTagsContainer: document.getElementById('selected-tags'),
+      // Nickname modal elements
+      nicknameModal: document.getElementById('nickname-modal'),
+      nicknameInput: document.getElementById('nickname-input'),
+      nicknameConfirmBtn: document.getElementById('nickname-confirm-btn'),
+      userNickname: document.getElementById('user-nickname'),
+      // Profile menu elements
+      profileButton: document.getElementById('profile-button'),
+      profileDropdown: document.getElementById('profile-dropdown'),
+      dropdownNickname: document.getElementById('dropdown-nickname'),
+      logoutBtn: document.getElementById('logout-btn')
     };
     
     this.init();
   }
   
   init() {
+    // Check if nickname exists, if not show nickname modal
+    if (this.checkNicknameExists()) {
+      this.initializeApp();
+    } else {
+      this.showNicknameModal();
+    }
+  }
+  
+  initializeApp() {
     this.generateTimeline();
     this.initializeEventListeners();
     this.setupScrollbarAutoHide();
@@ -61,6 +86,222 @@ class TimeTracker {
     this.startTimeUpdateTimer();
     this.initializeCurrentHourProgress();
     this.updateTaskLabels(); // Initial render of task labels
+    
+    // Ensure profile menu is set up (important for re-login)
+    this.setupProfileMenu();
+  }
+  
+  checkNicknameExists() {
+    const savedNickname = localStorage.getItem('userNickname');
+    if (savedNickname) {
+      this.currentNickname = savedNickname;
+      this.storageKey = `timeTracker_${savedNickname}`;
+      this.updateNicknameDisplay();
+      return true;
+    }
+    return false;
+  }
+  
+  showNicknameModal() {
+    this.elements.nicknameModal.style.display = 'flex';
+    this.elements.nicknameModal.classList.add('visible');
+    this.elements.nicknameInput.focus();
+    
+    // Add event listeners for nickname modal
+    this.setupNicknameEventListeners();
+  }
+  
+  hideNicknameModal() {
+    this.elements.nicknameModal.classList.remove('visible');
+    setTimeout(() => {
+      this.elements.nicknameModal.style.display = 'none';
+    }, 300);
+  }
+  
+  setupNicknameEventListeners() {
+    // Confirm button
+    this.elements.nicknameConfirmBtn.addEventListener('click', () => {
+      this.registerNickname();
+    });
+    
+    // Mobile touch support
+    this.elements.nicknameConfirmBtn.addEventListener('touchend', (e) => {
+      e.preventDefault();
+      this.registerNickname();
+    });
+    
+    // Enter key support
+    this.elements.nicknameInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        this.registerNickname();
+      }
+    });
+  }
+  
+  registerNickname() {
+    const nickname = this.elements.nicknameInput.value.trim();
+    
+    if (!nickname) {
+      alert('닉네임을 입력해주세요!');
+      return;
+    }
+    
+    if (nickname.length < 2) {
+      alert('닉네임은 2글자 이상 입력해주세요!');
+      return;
+    }
+    
+    // Save nickname
+    this.currentNickname = nickname;
+    this.storageKey = `timeTracker_${nickname}`;
+    localStorage.setItem('userNickname', nickname);
+    
+    // Update display
+    this.updateNicknameDisplay();
+    
+    // Hide modal and initialize app
+    this.hideNicknameModal();
+    
+    // Reset app data for new user
+    this.resetAppForNewUser();
+    this.initializeApp();
+    
+    console.log(`👋 Welcome ${nickname}! Your data will be saved under this nickname.`);
+  }
+  
+  updateNicknameDisplay() {
+    if (this.elements.userNickname && this.currentNickname) {
+      this.elements.userNickname.textContent = this.currentNickname;
+    }
+    if (this.elements.dropdownNickname && this.currentNickname) {
+      this.elements.dropdownNickname.textContent = this.currentNickname;
+    }
+  }
+  
+  resetAppForNewUser() {
+    // Reset all data for new user
+    this.timeData = {};
+    this.totalTime = 0;
+    this.currentSessionTime = 0;
+    this.taskSessions = {};
+    this.taskTagSessions = {};
+    this.taskHistory = [];
+    this.currentTaskName = "";
+    this.currentTaskTags = [];
+    
+    // Reset recording state
+    this.isRecording = false;
+    this.currentStartTime = null;
+    this.currentHour = null;
+    this.currentStartMinute = null;
+    
+    // Clear any intervals
+    if (this.updateInterval) {
+      clearInterval(this.updateInterval);
+      this.updateInterval = null;
+    }
+    
+    // Reset timeline order
+    this.timelineOrder = this.generateTimelineOrder();
+    
+    console.log('🔄 App reset for new user:', this.currentNickname);
+  }
+  
+  setupProfileMenu() {
+    if (!this.elements.profileButton || !this.elements.profileDropdown || !this.elements.logoutBtn) {
+      return;
+    }
+    
+    // Prevent duplicate event listeners
+    if (this.profileMenuSetup) {
+      return;
+    }
+    this.profileMenuSetup = true;
+    
+    // Profile button click to toggle dropdown
+    this.elements.profileButton.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.toggleProfileDropdown();
+    });
+    
+    // Mobile touch support
+    this.elements.profileButton.addEventListener('touchend', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      this.toggleProfileDropdown();
+    });
+    
+    // Logout button
+    this.elements.logoutBtn.addEventListener('click', () => {
+      this.logout();
+    });
+    
+    // Mobile touch support for logout
+    this.elements.logoutBtn.addEventListener('touchend', (e) => {
+      e.preventDefault();
+      this.logout();
+    });
+    
+    // Close dropdown when clicking outside
+    document.addEventListener('click', (e) => {
+      if (!this.elements.profileButton.contains(e.target) && 
+          !this.elements.profileDropdown.contains(e.target)) {
+        this.hideProfileDropdown();
+      }
+    });
+  }
+  
+  toggleProfileDropdown() {
+    if (this.elements.profileDropdown.classList.contains('visible')) {
+      this.hideProfileDropdown();
+    } else {
+      this.showProfileDropdown();
+    }
+  }
+  
+  showProfileDropdown() {
+    this.elements.profileDropdown.classList.add('visible');
+  }
+  
+  hideProfileDropdown() {
+    this.elements.profileDropdown.classList.remove('visible');
+  }
+  
+  logout() {
+    // Confirm logout
+    if (confirm('정말 로그아웃하시겠습니까? 현재 진행 중인 작업이 있다면 저장됩니다.')) {
+      console.log('👋 Logging out user:', this.currentNickname);
+      
+      // Stop any active recording
+      if (this.isRecording) {
+        this.stopRecording();
+      }
+      
+      // Clear nickname from localStorage
+      localStorage.removeItem('userNickname');
+      
+      // Reset app state
+      this.currentNickname = null;
+      this.storageKey = 'timeTracker';
+      
+      // Hide profile dropdown
+      this.hideProfileDropdown();
+      
+      // Reset app for logout
+      this.resetAppForNewUser();
+      
+      // Reset UI elements
+      this.elements.currentTaskNameDisplay.textContent = "작업을 시작하세요";
+      this.elements.currentTaskNameDisplay.classList.remove("recording");
+      this.elements.recordButton.classList.remove('recording');
+      this.elements.recordButton.innerHTML = `<svg class="record-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"></circle><polygon points="10,8 16,12 10,16 10,8"></polygon></svg>시작`;
+      
+      // Show nickname modal again
+      this.showNicknameModal();
+      
+      console.log('✅ Logout complete - ready for new user');
+    }
   }
   
   generateTimeline() {
@@ -529,7 +770,7 @@ class TimeTracker {
     
     // Handle case where selected tags container doesn't exist (removed from HTML)
     if (!container) {
-      console.log('🏷️ Selected tags container not found, skipping visual update');
+      // Silently skip visual update - tags are still tracked internally
       return;
     }
     
@@ -851,8 +1092,8 @@ class TimeTracker {
     this.hideTaskTooltip();
   }
   
-  distributeSessionTime(sessionTime) {
-    const startTime = this.currentStartTime;
+  distributeSessionTime(sessionTime, customStartTime = null) {
+    const startTime = customStartTime || this.currentStartTime;
     const endTime = startTime + sessionTime;
     
     let currentTime = startTime;
@@ -1043,13 +1284,21 @@ class TimeTracker {
       taskSessions: this.taskSessions, // Save task sessions
       taskTagSessions: this.taskTagSessions, // Save task tag sessions
       taskHistory: this.taskHistory, // Save task history
-      lastSaved: Date.now()
+      lastSaved: Date.now(),
+      // Save active recording state for recovery
+      activeRecording: this.isRecording ? {
+        startTime: this.currentStartTime,
+        taskName: this.currentTaskName,
+        taskTags: [...this.currentTaskTags],
+        startHour: this.currentHour,
+        startMinute: this.currentStartMinute
+      } : null
     };
-    localStorage.setItem('timeTracker', JSON.stringify(data));
+    localStorage.setItem(this.storageKey, JSON.stringify(data));
   }
   
   loadData() {
-    const saved = localStorage.getItem('timeTracker');
+    const saved = localStorage.getItem(this.storageKey);
     if (saved) {
       try {
         const data = JSON.parse(saved);
@@ -1063,6 +1312,10 @@ class TimeTracker {
           this.timelineOrder = this.generateTimelineOrder();
           this.taskSessions = data.taskSessions || {}; // Load task sessions
           this.taskHistory = data.taskHistory || []; // Load task history          this.taskTagSessions = data.taskTagSessions || {}; // Load task tag sessions
+          
+          // Check for interrupted recording session and recover it
+          this.recoverInterruptedSession(data.activeRecording);
+          
           this.updateDisplay();
           this.updateTaskLabels(); // Update labels after loading
         } else {
@@ -1075,6 +1328,63 @@ class TimeTracker {
     }
   }
   
+  recoverInterruptedSession(activeRecording) {
+    if (!activeRecording) return;
+    
+    const now = Date.now();
+    const timeSinceStart = now - activeRecording.startTime;
+    
+    // Only recover if the interruption was recent (within 24 hours)
+    if (timeSinceStart > 24 * 60 * 60 * 1000) {
+      console.log('🔄 Interrupted session too old, not recovering');
+      return;
+    }
+    
+    console.log('🔄 Recovering interrupted session:', {
+      taskName: activeRecording.taskName,
+      timeSinceStart: this.formatTime(timeSinceStart),
+      tags: activeRecording.taskTags
+    });
+    
+    // Distribute the interrupted session time across minutes
+    this.distributeSessionTime(timeSinceStart, activeRecording.startTime);
+    
+    // Store task names and tags for the interrupted session
+    this.storeInterruptedSessionTasks(activeRecording, timeSinceStart);
+    
+    // Add to total time
+    this.totalTime += timeSinceStart;
+    
+    console.log(`✅ Recovered ${this.formatTime(timeSinceStart)} of interrupted session`);
+  }
+  
+  storeInterruptedSessionTasks(activeRecording, sessionTime) {
+    const startTime = activeRecording.startTime;
+    const endTime = startTime + sessionTime;
+    let currentTime = startTime;
+    
+    while (currentTime < endTime) {
+      const date = new Date(currentTime);
+      const hour = date.getHours();
+      const minute = date.getMinutes();
+      
+      // Initialize hour data if needed
+      if (!this.taskSessions[hour]) {
+        this.taskSessions[hour] = {};
+      }
+      if (!this.taskTagSessions[hour]) {
+        this.taskTagSessions[hour] = {};
+      }
+      
+      // Store task name and tags for this minute
+      this.taskSessions[hour][minute] = activeRecording.taskName;
+      this.taskTagSessions[hour][minute] = [...activeRecording.taskTags];
+      
+      // Move to next minute
+      currentTime = new Date(date.getFullYear(), date.getMonth(), date.getDate(), hour, minute + 1, 0, 0).getTime();
+    }
+  }
+
   resetData() {
     this.timeData = {};
     this.totalTime = 0;
@@ -1106,6 +1416,11 @@ class TimeTracker {
   addToTaskHistory(taskName) {
     if (!taskName || taskName.trim() === "") return;
     
+    // Initialize taskHistory if undefined
+    if (!this.taskHistory) {
+      this.taskHistory = [];
+    }
+    
     // Remove if already exists to move to top
     this.taskHistory = this.taskHistory.filter(item => item.name !== taskName);
     this.taskHistory.unshift({ name: taskName, count: 1 });
@@ -1124,6 +1439,11 @@ class TimeTracker {
 
     console.log('📝 Showing task suggestions for query:', query);
     console.log('📚 Task history:', this.taskHistory);
+
+    // Initialize taskHistory if undefined
+    if (!this.taskHistory) {
+      this.taskHistory = [];
+    }
 
     suggestionsContainer.innerHTML = "";
     const filteredSuggestions = this.taskHistory.filter(item =>

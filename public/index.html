@@ -13,6 +13,31 @@
     <div class="app-container">
         <header class="app-header">
             <h1 class="header-title">타임 트래커</h1>
+            <div class="user-info">
+                <span class="user-nickname" id="user-nickname">사용자</span>
+                <div class="profile-menu">
+                    <button class="profile-button" id="profile-button">
+                        <svg class="profile-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="12" cy="7" r="4"></circle>
+                        </svg>
+                    </button>
+                    <div class="profile-dropdown" id="profile-dropdown">
+                        <div class="profile-info">
+                            <span class="dropdown-nickname" id="dropdown-nickname">사용자</span>
+                        </div>
+                        <hr class="dropdown-divider">
+                        <button class="dropdown-item logout-btn" id="logout-btn">
+                            <svg class="logout-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                                <polyline points="16,17 21,12 16,7"></polyline>
+                                <line x1="21" y1="12" x2="9" y2="12"></line>
+                            </svg>
+                            로그아웃
+                        </button>
+                    </div>
+                </div>
+            </div>
         </header>
 
         <main class="main-content">
@@ -111,6 +136,26 @@
                 <span class="nav-label">시간 분석기</span>
             </button>
         </nav>
+    </div>
+
+    <!-- Nickname Registration Modal -->
+    <div class="modal-overlay" id="nickname-modal" style="display: block;">
+        <div class="nickname-modal card">
+            <div class="welcome-section">
+                <h2 class="text-title1">환영합니다! 👋</h2>
+                <p class="text-body">타임 트래커를 시작하기 전에<br>닉네임을 설정해주세요.</p>
+            </div>
+            
+            <div class="nickname-input-container">
+                <label class="nickname-label text-subheadline">닉네임</label>
+                <input type="text" id="nickname-input" class="text-body" placeholder="예: 철수, 영희, 개발자김씨" maxlength="20">
+                <p class="nickname-hint text-caption1">이 닉네임으로 모든 데이터가 저장됩니다</p>
+            </div>
+
+            <div class="modal-buttons">
+                <button class="btn-confirm" id="nickname-confirm-btn">시작하기</button>
+            </div>
+        </div>
     </div>
 
     <!-- Task Name Modal -->
