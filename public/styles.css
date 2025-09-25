@@ -323,7 +323,6 @@ body {
   border-radius: 1px;
   transition: all 0.1s ease;
   min-width: 1px;
-  position: relative; /* Added for absolute positioning of task labels */
 }
 .minute-block.has-time {
   background: var(--orange-50);
@@ -368,23 +367,32 @@ body {
   color: var(--orange-50);
 }
 
-/* Task Label Box in Progress Bar */
-.task-label-box {
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  background: rgba(255, 255, 255, 0.9);
-  color: var(--neutral-0);
-  font-size: 10px;
-  line-height: 1;
-  padding: 1px 4px;
-  border-radius: 2px;
-  max-width: 60px; /* Fixed width */
+/* Task Tooltip */
+.task-tooltip {
+  background: var(--neutral-10);
+  color: var(--neutral-100);
+  padding: var(--space-xs) var(--space-sm);
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  line-height: 1.2;
+  max-width: 200px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  z-index: 10;
-  pointer-events: none; /* Allow clicks to pass through to minute blocks */
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  pointer-events: none;
+  animation: tooltipFadeIn 0.2s ease-out;
+}
+
+@keyframes tooltipFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 

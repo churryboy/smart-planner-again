@@ -58,10 +58,10 @@ class TimeTracker {
       
       const timeString = this.formatHour(hour);
       
-      // Create 60 minute blocks with task label containers
+      // Create 60 minute blocks
       const minuteBlocks = [];
       for (let minute = 0; minute < 60; minute++) {
-        minuteBlocks.push(`<div class="minute-block" data-minute="${minute}"><div class="task-label-container" id="task-label-${hour}-${minute}"></div></div>`);
+        minuteBlocks.push(`<div class="minute-block" data-minute="${minute}"></div>`);
       }
       
       timelineItem.innerHTML = `
@@ -411,22 +411,76 @@ class TimeTracker {
   updateTaskLabels() {
     this.timelineOrder.forEach(hour => {
       const hourTaskSessions = this.taskSessions[hour] || {};
-      for (let minute = 0; minute < 60; minute++) {
-        const taskName = hourTaskSessions[minute];
-        const taskLabelContainer = document.getElementById(`task-label-${hour}-${minute}`);
-        if (taskLabelContainer) {
-          taskLabelContainer.innerHTML = ''; // Clear previous label
-
+      const minuteGrid = document.getElementById(`minutes-${hour}`);
+      
+      if (minuteGrid) {
+        const minuteBlocks = minuteGrid.querySelectorAll('.minute-block');
+        
+        minuteBlocks.forEach((block, minute) => {
+          const taskName = hourTaskSessions[minute];
+          
+          // Remove existing click listeners
+          block.replaceWith(block.cloneNode(true));
+          const newBlock = minuteGrid.children[minute];
+          
           if (taskName) {
-            const taskLabelBox = document.createElement('div');
-            taskLabelBox.className = 'task-label-box text-caption2';
-            taskLabelBox.textContent = taskName;
-            taskLabelBox.title = taskName; // Full name on hover
-            taskLabelContainer.appendChild(taskLabelBox);
+            // Add click listener to show tooltip
+            newBlock.addEventListener('click', (e) => {
+              e.stopPropagation();
+              this.showTaskTooltip(e, taskName, hour, minute);
+            });
+            
+            // Add cursor pointer for clickable indication
+            newBlock.style.cursor = 'pointer';
+            
+            // Store task name as data attribute for reference
+            newBlock.dataset.taskName = taskName;
+          } else {
+            newBlock.style.cursor = 'default';
+            delete newBlock.dataset.taskName;
           }
-        }
+        });
       }
     });
+  }
+
+  showTaskTooltip(event, taskName, hour, minute) {
+    // Remove any existing tooltip
+    this.hideTaskTooltip();
+    
+    const tooltip = document.createElement('div');
+    tooltip.className = 'task-tooltip';
+    tooltip.textContent = taskName;
+    tooltip.id = 'active-task-tooltip';
+    
+    // Position tooltip near the clicked element
+    const rect = event.target.getBoundingClientRect();
+    tooltip.style.position = 'fixed';
+    tooltip.style.left = rect.left + 'px';
+    tooltip.style.top = (rect.top - 35) + 'px';
+    tooltip.style.zIndex = '1001';
+    
+    document.body.appendChild(tooltip);
+    
+    // Auto-hide after 3 seconds
+    setTimeout(() => {
+      this.hideTaskTooltip();
+    }, 3000);
+    
+    // Hide on click outside
+    document.addEventListener('click', this.hideTaskTooltipHandler);
+  }
+
+  hideTaskTooltip() {
+    const existingTooltip = document.getElementById('active-task-tooltip');
+    if (existingTooltip) {
+      existingTooltip.remove();
+    }
+    document.removeEventListener('click', this.hideTaskTooltipHandler);
+  }
+
+  hideTaskTooltipHandler = () => {
+    this.hideTaskTooltip();
   }
   
   distributeSessionTime(sessionTime) {
