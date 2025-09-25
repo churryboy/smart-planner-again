@@ -319,21 +319,20 @@ body {
 
 .minute-block {
   background: var(--neutral-80);
+  border: 1px solid var(--neutral-80);
   border-radius: 1px;
-  transition: background-color 0.1s ease;
+  transition: all 0.1s ease;
   min-width: 1px;
 }
-
 .minute-block.has-time {
   background: var(--orange-50);
+  border-color: var(--orange-50);
 }
-
 .minute-block.current-minute {
   background: var(--orange-60);
-  box-shadow: 0 0 2px var(--orange-50);
+  border-color: var(--orange-60);
   animation: pulse-minute 1s infinite;
 }
-
 @keyframes pulse-minute {
   0% { opacity: 1; }
   50% { opacity: 0.7; }

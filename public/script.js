@@ -437,10 +437,10 @@ class TimeTracker {
           // Update block appearance
           if (fillPercentage > 0) {
             block.style.background = `linear-gradient(to right, var(--orange-50) ${fillPercentage}%, var(--neutral-80) ${fillPercentage}%)`;
-            block.classList.add('has-time');
+            block.style.borderColor = fillPercentage > 50 ? "var(--orange-50)" : "var(--neutral-80)";            block.classList.add('has-time');
           } else {
             block.style.background = 'var(--neutral-80)';
-            block.classList.remove('has-time');
+            block.style.borderColor = "var(--neutral-80)";            block.classList.remove('has-time');
           }
           
           // Highlight current minute if recording
