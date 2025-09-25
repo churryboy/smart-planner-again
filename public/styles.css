@@ -760,11 +760,90 @@ body {
   border-bottom: 1px solid var(--neutral-70);
 }
 
-.analytics-title {
-  font-size: 24px;
+.time-metrics {
+  display: flex;
+  gap: var(--space-xl);
+}
+
+.metric-item {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.metric-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--neutral-40);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.metric-value {
+  font-size: 20px;
   font-weight: 600;
   color: var(--neutral-10);
-  margin: 0;
+}
+
+#study-time-metric {
+  color: var(--orange-50);
+}
+
+/* Header Controls */
+.header-controls {
+  display: flex;
+  align-items: center;
+  gap: var(--space-base);
+}
+
+/* Refresh Button */
+.refresh-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  background: var(--neutral-100);
+  border: 1px solid var(--neutral-70);
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+  transition: all var(--transition-base);
+  color: var(--neutral-40);
+}
+
+.refresh-button:hover {
+  background: var(--neutral-90);
+  border-color: var(--neutral-60);
+  color: var(--neutral-20);
+}
+
+.refresh-button:active {
+  background: var(--neutral-80);
+  transform: scale(0.95);
+}
+
+.refresh-button.refreshing {
+  color: var(--orange-50);
+  border-color: var(--orange-50);
+}
+
+.refresh-button.refreshing .refresh-icon {
+  animation: spin 1s linear infinite;
+}
+
+.refresh-icon {
+  width: 18px;
+  height: 18px;
+  stroke-width: 1.5;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* Period Dropdown */

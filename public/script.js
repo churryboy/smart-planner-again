@@ -924,6 +924,14 @@ class AnalyticsManager {
       periodSelect.value = this.currentPeriod;
     }
 
+    // Initialize refresh button
+    const refreshButton = document.getElementById('refresh-button');
+    if (refreshButton) {
+      refreshButton.addEventListener('click', () => {
+        this.refreshData();
+      });
+    }
+
     // Initial data load
     this.updateAnalytics();
   }
@@ -943,8 +951,33 @@ class AnalyticsManager {
     console.log(`📊 Switched to ${period} analytics view`);
   }
 
+  refreshData() {
+    const refreshButton = document.getElementById('refresh-button');
+    
+    // Add refreshing state
+    if (refreshButton) {
+      refreshButton.classList.add('refreshing');
+      refreshButton.disabled = true;
+    }
+
+    // Simulate a brief loading state for better UX
+    setTimeout(() => {
+      // Update analytics with fresh data
+      this.updateAnalytics();
+      
+      // Remove refreshing state
+      if (refreshButton) {
+        refreshButton.classList.remove('refreshing');
+        refreshButton.disabled = false;
+      }
+      
+      console.log('🔄 Analytics data refreshed');
+    }, 300);
+  }
+
   updateAnalytics() {
     const data = this.getAnalyticsData(this.currentPeriod);
+    this.updateTimeMetrics(data);
     this.updateTimelineReplica(data);
     this.updateTaskSummary(data);
   }
@@ -1040,6 +1073,16 @@ class AnalyticsManager {
   getDaysBetween(startDate, endDate) {
     const days = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24));
     return Math.max(1, days);
+  }
+
+  updateTimeMetrics(data) {
+    // Calculate total time
+    const totalTime = data.totalTime;
+    document.getElementById('total-time-metric').textContent = this.timeTracker.formatTime(totalTime);
+
+    // Calculate study time (time with "공부" category)
+    const studyTime = data.categories['공부'] || 0;
+    document.getElementById('study-time-metric').textContent = this.timeTracker.formatTime(studyTime);
   }
 
   updateTimelineReplica(data) {
@@ -1293,6 +1336,9 @@ class NavigationManager {
       targetViewElement.classList.remove('hidden');
     }
 
+    // Update app header title
+    this.updateAppHeader(viewName);
+
     // Initialize analytics manager when switching to analyzer view
     if (viewName === 'analyzer' && !this.analyticsManager) {
       this.analyticsManager = new AnalyticsManager(this.timeTracker);
@@ -1315,6 +1361,17 @@ class NavigationManager {
     this.currentView = viewName;
     
     console.log(`📱 Switched to ${viewName} view`);
+  }
+
+  updateAppHeader(viewName) {
+    const headerTitle = document.querySelector('.header-title');
+    if (headerTitle) {
+      if (viewName === 'analyzer') {
+        headerTitle.textContent = '시간 분석기';
+      } else {
+        headerTitle.textContent = '타임 트래커';
+      }
+    }
   }
 
   getCurrentView() {
