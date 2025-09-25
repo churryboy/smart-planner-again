@@ -2019,7 +2019,7 @@ class AITodoManager {
       }
       
       const data = await response.json();
-      this.displayRecommendations(data.recommendations);
+      this.displayRecommendations(data.recommendations, data.diagnosis);
       
     } catch (error) {
       console.error('AI recommendation error:', error);
@@ -2087,9 +2087,33 @@ class AITodoManager {
     return recommendations;
   }
 
-  displayRecommendations(recommendations) {
+  displayRecommendations(recommendations, diagnosis) {
     const container = document.getElementById('recommendations-container');
     if (!container) return;
+
+    // Generate diagnosis HTML if available
+    let diagnosisHTML = '';
+    if (diagnosis) {
+      diagnosisHTML = `
+        <div class="diagnosis-section">
+          <h3 class="diagnosis-title">📊 학습 현황 진단</h3>
+          <div class="diagnosis-content">
+            <div class="diagnosis-item">
+              <h4>학습 집중도 분석</h4>
+              <p>${diagnosis.studyTimeBalance.replace(/\n/g, '<br>')}</p>
+            </div>
+            <div class="diagnosis-item">
+              <h4>학습 습관 최적화</h4>
+              <p>${diagnosis.habitOptimization.replace(/\n/g, '<br>')}</p>
+            </div>
+            <div class="diagnosis-item">
+              <h4>목표 달성 가능성</h4>
+              <p>${diagnosis.goalAchievability.replace(/\n/g, '<br>')}</p>
+            </div>
+          </div>
+        </div>
+      `;
+    }
 
     const recommendationsHTML = recommendations.map(rec => `
       <div class="recommendation-item">
@@ -2101,13 +2125,18 @@ class AITodoManager {
         <div class="recommendation-meta">
           <span>예상 시간: ${rec.estimatedTime}</span>
           <span>카테고리: ${rec.category}</span>
+          ${rec.improvementEffect ? `<span>개선효과: ${rec.improvementEffect}</span>` : ''}
         </div>
       </div>
     `).join('');
 
     container.innerHTML = `
-      <div class="recommendations-list">
-        ${recommendationsHTML}
+      ${diagnosisHTML}
+      <div class="recommendations-section">
+        <h3 class="recommendations-title">📋 최적화된 학습 계획</h3>
+        <div class="recommendations-list">
+          ${recommendationsHTML}
+        </div>
       </div>
     `;
   }

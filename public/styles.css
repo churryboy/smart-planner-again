@@ -181,6 +181,69 @@ body {
   gap: var(--space-lg);
 }
 
+/* Diagnosis Section */
+.diagnosis-section {
+  background: var(--card-bg);
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 24px;
+  border: 1px solid var(--border-color);
+}
+
+.diagnosis-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.diagnosis-content {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.diagnosis-item {
+  background: var(--bg-secondary);
+  border-radius: 8px;
+  padding: 16px;
+  border-left: 4px solid var(--orange-50);
+}
+
+.diagnosis-item h4 {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 8px;
+}
+
+.diagnosis-item p {
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+.recommendations-section {
+  background: var(--card-bg);
+  border-radius: 12px;
+  padding: 20px;
+  border: 1px solid var(--border-color);
+}
+
+.recommendations-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .ai-todo-header {
   display: flex;
   flex-direction: column;
