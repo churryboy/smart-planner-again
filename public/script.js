@@ -653,27 +653,38 @@ class TimeTracker {
     const sessionTime = endTime - this.currentStartTime;
     
     // Store task name and tags for each minute recorded in this session
-    const startMinute = this.currentStartMinute;
-    const endMinute = new Date(endTime).getMinutes();
-    const currentHour = this.currentHour;
-
-    if (!this.taskSessions[currentHour]) {
-      this.taskSessions[currentHour] = {};
-    }
-    if (!this.taskTagSessions[currentHour]) {
-      this.taskTagSessions[currentHour] = {};
-    }
-
-    for (let m = startMinute; m <= endMinute; m++) {
-      this.taskSessions[currentHour][m] = this.currentTaskName;
-      this.taskTagSessions[currentHour][m] = [...this.currentTaskTags];
+    // Handle cross-hour recordings properly
+    const startDate = new Date(this.currentStartTime);
+    const endDate = new Date(endTime);
+    
+    let currentTime = this.currentStartTime;
+    
+    while (currentTime < endTime) {
+      const date = new Date(currentTime);
+      const hour = date.getHours();
+      const minute = date.getMinutes();
+      
+      // Initialize hour data if needed
+      if (!this.taskSessions[hour]) {
+        this.taskSessions[hour] = {};
+      }
+      if (!this.taskTagSessions[hour]) {
+        this.taskTagSessions[hour] = {};
+      }
+      
+      // Store task name and tags for this minute
+      this.taskSessions[hour][minute] = this.currentTaskName;
+      this.taskTagSessions[hour][minute] = [...this.currentTaskTags];
       
       // Debug: Log what's being saved
-      console.log(`💾 Saving for minute ${m}:`, {
+      console.log(`💾 Saving for minute ${minute} in hour ${hour}:`, {
         taskName: this.currentTaskName,
         tags: [...this.currentTaskTags],
-        hour: currentHour
+        hour: hour
       });
+      
+      // Move to next minute
+      currentTime = new Date(date.getFullYear(), date.getMonth(), date.getDate(), hour, minute + 1, 0, 0).getTime();
     }
     
     // Add session time to total
@@ -842,6 +853,30 @@ class TimeTracker {
     // Check if hour has changed
     const currentHour = this.getCurrentHour();
     if (currentHour !== this.currentHour) {
+      // Store task names for the completed hour session
+      const prevHour = this.currentHour;
+      const prevStartMinute = this.currentStartMinute;
+      const prevEndMinute = 59; // End of previous hour
+      
+      // Initialize hour data if needed
+      if (!this.taskSessions[prevHour]) {
+        this.taskSessions[prevHour] = {};
+      }
+      if (!this.taskTagSessions[prevHour]) {
+        this.taskTagSessions[prevHour] = {};
+      }
+      
+      // Store task name for all minutes in the previous hour session
+      for (let m = prevStartMinute; m <= prevEndMinute; m++) {
+        this.taskSessions[prevHour][m] = this.currentTaskName;
+        this.taskTagSessions[prevHour][m] = [...this.currentTaskTags];
+        
+        console.log(`💾 Hour transition - saving minute ${m} in hour ${prevHour}:`, {
+          taskName: this.currentTaskName,
+          tags: [...this.currentTaskTags]
+        });
+      }
+      
       // Distribute current session time and start fresh
       this.distributeSessionTime(this.currentSessionTime);
       this.totalTime += this.currentSessionTime;
