@@ -900,10 +900,412 @@ class TimeTracker {
   }
 }
 
+// ==============================================
+// Analytics System
+// ==============================================
+
+class AnalyticsManager {
+  constructor(timeTracker) {
+    this.timeTracker = timeTracker;
+    this.currentPeriod = '24h';
+    this.initializeAnalytics();
+  }
+
+  initializeAnalytics() {
+    // Initialize period dropdown
+    const periodSelect = document.getElementById('period-select');
+    if (periodSelect) {
+      periodSelect.addEventListener('change', (e) => {
+        const period = e.target.value;
+        this.switchPeriod(period);
+      });
+      
+      // Set initial value
+      periodSelect.value = this.currentPeriod;
+    }
+
+    // Initial data load
+    this.updateAnalytics();
+  }
+
+  switchPeriod(period) {
+    if (this.currentPeriod === period) return;
+
+    // Update dropdown value
+    const periodSelect = document.getElementById('period-select');
+    if (periodSelect) {
+      periodSelect.value = period;
+    }
+
+    this.currentPeriod = period;
+    this.updateAnalytics();
+    
+    console.log(`📊 Switched to ${period} analytics view`);
+  }
+
+  updateAnalytics() {
+    const data = this.getAnalyticsData(this.currentPeriod);
+    this.updateTimelineReplica(data);
+    this.updateSummaryCards(data);
+    this.updateCategoryChart(data);
+    this.updateActivityChart(data);
+    this.updateTaskBreakdown(data);
+  }
+
+  getAnalyticsData(period) {
+    const now = new Date();
+    let startDate;
+
+    switch (period) {
+      case '24h':
+        startDate = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+        break;
+      case '7d':
+        startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        break;
+      case '1m':
+        startDate = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate());
+        break;
+      case '6m':
+        startDate = new Date(now.getFullYear(), now.getMonth() - 6, now.getDate());
+        break;
+      default:
+        startDate = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+    }
+
+    return this.aggregateData(startDate, now);
+  }
+
+  aggregateData(startDate, endDate) {
+    const data = {
+      totalTime: 0,
+      totalTasks: 0,
+      categories: {},
+      tasks: {},
+      dailyActivity: {},
+      timelineData: {},
+      periodDays: this.getDaysBetween(startDate, endDate),
+      startDate: startDate,
+      endDate: endDate
+    };
+
+    // Aggregate data from timeTracker
+    Object.keys(this.timeTracker.timeData).forEach(hour => {
+      const hourData = this.timeTracker.timeData[hour];
+      const hourTaskSessions = this.timeTracker.taskSessions[hour] || {};
+      const hourTagSessions = this.timeTracker.taskTagSessions[hour] || {};
+
+      // Store timeline data for replica
+      data.timelineData[hour] = {
+        hourData: [...hourData],
+        taskSessions: { ...hourTaskSessions },
+        tagSessions: { ...hourTagSessions }
+      };
+
+      hourData.forEach((minuteTime, minute) => {
+        if (minuteTime > 0) {
+          data.totalTime += minuteTime;
+
+          const taskName = hourTaskSessions[minute];
+          const taskTags = hourTagSessions[minute] || [];
+
+          if (taskName) {
+            // Count unique tasks
+            if (!data.tasks[taskName]) {
+              data.tasks[taskName] = { time: 0, categories: new Set() };
+              data.totalTasks++;
+            }
+            data.tasks[taskName].time += minuteTime;
+
+            // Aggregate by categories
+            taskTags.forEach(tag => {
+              data.tasks[taskName].categories.add(tag);
+              if (!data.categories[tag]) {
+                data.categories[tag] = 0;
+              }
+              data.categories[tag] += minuteTime;
+            });
+          }
+
+          // Daily activity (simplified - using current day)
+          const today = new Date().toDateString();
+          if (!data.dailyActivity[today]) {
+            data.dailyActivity[today] = 0;
+          }
+          data.dailyActivity[today] += minuteTime;
+        }
+      });
+    });
+
+    return data;
+  }
+
+  getDaysBetween(startDate, endDate) {
+    const days = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24));
+    return Math.max(1, days);
+  }
+
+  updateTimelineReplica(data) {
+    const replicaContainer = document.getElementById('timeline-replica');
+    
+    if (Object.keys(data.timelineData).length === 0) {
+      replicaContainer.innerHTML = '<div class="replica-no-data">선택한 기간에 기록된 데이터가 없습니다</div>';
+      return;
+    }
+
+    // Filter hours based on the selected period
+    const filteredHours = this.filterHoursByPeriod(data.timelineData, data.startDate, data.endDate);
+    
+    if (filteredHours.length === 0) {
+      replicaContainer.innerHTML = '<div class="replica-no-data">선택한 기간에 기록된 데이터가 없습니다</div>';
+      return;
+    }
+
+    // Sort hours chronologically
+    const sortedHours = filteredHours.sort((a, b) => parseInt(a) - parseInt(b));
+
+    replicaContainer.innerHTML = sortedHours.map(hour => {
+      const hourData = data.timelineData[hour];
+      const totalDuration = hourData.hourData.reduce((sum, minuteTime) => sum + minuteTime, 0);
+      
+      if (totalDuration === 0) return ''; // Skip hours with no data
+
+      const timeString = this.formatHour(parseInt(hour));
+      
+      // Create minute blocks
+      const minuteBlocks = hourData.hourData.map((minuteTime, minute) => {
+        const hasTime = minuteTime > 0;
+        const taskTags = hourData.tagSessions[minute] || [];
+        let blockStyle = '';
+        
+        if (hasTime && taskTags.length > 0) {
+          const tagColor = this.timeTracker.getTagsGradient(taskTags);
+          const fillPercentage = Math.min((minuteTime / 60000) * 100, 100);
+          blockStyle = `style="background: linear-gradient(to right, ${tagColor} ${fillPercentage}%, var(--neutral-80) ${fillPercentage}%)"`;
+        }
+        
+        return `<div class="replica-minute-block ${hasTime ? 'has-time' : ''}" ${blockStyle}></div>`;
+      }).join('');
+
+      return `
+        <div class="replica-timeline-item">
+          <div class="replica-timeline-time">${timeString}</div>
+          <div class="replica-timeline-content">
+            <div class="replica-timeline-duration">${this.timeTracker.formatTime(totalDuration)}</div>
+            <div class="replica-progress-container">
+              <div class="replica-minute-grid">
+                ${minuteBlocks}
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    }).filter(html => html !== '').join('');
+  }
+
+  filterHoursByPeriod(timelineData, startDate, endDate) {
+    const now = new Date();
+    const currentHour = now.getHours();
+    
+    switch (this.currentPeriod) {
+      case '24h':
+        // Show last 24 hours
+        const hours24 = [];
+        for (let i = 23; i >= 0; i--) {
+          const hour = (currentHour - i + 24) % 24;
+          if (timelineData[hour]) {
+            hours24.push(hour.toString());
+          }
+        }
+        return hours24;
+        
+      case '7d':
+      case '1m':
+      case '6m':
+        // For longer periods, show all available hours with data
+        // In a real implementation, you'd filter by actual dates
+        return Object.keys(timelineData).filter(hour => {
+          const hourData = timelineData[hour];
+          return hourData.hourData.some(minuteTime => minuteTime > 0);
+        });
+        
+      default:
+        return Object.keys(timelineData);
+    }
+  }
+
+  formatHour(hour) {
+    return `${hour.toString().padStart(2, '0')}:00`;
+  }
+
+  updateSummaryCards(data) {
+    // Total time
+    document.getElementById('total-period-time').textContent = this.timeTracker.formatTime(data.totalTime);
+    
+    // Total tasks
+    document.getElementById('total-tasks').textContent = data.totalTasks.toString();
+    
+    // Average daily time
+    const avgDaily = data.totalTime / data.periodDays;
+    document.getElementById('avg-daily-time').textContent = this.timeTracker.formatTime(avgDaily);
+    
+    // Top category
+    const topCategory = Object.keys(data.categories).reduce((a, b) => 
+      data.categories[a] > data.categories[b] ? a : b, Object.keys(data.categories)[0]);
+    document.getElementById('top-category').textContent = topCategory || '-';
+  }
+
+  updateCategoryChart(data) {
+    const chartContainer = document.getElementById('category-chart');
+    
+    if (Object.keys(data.categories).length === 0) {
+      chartContainer.innerHTML = '<div class="no-data">데이터가 없습니다</div>';
+      return;
+    }
+
+    const totalTime = data.totalTime;
+    const sortedCategories = Object.entries(data.categories)
+      .sort(([,a], [,b]) => b - a)
+      .slice(0, 5); // Top 5 categories
+
+    const categoryColors = ['#ED5000', '#FA6616', '#FEF1EB', '#FB2D36', '#1198FF'];
+
+    chartContainer.innerHTML = sortedCategories.map(([category, time], index) => {
+      const percentage = ((time / totalTime) * 100).toFixed(1);
+      const color = categoryColors[index % categoryColors.length];
+      
+      return `
+        <div class="category-item">
+          <div class="category-info">
+            <div class="category-color" style="background-color: ${color}"></div>
+            <span class="category-name">${category}</span>
+          </div>
+          <div>
+            <span class="category-time">${this.timeTracker.formatTime(time)}</span>
+            <span class="category-percentage">${percentage}%</span>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  updateActivityChart(data) {
+    const chartContainer = document.getElementById('activity-chart');
+    
+    if (Object.keys(data.dailyActivity).length === 0) {
+      chartContainer.innerHTML = '<div class="no-data">데이터가 없습니다</div>';
+      return;
+    }
+
+    // Simple text-based activity display for now
+    const activities = Object.entries(data.dailyActivity);
+    chartContainer.innerHTML = activities.map(([date, time]) => `
+      <div class="activity-item">
+        <span class="activity-date">${new Date(date).toLocaleDateString('ko-KR')}</span>
+        <span class="activity-time">${this.timeTracker.formatTime(time)}</span>
+      </div>
+    `).join('');
+  }
+
+  updateTaskBreakdown(data) {
+    const listContainer = document.getElementById('task-breakdown-list');
+    
+    if (Object.keys(data.tasks).length === 0) {
+      listContainer.innerHTML = '<div class="no-data">데이터가 없습니다</div>';
+      return;
+    }
+
+    const sortedTasks = Object.entries(data.tasks)
+      .sort(([,a], [,b]) => b.time - a.time)
+      .slice(0, 10); // Top 10 tasks
+
+    listContainer.innerHTML = sortedTasks.map(([taskName, taskData]) => `
+      <div class="task-item">
+        <div class="task-info">
+          <div class="task-name">${taskName}</div>
+          <div class="task-category">${Array.from(taskData.categories).join(', ') || '카테고리 없음'}</div>
+        </div>
+        <div class="task-time">${this.timeTracker.formatTime(taskData.time)}</div>
+      </div>
+    `).join('');
+  }
+}
+
+// ==============================================
+// Navigation System
+// ==============================================
+
+class NavigationManager {
+  constructor(timeTracker) {
+    this.timeTracker = timeTracker;
+    this.currentView = 'tracker';
+    this.analyticsManager = null;
+    this.initializeNavigation();
+  }
+
+  initializeNavigation() {
+    const navItems = document.querySelectorAll('.nav-item');
+    
+    navItems.forEach(item => {
+      item.addEventListener('click', (e) => {
+        const targetView = item.getAttribute('data-view');
+        this.switchView(targetView);
+      });
+    });
+  }
+
+  switchView(viewName) {
+    if (this.currentView === viewName) return;
+
+    // Hide current view
+    const currentViewElement = document.getElementById(`${this.currentView}-view`);
+    if (currentViewElement) {
+      currentViewElement.classList.add('hidden');
+    }
+
+    // Show target view
+    const targetViewElement = document.getElementById(`${viewName}-view`);
+    if (targetViewElement) {
+      targetViewElement.classList.remove('hidden');
+    }
+
+    // Initialize analytics manager when switching to analyzer view
+    if (viewName === 'analyzer' && !this.analyticsManager) {
+      this.analyticsManager = new AnalyticsManager(this.timeTracker);
+    } else if (viewName === 'analyzer' && this.analyticsManager) {
+      // Refresh analytics data when returning to analyzer view
+      this.analyticsManager.updateAnalytics();
+    }
+
+    // Update navigation active state
+    document.querySelectorAll('.nav-item').forEach(item => {
+      item.classList.remove('active');
+    });
+    
+    const activeNavItem = document.querySelector(`[data-view="${viewName}"]`);
+    if (activeNavItem) {
+      activeNavItem.classList.add('active');
+    }
+
+    // Update current view
+    this.currentView = viewName;
+    
+    console.log(`📱 Switched to ${viewName} view`);
+  }
+
+  getCurrentView() {
+    return this.currentView;
+  }
+}
+
 // Initialize the app when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
   window.timeTracker = new TimeTracker();
+  window.navigationManager = new NavigationManager(window.timeTracker);
+  
   console.log('⏱️ Time Tracker initialized with minute-based timeline');
+  console.log('📱 Navigation system initialized');
+  console.log('📊 Analytics system ready');
   console.log('🔄 Use timeTracker.resetAllData() to clear all minute blocks');
   console.log('🕐 Recording starts from current system minute');
 });

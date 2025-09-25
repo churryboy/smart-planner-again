@@ -16,30 +16,131 @@
         </header>
 
         <main class="main-content">
-            <div class="control-total-section">
-                <div class="total-time-display">
-                    <div class="current-task-display">
-                        <span class="task-label text-caption1">현재 작업</span>
-                        <span class="task-name text-subheadline" id="current-task-name">작업을 시작하세요</span>
+            <!-- Time Tracker View -->
+            <div class="view-container" id="tracker-view">
+                <div class="control-total-section">
+                    <div class="total-time-display">
+                        <div class="current-task-display">
+                            <span class="task-label text-caption1">현재 작업</span>
+                            <span class="task-name text-subheadline" id="current-task-name">작업을 시작하세요</span>
+                        </div>
+                        <span class="total-label">총 시간</span>
+                        <span class="total-time" id="total-time">00:00:00</span>
+                        <span class="current-time" id="current-time">00:00:00</span>
                     </div>
-                    <span class="total-label">총 시간</span>
-                    <span class="total-time" id="total-time">00:00:00</span>
-                    <span class="current-time" id="current-time">00:00:00</span>
+                    <button class="record-button" id="record-button">
+                        <svg class="record-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <polygon points="10,8 16,12 10,16 10,8"></polygon>
+                        </svg>
+                        <span class="button-text">시작</span>
+                    </button>
                 </div>
-                <button class="record-button" id="record-button">
-                    <svg class="record-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                        <circle cx="12" cy="12" r="10"></circle>
-                        <polygon points="10,8 16,12 10,16 10,8"></polygon>
-                    </svg>
-                    <span class="button-text">시작</span>
-                </button>
+
+                <div class="timeline-container">
+                    <h2 class="timeline-title">오늘의 타임라인</h2>
+                    <div class="timeline" id="timeline"></div>
+                </div>
             </div>
 
-            <div class="timeline-container">
-                <h2 class="timeline-title">오늘의 타임라인</h2>
-                <div class="timeline" id="timeline"></div>
+            <!-- Time Analyzer View -->
+            <div class="view-container hidden" id="analyzer-view">
+                <div class="analytics-content">
+                    <div class="analytics-header">
+                        <h2 class="analytics-title">시간 분석기</h2>
+                        <div class="period-dropdown">
+                            <select class="period-select" id="period-select">
+                                <option value="24h">24시간</option>
+                                <option value="7d">7일</option>
+                                <option value="1m">1개월</option>
+                                <option value="6m">6개월</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Timeline Replica -->
+                    <div class="timeline-replica-container">
+                        <h3 class="replica-title">기간별 타임라인</h3>
+                        <div class="timeline-replica" id="timeline-replica"></div>
+                    </div>
+
+                    <!-- Summary Cards -->
+                    <div class="summary-cards">
+                        <div class="summary-card">
+                            <div class="card-icon">⏱️</div>
+                            <div class="card-content">
+                                <span class="card-label">총 시간</span>
+                                <span class="card-value" id="total-period-time">00:00:00</span>
+                            </div>
+                        </div>
+                        <div class="summary-card">
+                            <div class="card-icon">📋</div>
+                            <div class="card-content">
+                                <span class="card-label">완료한 작업</span>
+                                <span class="card-value" id="total-tasks">0</span>
+                            </div>
+                        </div>
+                        <div class="summary-card">
+                            <div class="card-icon">📊</div>
+                            <div class="card-content">
+                                <span class="card-label">일평균 시간</span>
+                                <span class="card-value" id="avg-daily-time">00:00:00</span>
+                            </div>
+                        </div>
+                        <div class="summary-card">
+                            <div class="card-icon">🎯</div>
+                            <div class="card-content">
+                                <span class="card-label">가장 많은 카테고리</span>
+                                <span class="card-value" id="top-category">-</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Charts Section -->
+                    <div class="charts-section">
+                        <div class="chart-container">
+                            <h3 class="chart-title">카테고리별 시간 분포</h3>
+                            <div class="category-chart" id="category-chart">
+                                <div class="no-data">데이터가 없습니다</div>
+                            </div>
+                        </div>
+
+                        <div class="chart-container">
+                            <h3 class="chart-title">일별 활동 패턴</h3>
+                            <div class="activity-chart" id="activity-chart">
+                                <div class="no-data">데이터가 없습니다</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Task List -->
+                    <div class="task-breakdown">
+                        <h3 class="section-title">작업별 상세 분석</h3>
+                        <div class="task-list" id="task-breakdown-list">
+                            <div class="no-data">데이터가 없습니다</div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </main>
+
+        <!-- Bottom Navigation -->
+        <nav class="bottom-navigation">
+            <button class="nav-item active" data-view="tracker">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <polygon points="10,8 16,12 10,16 10,8"></polygon>
+                </svg>
+                <span class="nav-label">시간 측정기</span>
+            </button>
+            <button class="nav-item" data-view="analyzer">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <path d="M3 3v18h18"></path>
+                    <path d="M18.7 8l-5.1 5.2-2.8-2.7L7 14.3"></path>
+                </svg>
+                <span class="nav-label">시간 분석기</span>
+            </button>
+        </nav>
     </div>
 
     <!-- Task Name Modal -->
@@ -61,9 +162,7 @@
                     <input type="text" id="custom-tag-input" class="text-body" placeholder="커스텀 태그 입력... (최대 9개)" maxlength="20">
                     <button class="add-tag-btn" id="add-custom-tag">추가</button>
                 </div>
-                <div class="selected-tags" id="selected-tags">
-                    <!-- Selected tags will appear here -->
-                </div>
+
             </div>
 
             <div class="modal-buttons">
