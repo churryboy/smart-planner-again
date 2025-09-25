@@ -2149,9 +2149,6 @@ class AITodoManager {
           <span>카테고리: ${rec.category}</span>
           ${rec.improvementEffect ? `<span>개선효과: ${rec.improvementEffect}</span>` : ''}
         </div>
-        <div class="recommendation-action">
-          <span class="action-hint">클릭하여 시작하기 →</span>
-        </div>
       </div>
     `).join('');
 
