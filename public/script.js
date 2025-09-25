@@ -284,10 +284,34 @@ class TimeTracker {
       this.hideTaskModal();
     });
 
-    this.elements.taskConfirmBtn.addEventListener('click', () => {
+    this.elements.taskConfirmBtn.addEventListener('click', (e) => {
+      console.log('🖱️ Task confirm button clicked');
+      e.preventDefault();
       this.startRecordingWithTask();
     });
-
+    
+    this.elements.taskConfirmBtn.addEventListener('touchend', (e) => {
+      console.log('👆 Task confirm button touched');
+      e.preventDefault();
+      this.startRecordingWithTask();
+    });    
+    this.elements.taskConfirmBtn.addEventListener('touchend', (e) => {
+      console.log('👆 Task confirm button touched');
+      e.preventDefault();
+      this.startRecordingWithTask();
+    });
+    
+    this.elements.taskConfirmBtn.addEventListener('click', (e) => {
+      console.log('🖱️ Task confirm button clicked');
+      e.preventDefault();
+      this.startRecordingWithTask();
+    });
+    
+    this.elements.taskConfirmBtn.addEventListener('touchend', (e) => {
+      console.log('👆 Task confirm button touched');
+      e.preventDefault();
+      this.startRecordingWithTask();
+    });
     this.elements.taskNameInput.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') {
         e.preventDefault();
@@ -335,8 +359,18 @@ class TimeTracker {
   }
 
     showTaskModal() {
-    this.elements.taskNameModal.classList.add('visible');
-    this.elements.taskNameInput.value = '';
+    console.log('📱 Modal opened on device');
+    console.log('📱 Task confirm button element:', this.elements.taskConfirmBtn);
+    console.log('📱 Button disabled state:', this.elements.taskConfirmBtn.disabled);    this.elements.taskNameModal.classList.add('visible');
+    
+    // Add fallback touch handling for mobile
+    this.elements.taskNameModal.addEventListener('touchend', (e) => {
+      if (e.target.id === 'task-confirm-btn' || e.target.closest('#task-confirm-btn')) {
+        console.log('📱 Fallback touch handler triggered');
+        e.preventDefault();
+        this.startRecordingWithTask();
+      }
+    });    this.elements.taskNameInput.value = '';
     this.currentTaskTags = [];
     this.updateSelectedTags();
     this.resetPredefinedTags();

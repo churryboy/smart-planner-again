@@ -516,7 +516,22 @@ body {
 }
 
 .btn-confirm:hover {
-  background-color: var(--orange-60);
+}
+
+/* Mobile touch improvements */
+@media (max-width: 768px) {
+  .btn-confirm, .btn-cancel {
+    min-height: 44px;
+    min-width: 44px;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+  
+  .btn-confirm:active {
+    background-color: var(--orange-60);
+    transform: scale(0.98);
+  }
+}  background-color: var(--orange-60);
 }
 
 /* Category Tags Section */
