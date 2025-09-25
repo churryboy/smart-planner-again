@@ -20,6 +20,15 @@ app.get('/api/analytics-config', (req, res) => {
   });
 });
 
+// Debug endpoint to check environment variables (remove after setup)
+app.get('/api/env-check', (req, res) => {
+  res.json({
+    hasOpenAI: !!process.env.OPENAI_API_KEY,
+    hasMixpanel: !!process.env.MIXPANEL_PROJECT_TOKEN,
+    nodeEnv: process.env.NODE_ENV || 'development'
+  });
+});
+
 // OpenAI API endpoint
 app.post('/api/generate-study-plan', async (req, res) => {
   try {
