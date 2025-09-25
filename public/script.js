@@ -333,6 +333,12 @@ class TimeTracker {
       this.addCustomTag();
     });
 
+    this.elements.addCustomTagBtn.addEventListener('touchend', (e) => {
+      console.log('👆 Add custom tag button touched');
+      e.preventDefault();
+      this.addCustomTag();
+    });
+
     this.elements.customTagInput.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') {
         e.preventDefault();
