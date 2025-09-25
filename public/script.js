@@ -1941,6 +1941,179 @@ class AnalyticsManager {
 }
 
 // ==============================================
+// AI Todo Recommendation System
+// ==============================================
+
+class AITodoManager {
+  constructor(timeTracker) {
+    this.timeTracker = timeTracker;
+    this.initializeAITodo();
+  }
+
+  initializeAITodo() {
+    const generateBtn = document.getElementById('generate-recommendations');
+    if (generateBtn) {
+      generateBtn.addEventListener('click', () => {
+        this.generateRecommendations();
+      });
+      
+      // Mobile touch support
+      generateBtn.addEventListener('touchend', (e) => {
+        e.preventDefault();
+        this.generateRecommendations();
+      });
+    }
+  }
+
+  async generateRecommendations() {
+    const targetExam = document.getElementById('target-exam').value.trim();
+    const examDate = document.getElementById('exam-date').value;
+    
+    // Validation
+    if (!targetExam) {
+      alert('목표 시험을 입력해주세요.');
+      return;
+    }
+    
+    if (!examDate) {
+      alert('시험 날짜를 선택해주세요.');
+      return;
+    }
+    
+    // Check if exam date is in the future
+    const today = new Date();
+    const selectedDate = new Date(examDate);
+    if (selectedDate <= today) {
+      alert('시험 날짜는 오늘 이후로 선택해주세요.');
+      return;
+    }
+    
+    console.log('🤖 Generating AI recommendations for:', targetExam, examDate);
+    this.showLoadingState();
+    
+    try {
+      // Prepare user data for AI analysis
+      const userData = {
+        timeData: this.timeTracker.timeData,
+        taskSessions: this.timeTracker.taskSessions,
+        taskHistory: this.timeTracker.taskHistory || [],
+        totalTime: this.timeTracker.totalTime
+      };
+      
+      // Call OpenAI API
+      const response = await fetch('/api/generate-study-plan', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          targetExam,
+          examDate,
+          userData
+        })
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'API 호출 실패');
+      }
+      
+      const data = await response.json();
+      this.displayRecommendations(data.recommendations);
+      
+    } catch (error) {
+      console.error('AI recommendation error:', error);
+      this.showErrorState(error.message);
+    }
+  }
+
+  showLoadingState() {
+    const container = document.getElementById('recommendations-container');
+    if (container) {
+      container.innerHTML = `
+        <div class="loading-state">
+          <div class="loading-spinner"></div>
+          <div class="loading-text">AI가 맞춤형 학습 계획을 생성하고 있습니다...</div>
+        </div>
+      `;
+    }
+  }
+  
+  showErrorState(errorMessage) {
+    const container = document.getElementById('recommendations-container');
+    if (container) {
+      container.innerHTML = `
+        <div class="error-state">
+          <div class="error-icon">⚠️</div>
+          <h3>오류가 발생했습니다</h3>
+          <p>${errorMessage}</p>
+          <button class="retry-btn" onclick="window.location.reload()">다시 시도</button>
+        </div>
+      `;
+    }
+  }
+
+  analyzeUserData() {
+    // Analyze user's time tracking data
+    const timeData = this.timeTracker.timeData;
+    const taskSessions = this.timeTracker.taskSessions;
+    const taskHistory = this.timeTracker.taskHistory || [];
+    
+    // Simple AI logic - generate recommendations based on patterns
+    const recommendations = [
+      {
+        title: "집중 시간 늘리기",
+        description: "최근 데이터를 보면 집중 시간이 부족해 보입니다. 25분 집중 + 5분 휴식의 포모도로 기법을 시도해보세요.",
+        priority: "높음",
+        estimatedTime: "25분",
+        category: "생산성"
+      },
+      {
+        title: "규칙적인 휴식 취하기",
+        description: "장시간 작업 후 적절한 휴식이 필요합니다. 1시간마다 5-10분씩 휴식을 취해보세요.",
+        priority: "중간",
+        estimatedTime: "10분",
+        category: "건강"
+      },
+      {
+        title: "새로운 기술 학습",
+        description: "학습 패턴을 보면 새로운 도전이 필요한 시점입니다. 관심 있는 새로운 기술을 학습해보세요.",
+        priority: "낮음",
+        estimatedTime: "30분",
+        category: "성장"
+      }
+    ];
+
+    return recommendations;
+  }
+
+  displayRecommendations(recommendations) {
+    const container = document.getElementById('recommendations-container');
+    if (!container) return;
+
+    const recommendationsHTML = recommendations.map(rec => `
+      <div class="recommendation-item">
+        <div class="recommendation-header">
+          <h4 class="recommendation-title">${rec.title}</h4>
+          <span class="recommendation-priority">${rec.priority}</span>
+        </div>
+        <p class="recommendation-description">${rec.description}</p>
+        <div class="recommendation-meta">
+          <span>예상 시간: ${rec.estimatedTime}</span>
+          <span>카테고리: ${rec.category}</span>
+        </div>
+      </div>
+    `).join('');
+
+    container.innerHTML = `
+      <div class="recommendations-list">
+        ${recommendationsHTML}
+      </div>
+    `;
+  }
+}
+
+// ==============================================
 // Navigation System
 // ==============================================
 
@@ -1949,6 +2122,7 @@ class NavigationManager {
     this.timeTracker = timeTracker;
     this.currentView = 'tracker';
     this.analyticsManager = null;
+    this.aiTodoManager = null;
     this.initializeNavigation();
   }
 
@@ -1989,6 +2163,11 @@ class NavigationManager {
       this.analyticsManager.updateAnalytics();
     }
 
+    // Initialize AI Todo manager when switching to ai-todo view
+    if (viewName === 'ai-todo' && !this.aiTodoManager) {
+      this.aiTodoManager = new AITodoManager(this.timeTracker);
+    }
+
     // Update navigation active state
     document.querySelectorAll('.nav-item').forEach(item => {
       item.classList.remove('active');
@@ -2010,6 +2189,8 @@ class NavigationManager {
     if (headerTitle) {
       if (viewName === 'analyzer') {
         headerTitle.textContent = '시간 분석기';
+      } else if (viewName === 'ai-todo') {
+        headerTitle.textContent = 'AI 할일 추천';
       } else {
         headerTitle.textContent = '타임 트래커';
       }
