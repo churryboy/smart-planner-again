@@ -658,20 +658,19 @@ body {
   border: 1px solid var(--neutral-70);
   border-radius: var(--radius-xl);
   padding: var(--space-lg);
-  margin-top: var(--space-lg);
   margin-bottom: var(--space-xl);
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-lg);
 }
 
 .total-time-display {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: var(--space-base);
-  background: var(--neutral-95);
-  border-radius: var(--radius-lg);
+  padding: var(--space-lg);
+  background: var(--neutral-100);
+  border: 1px solid var(--neutral-70);
+  border-radius: var(--radius-xl);
+  margin-bottom: var(--space-lg);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
 .tasks-section {
@@ -773,6 +772,33 @@ body {
   background: var(--neutral-80);
   color: var(--neutral-30);
   cursor: not-allowed;
+}
+
+.task-category-select {
+  padding: 6px 10px;
+  border: 1px solid var(--neutral-70);
+  border-radius: var(--radius-md);
+  font-size: 13px;
+  font-family: var(--font-primary);
+  background: var(--neutral-90);
+  color: var(--neutral-20);
+  cursor: pointer;
+  transition: all var(--transition-base);
+  height: 32px;
+  flex-shrink: 0;
+  min-width: 80px;
+}
+
+.task-category-select:hover {
+  border-color: var(--neutral-60);
+  background: var(--neutral-95);
+}
+
+.task-category-select:focus {
+  outline: none;
+  border-color: var(--blue-50);
+  background: var(--neutral-100);
+  box-shadow: 0 0 0 2px rgba(7, 133, 242, 0.1);
 }
 
 .task-controls {
@@ -1955,6 +1981,31 @@ body {
 .task-summary-categories {
   font-size: 12px;
   color: var(--neutral-40);
+}
+
+.task-summary-category-select {
+  margin-top: var(--space-xs);
+  padding: 4px 8px;
+  border: 1px solid var(--neutral-70);
+  border-radius: var(--radius-md);
+  font-size: 12px;
+  font-family: var(--font-primary);
+  background: var(--neutral-100);
+  color: var(--neutral-20);
+  cursor: pointer;
+  transition: all var(--transition-base);
+  max-width: 100px;
+}
+
+.task-summary-category-select:hover {
+  border-color: var(--neutral-60);
+  background: var(--neutral-95);
+}
+
+.task-summary-category-select:focus {
+  outline: none;
+  border-color: var(--blue-50);
+  box-shadow: 0 0 0 2px rgba(7, 133, 242, 0.1);
 }
 
 .task-summary-time {

@@ -48,17 +48,18 @@
         <main class="main-content">
             <!-- Time Tracker View -->
             <div class="view-container" id="tracker-view">
+                <!-- Total Time Display - Standalone Panel -->
+                <div class="total-time-display">
+                    <span class="total-label">총 시간</span>
+                    <span class="total-time" id="total-time">00:00:00</span>
+                </div>
+
                 <div class="timeline-container">
                     <h2 class="timeline-title">현재 시간 타임라인</h2>
                     <div class="timeline" id="timeline"></div>
                 </div>
 
                 <div class="control-total-section">
-                    <div class="total-time-display">
-                        <span class="total-label">총 시간</span>
-                        <span class="total-time" id="total-time">00:00:00</span>
-                    </div>
-                    
                     <div class="tasks-section">
                         <div class="tasks-header">
                             <h3 class="tasks-title">작업 목록</h3>

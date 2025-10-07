@@ -42,6 +42,7 @@ class MultiTaskManager {
       totalTime: 0,
       isRecording: false,
       hasBeenRecorded: false, // Track if task has been recorded before
+      category: '공부', // Default category
       element: null
     };
     
@@ -295,13 +296,46 @@ class MultiTaskManager {
     }
   }
   
+  updateStudyTime() {
+    // Calculate total study time (tasks with '공부' category)
+    let studyTime = 0;
+    
+    console.log('📚 Calculating study time:');
+    this.tasks.forEach(task => {
+      console.log(`  Task: "${task.name}", Category: "${task.category}", TotalTime: ${task.totalTime}, IsRecording: ${task.isRecording}`);
+      
+      if (task.category === '공부') {
+        studyTime += task.totalTime;
+        // Add current session time if recording
+        if (task.isRecording && task.startTime) {
+          const sessionTime = Date.now() - task.startTime;
+          studyTime += sessionTime;
+          console.log(`    ✅ Added ${this.formatTime(task.totalTime)} + ${this.formatTime(sessionTime)} (recording)`);
+        } else {
+          console.log(`    ✅ Added ${this.formatTime(task.totalTime)}`);
+        }
+      } else {
+        console.log(`    ❌ Skipped (category: ${task.category})`);
+      }
+    });
+    
+    console.log(`📊 Total study time: ${this.formatTime(studyTime)}`);
+    
+    // Update the study time display in analyzer view
+    const studyTimeElement = document.getElementById('study-time-metric');
+    if (studyTimeElement) {
+      studyTimeElement.textContent = this.formatTime(studyTime);
+    }
+  }
+  
   saveTasksData() {
     const tasksData = Array.from(this.tasks.entries()).map(([id, task]) => ({
       id,
       name: task.name,
       totalTime: task.totalTime,
       isRecording: task.isRecording,
-      hasBeenRecorded: task.hasBeenRecorded || false
+      hasBeenRecorded: task.hasBeenRecorded || false,
+      category: task.category || '공부'
     }));
     
     localStorage.setItem(`multiTasks_${this.timeTracker.currentNickname}`, JSON.stringify(tasksData));
@@ -331,6 +365,7 @@ class MultiTaskManager {
           totalTime: taskData.totalTime,
           isRecording: false, // Don't restore recording state
           hasBeenRecorded: taskData.hasBeenRecorded || false,
+          category: taskData.category || '공부',
           element: null
         };
         
@@ -353,6 +388,7 @@ class MultiTaskManager {
       });
       
       this.updateTotalTime();
+      this.updateStudyTime(); // Update study time after loading tasks
       return true;
     } catch (error) {
       console.error('Failed to load tasks data:', error);
@@ -374,6 +410,7 @@ class MultiTaskManager {
       
       if (hasRecording) {
         this.updateTotalTime();
+        this.updateStudyTime(); // Also update study time
       }
     }, 1000);
   }
@@ -2300,6 +2337,14 @@ class AnalyticsManager {
   updateTaskSummary(data) {
     const summaryContainer = document.getElementById('task-summary-list');
     
+    // Get task categories from multiTaskManager
+    const taskCategories = new Map();
+    if (window.multiTaskManager) {
+      window.multiTaskManager.tasks.forEach((task, taskId) => {
+        taskCategories.set(task.name, task.category || '기타');
+      });
+    }
+    
     if (Object.keys(data.tasks).length === 0) {
       summaryContainer.innerHTML = '<div class="no-data">데이터가 없습니다</div>';
       return;
@@ -2310,26 +2355,50 @@ class AnalyticsManager {
       .sort(([,a], [,b]) => b.time - a.time);
 
     summaryContainer.innerHTML = sortedTasks.map(([taskName, taskData]) => {
-      // Debug: Log task data to see what categories are available
-      console.log(`📋 Task "${taskName}":`, {
-        categories: taskData.categories,
-        categoriesType: typeof taskData.categories,
-        categoriesArray: Array.from(taskData.categories || []),
-        time: taskData.time
-      });
-      
-      const categories = Array.from(taskData.categories || []).join(', ') || '카테고리 없음';
+      const currentCategory = taskCategories.get(taskName) || '공부';
       
       return `
-        <div class="task-summary-item">
+        <div class="task-summary-item" data-task-name="${taskName}">
           <div class="task-summary-info">
             <div class="task-summary-name">${taskName}</div>
-            <div class="task-summary-categories">${categories}</div>
+            <select class="task-summary-category-select" data-task-name="${taskName}">
+              <option value="공부" ${currentCategory === '공부' ? 'selected' : ''}>공부</option>
+              <option value="이동" ${currentCategory === '이동' ? 'selected' : ''}>이동</option>
+              <option value="식사" ${currentCategory === '식사' ? 'selected' : ''}>식사</option>
+              <option value="휴식" ${currentCategory === '휴식' ? 'selected' : ''}>휴식</option>
+              <option value="기타" ${currentCategory === '기타' ? 'selected' : ''}>기타</option>
+            </select>
           </div>
           <div class="task-summary-time">${this.timeTracker.formatTime(taskData.time)}</div>
         </div>
       `;
     }).join('');
+    
+    // Add event listeners to dropdowns
+    this.setupTaskSummaryListeners();
+  }
+  
+  setupTaskSummaryListeners() {
+    const selects = document.querySelectorAll('.task-summary-category-select');
+    selects.forEach(select => {
+      select.addEventListener('change', (e) => {
+        const taskName = e.target.dataset.taskName;
+        const newCategory = e.target.value;
+        
+        // Update the category in multiTaskManager
+        if (window.multiTaskManager) {
+          window.multiTaskManager.tasks.forEach((task, taskId) => {
+            if (task.name === taskName) {
+              task.category = newCategory;
+              window.multiTaskManager.saveTasksData();
+              window.multiTaskManager.updateStudyTime();
+            }
+          });
+        }
+        
+        console.log(`📝 Updated task "${taskName}" category to "${newCategory}"`);
+      });
+    });
   }
 
   updateSummaryCards(data) {
