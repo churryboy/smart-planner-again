@@ -20,12 +20,26 @@ app.get('/api/analytics-config', (req, res) => {
   });
 });
 
-// Debug endpoint to check environment variables (remove after setup)
+// Debug endpoint to check environment variables and analytics setup
 app.get('/api/env-check', (req, res) => {
   res.json({
     hasOpenAI: !!process.env.OPENAI_API_KEY,
     hasMixpanel: !!process.env.MIXPANEL_PROJECT_TOKEN,
-    nodeEnv: process.env.NODE_ENV || 'development'
+    mixpanelTokenPreview: process.env.MIXPANEL_PROJECT_TOKEN ? 
+      process.env.MIXPANEL_PROJECT_TOKEN.substring(0, 8) + '...' : 'NOT_SET',
+    nodeEnv: process.env.NODE_ENV || 'development',
+    timestamp: new Date().toISOString()
+  });
+});
+
+// Test endpoint for analytics debugging
+app.get('/api/analytics-debug', (req, res) => {
+  res.json({
+    mixpanelConfigured: !!process.env.MIXPANEL_PROJECT_TOKEN,
+    tokenLength: process.env.MIXPANEL_PROJECT_TOKEN ? process.env.MIXPANEL_PROJECT_TOKEN.length : 0,
+    environment: process.env.NODE_ENV || 'development',
+    serverTime: new Date().toISOString(),
+    headers: req.headers
   });
 });
 

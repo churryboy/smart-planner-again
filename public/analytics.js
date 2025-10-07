@@ -3,20 +3,33 @@ class Analytics {
   constructor() {
     this.isInitialized = false;
     this.userId = null;
+    this.debugMode = window.location.hostname === 'localhost' || window.location.search.includes('debug=true');
   }
 
   // Initialize Mixpanel
   init(projectToken) {
+    if (!projectToken) {
+      console.error('❌ No Mixpanel project token provided');
+      return;
+    }
+
     if (typeof mixpanel !== 'undefined') {
-      mixpanel.init(projectToken, {
-        debug: false,
-        track_pageview: true,
-        persistence: 'localStorage'
-      });
-      this.isInitialized = true;
-      console.log('📊 Mixpanel initialized');
+      try {
+        mixpanel.init(projectToken, {
+          debug: this.debugMode,
+          track_pageview: true,
+          persistence: 'localStorage',
+          loaded: (mixpanel) => {
+            console.log('📊 Mixpanel loaded successfully');
+          }
+        });
+        this.isInitialized = true;
+        console.log('📊 Mixpanel initialized with token:', projectToken.substring(0, 8) + '...');
+      } catch (error) {
+        console.error('❌ Mixpanel initialization failed:', error);
+      }
     } else {
-      console.error('❌ Mixpanel library not loaded');
+      console.error('❌ Mixpanel library not loaded - check network connectivity and script loading');
     }
   }
 
@@ -37,16 +50,27 @@ class Analytics {
 
   // Track events
   track(eventName, properties = {}) {
-    if (!this.isInitialized) return;
+    if (!this.isInitialized) {
+      console.warn('⚠️ Analytics not initialized, skipping event:', eventName);
+      return;
+    }
     
-    const eventData = {
-      ...properties,
-      userId: this.userId,
-      timestamp: new Date().toISOString()
-    };
-    
-    mixpanel.track(eventName, eventData);
-    console.log('📈 Event tracked:', eventName, eventData);
+    try {
+      const eventData = {
+        ...properties,
+        userId: this.userId,
+        timestamp: new Date().toISOString(),
+        url: window.location.href,
+        userAgent: navigator.userAgent
+      };
+      
+      mixpanel.track(eventName, eventData);
+      if (this.debugMode) {
+        console.log('📈 Event tracked:', eventName, eventData);
+      }
+    } catch (error) {
+      console.error('❌ Failed to track event:', eventName, error);
+    }
   }
 
   // User registration/login events

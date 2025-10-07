@@ -2,13 +2,367 @@
 // Time Tracker with Minute-Based Timeline
 // ==============================================
 
+// Multi-task management class
+class MultiTaskManager {
+  constructor(timeTracker) {
+    this.timeTracker = timeTracker;
+    this.tasks = new Map(); // taskId -> { name, startTime, totalTime, isRecording, element }
+    this.taskIdCounter = 0;
+    
+    this.elements = {
+      addTaskButton: document.getElementById('add-task-button'),
+      tasksList: document.getElementById('tasks-list'),
+      totalTime: document.getElementById('total-time')
+    };
+    
+    this.init();
+  }
+  
+  init() {
+    this.setupEventListeners();
+    // Don't add initial task here - it will be handled by TimeTracker initialization
+  }
+  
+  setupEventListeners() {
+    this.elements.addTaskButton.addEventListener('click', () => {
+      this.addNewTask();
+    });
+  }
+  
+  addInitialTask() {
+    this.addNewTask('첫 번째 작업');
+  }
+  
+  addNewTask(defaultName = '') {
+    const taskId = ++this.taskIdCounter;
+    const taskData = {
+      id: taskId,
+      name: defaultName,
+      startTime: null,
+      totalTime: 0,
+      isRecording: false,
+      element: null
+    };
+    
+    const taskElement = this.createTaskElement(taskData);
+    taskData.element = taskElement;
+    
+    this.tasks.set(taskId, taskData);
+    this.elements.tasksList.appendChild(taskElement);
+    
+    // Focus on the input if it's empty
+    if (!defaultName) {
+      const input = taskElement.querySelector('.task-input');
+      input.focus();
+    }
+    
+    return taskId;
+  }
+  
+  createTaskElement(taskData) {
+    const taskItem = document.createElement('div');
+    taskItem.className = 'task-item';
+    taskItem.dataset.taskId = taskData.id;
+    
+    taskItem.innerHTML = `
+      <input type="text" class="task-input" placeholder="작업 이름을 입력하세요..." value="${taskData.name}">
+      <div class="task-controls">
+        <span class="task-time">00:00:00</span>
+        <button class="task-record-button" title="기록 시작/정지">
+          <svg class="record-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"></circle>
+            <polygon points="10,8 16,12 10,16 10,8"></polygon>
+          </svg>
+        </button>
+        <button class="task-delete-button" title="작업 삭제">
+          <svg class="delete-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+    `;
+    
+    this.setupTaskEventListeners(taskItem, taskData);
+    return taskItem;
+  }
+  
+  setupTaskEventListeners(taskElement, taskData) {
+    const input = taskElement.querySelector('.task-input');
+    const recordButton = taskElement.querySelector('.task-record-button');
+    const deleteButton = taskElement.querySelector('.task-delete-button');
+    
+    // Input change handler
+    input.addEventListener('input', (e) => {
+      taskData.name = e.target.value;
+      this.saveTasksData();
+    });
+    
+    input.addEventListener('blur', (e) => {
+      if (!e.target.value.trim()) {
+        e.target.value = `작업 ${taskData.id}`;
+        taskData.name = e.target.value;
+      }
+    });
+    
+    // Record button handler
+    recordButton.addEventListener('click', () => {
+      this.toggleTaskRecording(taskData.id);
+    });
+    
+    // Delete button handler
+    deleteButton.addEventListener('click', () => {
+      this.deleteTask(taskData.id);
+    });
+  }
+  
+  toggleTaskRecording(taskId) {
+    const task = this.tasks.get(taskId);
+    if (!task) return;
+    
+    if (task.isRecording) {
+      this.stopTaskRecording(taskId);
+    } else {
+      // Stop all other recordings first
+      this.stopAllRecordings();
+      this.startTaskRecording(taskId);
+    }
+  }
+  
+  startTaskRecording(taskId) {
+    const task = this.tasks.get(taskId);
+    if (!task || task.isRecording) return;
+    
+    // Update task name if empty
+    const input = task.element.querySelector('.task-input');
+    if (!task.name.trim()) {
+      task.name = `작업 ${taskId}`;
+      input.value = task.name;
+    }
+    
+    task.isRecording = true;
+    task.startTime = Date.now();
+    
+    // Update UI
+    task.element.classList.add('recording');
+    const recordButton = task.element.querySelector('.task-record-button');
+    recordButton.classList.add('recording');
+    recordButton.innerHTML = `
+      <svg class="record-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <rect x="6" y="6" width="12" height="12"></rect>
+      </svg>
+    `;
+    
+    // Disable input while recording
+    input.disabled = true;
+    
+    // Start the original TimeTracker recording with this task
+    this.timeTracker.currentTaskName = task.name;
+    this.timeTracker.currentTaskTags = ['멀티태스킹'];
+    this.timeTracker.startRecording();
+    
+    // Track analytics
+    if (window.analytics) {
+      window.analytics.trackTaskStart(task.name, ['멀티태스킹']);
+    }
+    
+    console.log(`▶️ Started recording task: ${task.name}`);
+  }
+  
+  stopTaskRecording(taskId) {
+    const task = this.tasks.get(taskId);
+    if (!task || !task.isRecording) return;
+    
+    const sessionTime = Date.now() - task.startTime;
+    task.totalTime += sessionTime;
+    task.isRecording = false;
+    task.startTime = null;
+    
+    // Update UI
+    task.element.classList.remove('recording');
+    const recordButton = task.element.querySelector('.task-record-button');
+    recordButton.classList.remove('recording');
+    recordButton.innerHTML = `
+      <svg class="record-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="10"></circle>
+        <polygon points="10,8 16,12 10,16 10,8"></polygon>
+      </svg>
+    `;
+    
+    // Re-enable input
+    const input = task.element.querySelector('.task-input');
+    input.disabled = false;
+    
+    // Stop the original TimeTracker recording
+    this.timeTracker.stopRecording();
+    
+    // Track analytics
+    if (window.analytics) {
+      window.analytics.trackTaskStop(task.name, sessionTime, ['멀티태스킹']);
+    }
+    
+    this.updateTaskTimeDisplay(taskId);
+    this.updateTotalTime();
+    this.saveTasksData();
+    
+    console.log(`⏹️ Stopped recording task: ${task.name} - Session: ${this.formatTime(sessionTime)}`);
+  }
+  
+  stopAllRecordings() {
+    this.tasks.forEach((task, taskId) => {
+      if (task.isRecording) {
+        this.stopTaskRecording(taskId);
+      }
+    });
+  }
+  
+  deleteTask(taskId) {
+    const task = this.tasks.get(taskId);
+    if (!task) return;
+    
+    // Stop recording if active
+    if (task.isRecording) {
+      this.stopTaskRecording(taskId);
+    }
+    
+    // Remove from DOM
+    task.element.remove();
+    
+    // Remove from tasks map
+    this.tasks.delete(taskId);
+    
+    // Update total time
+    this.updateTotalTime();
+    this.saveTasksData();
+    
+    console.log(`🗑️ Deleted task: ${task.name}`);
+  }
+  
+  updateTaskTimeDisplay(taskId) {
+    const task = this.tasks.get(taskId);
+    if (!task) return;
+    
+    let displayTime = task.totalTime;
+    
+    // Add current session time if recording
+    if (task.isRecording && task.startTime) {
+      displayTime += Date.now() - task.startTime;
+    }
+    
+    const timeElement = task.element.querySelector('.task-time');
+    timeElement.textContent = this.formatTime(displayTime);
+  }
+  
+  updateTotalTime() {
+    // Total time is now managed by TimeTracker based on actual recorded minute data
+    // MultiTaskManager no longer updates the total-time display
+    // This prevents conflicts and flickering
+    
+    // We can still calculate task totals for internal use if needed
+    let totalTime = 0;
+    this.tasks.forEach(task => {
+      totalTime += task.totalTime;
+      if (task.isRecording && task.startTime) {
+        totalTime += Date.now() - task.startTime;
+      }
+    });
+    
+    // Don't update the display - let TimeTracker handle it
+    return totalTime;
+  }
+  
+  formatTime(milliseconds) {
+    const totalSeconds = Math.floor(milliseconds / 1000);
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+    
+    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+  }
+  
+  saveTasksData() {
+    const tasksData = Array.from(this.tasks.entries()).map(([id, task]) => ({
+      id,
+      name: task.name,
+      totalTime: task.totalTime,
+      isRecording: task.isRecording
+    }));
+    
+    localStorage.setItem(`multiTasks_${this.timeTracker.currentNickname}`, JSON.stringify(tasksData));
+  }
+  
+  loadTasksData() {
+    const saved = localStorage.getItem(`multiTasks_${this.timeTracker.currentNickname}`);
+    if (!saved) return false;
+    
+    try {
+      const tasksData = JSON.parse(saved);
+      
+      if (!tasksData || tasksData.length === 0) {
+        return false;
+      }
+      
+      // Clear existing tasks
+      this.tasks.clear();
+      this.elements.tasksList.innerHTML = '';
+      
+      // Restore tasks
+      tasksData.forEach(taskData => {
+        const task = {
+          id: taskData.id,
+          name: taskData.name,
+          startTime: null,
+          totalTime: taskData.totalTime,
+          isRecording: false, // Don't restore recording state
+          element: null
+        };
+        
+        const taskElement = this.createTaskElement(task);
+        task.element = taskElement;
+        
+        this.tasks.set(task.id, task);
+        this.elements.tasksList.appendChild(taskElement);
+        
+        this.updateTaskTimeDisplay(task.id);
+        
+        // Update counter
+        this.taskIdCounter = Math.max(this.taskIdCounter, task.id);
+      });
+      
+      this.updateTotalTime();
+      return true;
+    } catch (error) {
+      console.error('Failed to load tasks data:', error);
+      return false;
+    }
+  }
+  
+  // Start update timer for recording tasks
+  startUpdateTimer() {
+    setInterval(() => {
+      let hasRecording = false;
+      
+      this.tasks.forEach((task, taskId) => {
+        if (task.isRecording) {
+          this.updateTaskTimeDisplay(taskId);
+          hasRecording = true;
+        }
+      });
+      
+      if (hasRecording) {
+        this.updateTotalTime();
+      }
+    }, 1000);
+  }
+}
+
 class TimeTracker {
   constructor() {
     this.isRecording = false;
     this.currentStartTime = null;
     this.currentHour = null;
     this.timeData = {}; // Store time data for each hour: { hour: [minute0, minute1, ...minute59] }
-    this.totalTime = 0;
+    // totalTime is now calculated dynamically from timeData
     this.currentSessionTime = 0;
     this.updateInterval = null;
     this.timelineOrder = this.generateTimelineOrder();
@@ -38,13 +392,13 @@ class TimeTracker {
     this.customTagColorIndex = 0;
     
     this.elements = {
-      recordButton: document.getElementById('record-button'),
+      recordButton: document.getElementById('record-button'), // May be null with new UI
       statusDot: document.querySelector('.status-dot'),
       statusText: document.getElementById('status-text'),
       currentTime: document.getElementById('current-time'),
       totalTime: document.getElementById('total-time'),
       timeline: document.getElementById('timeline'),
-      currentTaskNameDisplay: document.getElementById('current-task-name'),
+      currentTaskNameDisplay: document.getElementById('current-task-name'), // May be null with new UI
       taskNameModal: document.getElementById('task-name-modal'),
       taskNameInput: document.getElementById('task-name-input'),
       taskSuggestionsContainer: document.getElementById('task-suggestions'),
@@ -89,6 +443,29 @@ class TimeTracker {
     
     // Ensure profile menu is set up (important for re-login)
     this.setupProfileMenu();
+    
+    // Initialize multi-task manager
+    this.initializeMultiTaskManager();
+  }
+  
+  initializeMultiTaskManager() {
+    // Initialize multi-task manager if elements exist
+    if (document.getElementById('add-task-button') && document.getElementById('tasks-list')) {
+      window.multiTaskManager = new MultiTaskManager(this);
+      
+      // Load saved tasks first, if none exist, the initial task will be created
+      const hasExistingTasks = window.multiTaskManager.loadTasksData();
+      
+      // If no existing tasks were loaded, create initial task
+      if (!hasExistingTasks) {
+        window.multiTaskManager.addInitialTask();
+      }
+      
+      window.multiTaskManager.startUpdateTimer();
+      console.log('📋 Multi-task manager initialized');
+    } else {
+      console.warn('⚠️ Multi-task manager elements not found');
+    }
   }
   
   checkNicknameExists() {
@@ -195,7 +572,7 @@ class TimeTracker {
   resetAppForNewUser() {
     // Reset all data for new user
     this.timeData = {};
-    this.totalTime = 0;
+    // totalTime is calculated dynamically, no need to reset
     this.currentSessionTime = 0;
     this.taskSessions = {};
     this.taskTagSessions = {};
@@ -310,10 +687,14 @@ class TimeTracker {
       this.resetAppForNewUser();
       
       // Reset UI elements
+          if (this.elements.currentTaskNameDisplay) {
       this.elements.currentTaskNameDisplay.textContent = "작업을 시작하세요";
       this.elements.currentTaskNameDisplay.classList.remove("recording");
+    }
+    if (this.elements.recordButton) {
       this.elements.recordButton.classList.remove('recording');
       this.elements.recordButton.innerHTML = `<svg class="record-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"></circle><polygon points="10,8 16,12 10,16 10,8"></polygon></svg>시작`;
+    }
       
       // Show nickname modal again
       this.showNicknameModal();
@@ -530,80 +911,79 @@ class TimeTracker {
   }
   
   initializeEventListeners() {
-    this.elements.recordButton.addEventListener('click', () => {
-      if (this.isRecording) {
-        this.stopRecording();
-      } else {
-        this.showTaskModal(); // Show modal before starting recording
-      }
-    });
+    // Skip record button event listener as we now use MultiTaskManager
+    if (this.elements.recordButton) {
+      this.elements.recordButton.addEventListener('click', () => {
+        if (this.isRecording) {
+          this.stopRecording();
+        } else {
+          this.showTaskModal(); // Show modal before starting recording
+        }
+      });
+    }
 
-    this.elements.taskCancelBtn.addEventListener('click', () => {
-      this.currentTaskTags = []; // Clear tags when cancelling
-      this.hideTaskModal();
-    });
+    if (this.elements.taskCancelBtn) {
+      this.elements.taskCancelBtn.addEventListener('click', () => {
+        this.currentTaskTags = []; // Clear tags when cancelling
+        this.hideTaskModal();
+      });
+    }
 
-    this.elements.taskConfirmBtn.addEventListener('click', (e) => {
-      console.log('🖱️ Task confirm button clicked');
-      e.preventDefault();
-      this.startRecordingWithTask();
-    });
-    
-    this.elements.taskConfirmBtn.addEventListener('touchend', (e) => {
-      console.log('👆 Task confirm button touched');
-      e.preventDefault();
-      this.startRecordingWithTask();
-    });    
-    this.elements.taskConfirmBtn.addEventListener('touchend', (e) => {
-      console.log('👆 Task confirm button touched');
-      e.preventDefault();
-      this.startRecordingWithTask();
-    });
-    
-    this.elements.taskConfirmBtn.addEventListener('click', (e) => {
-      console.log('🖱️ Task confirm button clicked');
-      e.preventDefault();
-      this.startRecordingWithTask();
-    });
-    
-    this.elements.taskConfirmBtn.addEventListener('touchend', (e) => {
-      console.log('👆 Task confirm button touched');
-      e.preventDefault();
-      this.startRecordingWithTask();
-    });
-    this.elements.taskNameInput.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') {
+    if (this.elements.taskConfirmBtn) {
+      this.elements.taskConfirmBtn.addEventListener('click', (e) => {
+        console.log('🖱️ Task confirm button clicked');
         e.preventDefault();
         this.startRecordingWithTask();
-      } else if (e.key === 'Escape') {
+      });
+      
+      this.elements.taskConfirmBtn.addEventListener('touchend', (e) => {
+        console.log('👆 Task confirm button touched');
         e.preventDefault();
-        this.hideTaskModal();
-      }
-    });
+        this.startRecordingWithTask();
+      });
+    }
+    
+    if (this.elements.taskNameInput) {
+      this.elements.taskNameInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          this.startRecordingWithTask();
+        } else if (e.key === 'Escape') {
+          e.preventDefault();
+          this.hideTaskModal();
+        }
+      });
+    }
 
-    this.elements.taskNameModal.addEventListener('click', (e) => {
-      if (e.target === this.elements.taskNameModal) {
-        this.hideTaskModal();
-      }
-    });
+    if (this.elements.taskNameModal) {
+      this.elements.taskNameModal.addEventListener('click', (e) => {
+        if (e.target === this.elements.taskNameModal) {
+          this.hideTaskModal();
+        }
+      });
+    }
 
     // Tag functionality event listeners
-    this.elements.addCustomTagBtn.addEventListener('click', () => {
-      this.addCustomTag();
-    });
+    if (this.elements.addCustomTagBtn) {
+      this.elements.addCustomTagBtn.addEventListener('click', () => {
+        this.addCustomTag();
+      });
 
-    this.elements.addCustomTagBtn.addEventListener('touchend', (e) => {
-      console.log('👆 Add custom tag button touched');
-      e.preventDefault();
-      this.addCustomTag();
-    });
-
-    this.elements.customTagInput.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') {
+      this.elements.addCustomTagBtn.addEventListener('touchend', (e) => {
+        console.log('👆 Add custom tag button touched');
         e.preventDefault();
         this.addCustomTag();
-      }
-    });
+      });
+    }
+
+    if (this.elements.customTagInput) {
+      this.elements.customTagInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          this.addCustomTag();
+        }
+      });
+    }
 
     // Predefined tag buttons
     document.querySelectorAll('.tag-btn').forEach(btn => {
@@ -626,20 +1006,29 @@ class TimeTracker {
     showTaskModal() {
     console.log('📱 Modal opened on device');
     console.log('📱 Task confirm button element:', this.elements.taskConfirmBtn);
-    console.log('📱 Button disabled state:', this.elements.taskConfirmBtn.disabled);    this.elements.taskNameModal.classList.add('visible');
+    console.log('📱 Button disabled state:', this.elements.taskConfirmBtn?.disabled);
     
-    // Add fallback touch handling for mobile
-    this.elements.taskNameModal.addEventListener('touchend', (e) => {
-      if (e.target.id === 'task-confirm-btn' || e.target.closest('#task-confirm-btn')) {
-        console.log('📱 Fallback touch handler triggered');
-        e.preventDefault();
-        this.startRecordingWithTask();
-      }
-    });    this.elements.taskNameInput.value = '';
+    if (this.elements.taskNameModal) {
+      this.elements.taskNameModal.classList.add('visible');
+      
+      // Add fallback touch handling for mobile
+      this.elements.taskNameModal.addEventListener('touchend', (e) => {
+        if (e.target.id === 'task-confirm-btn' || e.target.closest('#task-confirm-btn')) {
+          console.log('📱 Fallback touch handler triggered');
+          e.preventDefault();
+          this.startRecordingWithTask();
+        }
+      });
+    }
+    
+    if (this.elements.taskNameInput) {
+      this.elements.taskNameInput.value = '';
+      this.elements.taskNameInput.focus();
+    }
+    
     this.currentTaskTags = [];
     this.updateSelectedTags();
     this.resetPredefinedTags();
-    this.elements.taskNameInput.focus();
     
     // Show all task history when modal opens
     this.updateTaskSuggestions('');
@@ -945,12 +1334,16 @@ class TimeTracker {
     console.log('🔍 Tags after initializeCurrentHourProgress:', this.currentTaskTags);
     
     // Update UI
-    this.elements.recordButton.classList.add('recording');
-    this.elements.recordButton.innerHTML = `<svg class="record-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="6" y="6" width="12" height="12"></rect></svg>정지`;
+    if (this.elements.recordButton) {
+      this.elements.recordButton.classList.add('recording');
+      this.elements.recordButton.innerHTML = `<svg class="record-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="6" y="6" width="12" height="12"></rect></svg>정지`;
+    }
     if (this.elements.statusDot) this.elements.statusDot.classList.add('recording');
     if (this.elements.statusText) this.elements.statusText.textContent = '기록 중';
-    this.elements.currentTaskNameDisplay.textContent = this.currentTaskName;
-    this.elements.currentTaskNameDisplay.classList.add('recording');
+    if (this.elements.currentTaskNameDisplay) {
+      this.elements.currentTaskNameDisplay.textContent = this.currentTaskName;
+      this.elements.currentTaskNameDisplay.classList.add('recording');
+    }
     
     // Debug: Check tags after UI updates
     console.log('🔍 Tags after UI updates:', this.currentTaskTags);
@@ -1009,9 +1402,6 @@ class TimeTracker {
       currentTime = new Date(date.getFullYear(), date.getMonth(), date.getDate(), hour, minute + 1, 0, 0).getTime();
     }
     
-    // Add session time to total
-    this.totalTime += sessionTime;
-    
     // Track task stop
     if (window.analytics) {
       window.analytics.trackTaskStop(this.currentTaskName, sessionTime, this.currentTaskTags);
@@ -1033,13 +1423,17 @@ class TimeTracker {
     }
     
     // Update UI
-    this.elements.recordButton.classList.remove('recording');
-    this.elements.recordButton.innerHTML = `<svg class="record-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"></circle><polygon points="10,8 16,12 10,16 10,8"></polygon></svg>시작`;
+    if (this.elements.recordButton) {
+      this.elements.recordButton.classList.remove('recording');
+      this.elements.recordButton.innerHTML = `<svg class="record-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"></circle><polygon points="10,8 16,12 10,16 10,8"></polygon></svg>시작`;
+    }
     if (this.elements.statusDot) this.elements.statusDot.classList.remove('recording');
     if (this.elements.statusText) this.elements.statusText.textContent = '대기 중';
-    this.elements.currentTime.textContent = '00:00:00';
-    this.elements.currentTaskNameDisplay.textContent = '작업을 시작하세요';
-    this.elements.currentTaskNameDisplay.classList.remove('recording');
+    if (this.elements.currentTime) this.elements.currentTime.textContent = '00:00:00';
+    if (this.elements.currentTaskNameDisplay) {
+      this.elements.currentTaskNameDisplay.textContent = '작업을 시작하세요';
+      this.elements.currentTaskNameDisplay.classList.remove('recording');
+    }
     this.currentTaskName = '';
     this.currentTaskTags = [];
     
@@ -1206,7 +1600,6 @@ class TimeTracker {
       
       // Distribute current session time and start fresh
       this.distributeSessionTime(this.currentSessionTime);
-      this.totalTime += this.currentSessionTime;
       
       // Start new session for new hour
       this.currentHour = currentHour;
@@ -1220,12 +1613,37 @@ class TimeTracker {
     this.updateDisplay();
   }
   
+  calculateTotalTimeFromData() {
+    // Calculate total time from all recorded minutes in timeData
+    let total = 0;
+    
+    // Sum up all recorded time from all hours
+    Object.keys(this.timeData).forEach(hour => {
+      const hourData = this.timeData[hour];
+      if (hourData && Array.isArray(hourData)) {
+        total += hourData.reduce((sum, minuteTime) => sum + minuteTime, 0);
+      }
+    });
+    
+    // Add current session time if recording
+    if (this.isRecording && this.currentSessionTime > 0) {
+      total += this.currentSessionTime;
+    }
+    
+    return total;
+  }
+  
   updateDisplay() {
     // Update current session time
-    this.elements.currentTime.textContent = this.formatTime(this.currentSessionTime);
+    if (this.elements.currentTime) {
+      this.elements.currentTime.textContent = this.formatTime(this.currentSessionTime);
+    }
     
-    // Update total time
-    this.elements.totalTime.textContent = this.formatTime(this.totalTime);
+    // Calculate and update total time from actual recorded minute data
+    const calculatedTotalTime = this.calculateTotalTimeFromData();
+    if (this.elements.totalTime) {
+      this.elements.totalTime.textContent = this.formatTime(calculatedTotalTime);
+    }
     
     // Update timeline items
     this.timelineOrder.forEach(hour => {
@@ -1325,7 +1743,7 @@ class TimeTracker {
   saveData() {
     const data = {
       timeData: this.timeData,
-      totalTime: this.totalTime,
+      // totalTime is now calculated dynamically from timeData
       timelineOrder: this.timelineOrder,
       taskSessions: this.taskSessions, // Save task sessions
       taskTagSessions: this.taskTagSessions, // Save task tag sessions
@@ -1354,7 +1772,7 @@ class TimeTracker {
         
         if (lastSaved.toDateString() === today.toDateString()) {
           this.timeData = data.timeData || {};
-          this.totalTime = data.totalTime || 0;
+          // totalTime is now calculated dynamically from timeData
           this.timelineOrder = this.generateTimelineOrder();
           this.taskSessions = data.taskSessions || {}; // Load task sessions
           this.taskHistory = data.taskHistory || []; // Load task history          this.taskTagSessions = data.taskTagSessions || {}; // Load task tag sessions
@@ -1398,9 +1816,6 @@ class TimeTracker {
     // Store task names and tags for the interrupted session
     this.storeInterruptedSessionTasks(activeRecording, timeSinceStart);
     
-    // Add to total time
-    this.totalTime += timeSinceStart;
-    
     console.log(`✅ Recovered ${this.formatTime(timeSinceStart)} of interrupted session`);
   }
   
@@ -1433,14 +1848,16 @@ class TimeTracker {
 
   resetData() {
     this.timeData = {};
-    this.totalTime = 0;
+    // totalTime is calculated dynamically, no need to reset
     this.timelineOrder = this.generateTimelineOrder();
     this.taskSessions = {}; // Clear task sessions
     this.taskTagSessions = {}; // Clear task tag sessions
     this.currentTaskName = "";
     this.currentTaskTags = [];
-    this.elements.currentTaskNameDisplay.textContent = "작업을 시작하세요";
-    this.elements.currentTaskNameDisplay.classList.remove("recording");
+    if (this.elements.currentTaskNameDisplay) {
+      this.elements.currentTaskNameDisplay.textContent = "작업을 시작하세요";
+      this.elements.currentTaskNameDisplay.classList.remove("recording");
+    }
     this.updateDisplay();
     this.updateTaskLabels(); // Clear task labels from display
     this.saveData();
@@ -2446,15 +2863,44 @@ class NavigationManager {
 // Initialize analytics
 async function initializeAnalytics() {
   try {
+    console.log('🔄 Initializing analytics...');
     const response = await fetch('/api/analytics-config');
+    
+    if (!response.ok) {
+      throw new Error(`Analytics config request failed: ${response.status} ${response.statusText}`);
+    }
+    
     const config = await response.json();
+    console.log('📋 Analytics config received:', { 
+      hasToken: !!config.mixpanelToken, 
+      hasAnalytics: !!window.analytics 
+    });
     
     if (config.mixpanelToken && window.analytics) {
       window.analytics.init(config.mixpanelToken);
-      window.analytics.trackSessionStart();
+      
+      // Wait a moment for initialization, then track session start
+      setTimeout(() => {
+        if (window.analytics.isInitialized) {
+          window.analytics.trackSessionStart();
+        } else {
+          console.warn('⚠️ Analytics not initialized after timeout');
+        }
+      }, 1000);
+    } else {
+      if (!config.mixpanelToken) {
+        console.error('❌ No Mixpanel token in config - check MIXPANEL_PROJECT_TOKEN environment variable');
+      }
+      if (!window.analytics) {
+        console.error('❌ Analytics object not found - check analytics.js loading');
+      }
     }
   } catch (error) {
     console.error('❌ Failed to initialize analytics:', error);
+    console.error('This usually means:');
+    console.error('1. MIXPANEL_PROJECT_TOKEN not set in production');
+    console.error('2. Network connectivity issues');
+    console.error('3. Server not responding to /api/analytics-config');
   }
 }
 
@@ -2465,6 +2911,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   
   window.timeTracker = new TimeTracker();
   window.navigationManager = new NavigationManager(window.timeTracker);
+  
+  // Multi-task manager is now initialized inside TimeTracker.initializeMultiTaskManager()
+  // No need to initialize it here again
   
   console.log('⏱️ Time Tracker initialized with minute-based timeline');
   console.log('📱 Navigation system initialized');

@@ -50,21 +50,26 @@
             <div class="view-container" id="tracker-view">
                 <div class="control-total-section">
                     <div class="total-time-display">
-                        <div class="current-task-display">
-                            <span class="task-label text-caption1">현재 작업</span>
-                            <span class="task-name text-subheadline" id="current-task-name">작업을 시작하세요</span>
-                        </div>
                         <span class="total-label">총 시간</span>
                         <span class="total-time" id="total-time">00:00:00</span>
-                        <span class="current-time" id="current-time">00:00:00</span>
                     </div>
-                    <button class="record-button" id="record-button">
-                        <svg class="record-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                            <circle cx="12" cy="12" r="10"></circle>
-                            <polygon points="10,8 16,12 10,16 10,8"></polygon>
-                        </svg>
-                        <span class="button-text">시작</span>
-                    </button>
+                    
+                    <div class="tasks-section">
+                        <div class="tasks-header">
+                            <h3 class="tasks-title">작업 목록</h3>
+                            <button class="add-task-button" id="add-task-button">
+                                <svg class="add-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                                </svg>
+                                작업 추가
+                            </button>
+                        </div>
+                        
+                        <div class="tasks-list" id="tasks-list">
+                            <!-- Tasks will be dynamically added here -->
+                        </div>
+                    </div>
                 </div>
 
                 <div class="timeline-container">
