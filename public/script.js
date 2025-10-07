@@ -41,6 +41,7 @@ class MultiTaskManager {
       startTime: null,
       totalTime: 0,
       isRecording: false,
+      hasBeenRecorded: false, // Track if task has been recorded before
       element: null
     };
     
@@ -156,6 +157,9 @@ class MultiTaskManager {
     // Disable input while recording
     input.disabled = true;
     
+    // Update timeline title with current task name
+    this.updateTimelineTitle(task.name);
+    
     // Start the original TimeTracker recording with this task
     this.timeTracker.currentTaskName = task.name;
     this.timeTracker.currentTaskTags = ['멀티태스킹'];
@@ -177,6 +181,7 @@ class MultiTaskManager {
     task.totalTime += sessionTime;
     task.isRecording = false;
     task.startTime = null;
+    task.hasBeenRecorded = true; // Mark as recorded
     
     // Update UI
     task.element.classList.remove('recording');
@@ -189,9 +194,12 @@ class MultiTaskManager {
       </svg>
     `;
     
-    // Re-enable input
+    // Keep input disabled after recording (don't re-enable)
     const input = task.element.querySelector('.task-input');
-    input.disabled = false;
+    input.disabled = true;
+    
+    // Reset timeline title to default
+    this.updateTimelineTitle('현재 시간 타임라인');
     
     // Stop the original TimeTracker recording
     this.timeTracker.stopRecording();
@@ -280,12 +288,20 @@ class MultiTaskManager {
     return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
   }
   
+  updateTimelineTitle(title) {
+    const timelineTitle = document.querySelector('.timeline-title');
+    if (timelineTitle) {
+      timelineTitle.textContent = title;
+    }
+  }
+  
   saveTasksData() {
     const tasksData = Array.from(this.tasks.entries()).map(([id, task]) => ({
       id,
       name: task.name,
       totalTime: task.totalTime,
-      isRecording: task.isRecording
+      isRecording: task.isRecording,
+      hasBeenRecorded: task.hasBeenRecorded || false
     }));
     
     localStorage.setItem(`multiTasks_${this.timeTracker.currentNickname}`, JSON.stringify(tasksData));
@@ -314,11 +330,18 @@ class MultiTaskManager {
           startTime: null,
           totalTime: taskData.totalTime,
           isRecording: false, // Don't restore recording state
+          hasBeenRecorded: taskData.hasBeenRecorded || false,
           element: null
         };
         
         const taskElement = this.createTaskElement(task);
         task.element = taskElement;
+        
+        // Disable input if task has been recorded before
+        if (task.hasBeenRecorded) {
+          const input = taskElement.querySelector('.task-input');
+          input.disabled = true;
+        }
         
         this.tasks.set(task.id, task);
         this.elements.tasksList.appendChild(taskElement);
@@ -707,35 +730,35 @@ class TimeTracker {
     const timeline = this.elements.timeline;
     timeline.innerHTML = '';
     
-    this.timelineOrder.forEach(hour => {
-      const timelineItem = document.createElement('div');
-      timelineItem.className = 'timeline-item';
-      timelineItem.dataset.hour = hour;
-      timelineItem.draggable = true;
-      
-      const timeString = this.formatHour(hour);
-      
-      // Create 60 minute blocks
-      const minuteBlocks = [];
-      for (let minute = 0; minute < 60; minute++) {
-        minuteBlocks.push(`<div class="minute-block" data-minute="${minute}"></div>`);
-      }
-      
-      timelineItem.innerHTML = `
-        <div class="timeline-time">${timeString}</div>
-        <div class="timeline-content">
-          <div class="timeline-duration" id="duration-${hour}">00:00:00</div>
-          <div class="progress-container">
-            <div class="minute-grid" id="minutes-${hour}">
-              ${minuteBlocks.join('')}
-            </div>
+    // Only show the current hour
+    const currentHour = this.getCurrentHour();
+    
+    const timelineItem = document.createElement('div');
+    timelineItem.className = 'timeline-item';
+    timelineItem.dataset.hour = currentHour;
+    timelineItem.draggable = false; // Disable dragging since we only show one item
+    
+    const timeString = this.formatHour(currentHour);
+    
+    // Create 60 minute blocks
+    const minuteBlocks = [];
+    for (let minute = 0; minute < 60; minute++) {
+      minuteBlocks.push(`<div class="minute-block" data-minute="${minute}"></div>`);
+    }
+    
+    timelineItem.innerHTML = `
+      <div class="timeline-time">${timeString}</div>
+      <div class="timeline-content">
+        <div class="timeline-duration" id="duration-${currentHour}">00:00:00</div>
+        <div class="progress-container">
+          <div class="minute-grid" id="minutes-${currentHour}">
+            ${minuteBlocks.join('')}
           </div>
         </div>
-      `;
-      
-      this.addDragListeners(timelineItem);
-      timeline.appendChild(timelineItem);
-    });
+      </div>
+    `;
+    
+    timeline.appendChild(timelineItem);
   }
 
   addDragListeners(item) {
@@ -1645,27 +1668,27 @@ class TimeTracker {
       this.elements.totalTime.textContent = this.formatTime(calculatedTotalTime);
     }
     
-    // Update timeline items
-    this.timelineOrder.forEach(hour => {
-      const hourData = this.timeData[hour] || new Array(60).fill(0);
-      const totalDuration = hourData.reduce((sum, minuteTime) => sum + minuteTime, 0);
+    // Update timeline items - only current hour
+    const currentHour = this.getCurrentHour();
+    const hourData = this.timeData[currentHour] || new Array(60).fill(0);
+    const totalDuration = hourData.reduce((sum, minuteTime) => sum + minuteTime, 0);
+    
+    // Update duration display
+    const durationElement = document.getElementById(`duration-${currentHour}`);
+    if (durationElement) {
+      let displayDuration = totalDuration;
       
-      // Update duration display
-      const durationElement = document.getElementById(`duration-${hour}`);
-      if (durationElement) {
-        let displayDuration = totalDuration;
-        
-        // Add current session time if recording and this is the current hour
-        if (this.isRecording && hour === this.currentHour) {
-          displayDuration += this.currentSessionTime;
-        }
-        
-        durationElement.textContent = this.formatTime(displayDuration);
+      // Add current session time if recording
+      if (this.isRecording && currentHour === this.currentHour) {
+        displayDuration += this.currentSessionTime;
       }
       
-      // Update minute blocks
-      const minuteGrid = document.getElementById(`minutes-${hour}`);
-      if (minuteGrid) {
+      durationElement.textContent = this.formatTime(displayDuration);
+    }
+    
+    // Update minute blocks
+    const minuteGrid = document.getElementById(`minutes-${currentHour}`);
+    if (minuteGrid) {
         const minuteBlocks = minuteGrid.querySelectorAll('.minute-block');
         
         minuteBlocks.forEach((block, minute) => {
@@ -1673,13 +1696,13 @@ class TimeTracker {
           let displayTime = minuteTime;
           
           // Get tag information for this minute
-          const minuteTags = (this.taskTagSessions[hour] && this.taskTagSessions[hour][minute]) || [];
+          const minuteTags = (this.taskTagSessions[currentHour] && this.taskTagSessions[currentHour][minute]) || [];
           let tagColor = '#ED5000'; // Default orange color
           
 
           
           // Add current session contribution if recording
-          if (this.isRecording && hour === this.currentHour) {
+          if (this.isRecording && currentHour === this.currentHour) {
             const currentMinute = this.getCurrentMinute();
             if (minute === currentMinute) {
               // Add partial current session time for current minute
@@ -1720,7 +1743,7 @@ class TimeTracker {
           }
           
           // Highlight current minute if recording
-          if (this.isRecording && hour === this.currentHour && minute === this.getCurrentMinute()) {
+          if (this.isRecording && currentHour === this.currentHour && minute === this.getCurrentMinute()) {
             block.classList.add('current-minute');
           } else {
             block.classList.remove('current-minute');
@@ -1729,15 +1752,14 @@ class TimeTracker {
       }
       
       // Highlight current hour if recording
-      const timelineItem = document.querySelector(`[data-hour="${hour}"]`);
+      const timelineItem = document.querySelector(`[data-hour="${currentHour}"]`);
       if (timelineItem) {
-        if (this.isRecording && hour === this.currentHour) {
+        if (this.isRecording && currentHour === this.currentHour) {
           timelineItem.classList.add('active');
         } else {
           timelineItem.classList.remove('active');
         }
       }
-    });
   }
   
   saveData() {

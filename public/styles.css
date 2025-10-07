@@ -658,6 +658,7 @@ body {
   border: 1px solid var(--neutral-70);
   border-radius: var(--radius-xl);
   padding: var(--space-lg);
+  margin-top: var(--space-lg);
   margin-bottom: var(--space-xl);
   display: flex;
   flex-direction: column;
@@ -972,7 +973,8 @@ body {
   background: var(--neutral-100);
   border: 1px solid var(--neutral-70);
   border-radius: var(--radius-xl);
-  padding: var(--space-base);
+  padding: var(--space-lg);
+  margin-bottom: var(--space-lg);
 }
 
 .timeline-title {
