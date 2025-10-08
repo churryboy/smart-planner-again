@@ -178,6 +178,9 @@ class MultiTaskManager {
     const task = this.tasks.get(taskId);
     if (!task || !task.isRecording) return;
     
+    console.log(`⏹️ Stopping recording for task: ${task.name}`);
+    console.log(`   Current TimeTracker taskName: ${this.timeTracker.currentTaskName}`);
+    
     const sessionTime = Date.now() - task.startTime;
     task.totalTime += sessionTime;
     task.isRecording = false;
@@ -205,6 +208,8 @@ class MultiTaskManager {
     // Stop the original TimeTracker recording
     this.timeTracker.stopRecording();
     
+    console.log(`   After stopping, taskSessions:`, this.timeTracker.taskSessions);
+    
     // Track analytics
     if (window.analytics) {
       window.analytics.trackTaskStop(task.name, sessionTime, ['멀티태스킹']);
@@ -214,7 +219,7 @@ class MultiTaskManager {
     this.updateTotalTime();
     this.saveTasksData();
     
-    console.log(`⏹️ Stopped recording task: ${task.name} - Session: ${this.formatTime(sessionTime)}`);
+    console.log(`✅ Stopped recording task: ${task.name} - Session: ${this.formatTime(sessionTime)}`);
   }
   
   stopAllRecordings() {
@@ -509,6 +514,12 @@ class TimeTracker {
   }
   
   initializeMultiTaskManager() {
+    // Prevent multiple initializations
+    if (window.multiTaskManager) {
+      console.log('📋 Multi-task manager already initialized, skipping...');
+      return;
+    }
+    
     // Initialize multi-task manager if elements exist
     if (document.getElementById('add-task-button') && document.getElementById('tasks-list')) {
       window.multiTaskManager = new MultiTaskManager(this);
@@ -2145,7 +2156,7 @@ class AnalyticsManager {
       endDate: endDate
     };
 
-    // Aggregate data from timeTracker
+    // Aggregate data from timeTracker for timeline
     console.log('📊 Aggregating data for period:', this.currentPeriod);
     console.log('📊 Available hours in timeData:', Object.keys(this.timeTracker.timeData));
     
@@ -2153,16 +2164,6 @@ class AnalyticsManager {
       const hourData = this.timeTracker.timeData[hour];
       const hourTaskSessions = this.timeTracker.taskSessions[hour] || {};
       const hourTagSessions = this.timeTracker.taskTagSessions[hour] || {};
-      
-      // Debug: Log data for hours after 14:00
-      if (parseInt(hour) >= 14) {
-        console.log(`📊 Hour ${hour} data:`, {
-          totalMinutes: hourData.reduce((sum, time) => sum + (time > 0 ? 1 : 0), 0),
-          totalTime: hourData.reduce((sum, time) => sum + time, 0),
-          tasks: Object.keys(hourTaskSessions),
-          taskNames: Object.values(hourTaskSessions).filter(name => name)
-        });
-      }
 
       // Store timeline data for replica
       data.timelineData[hour] = {
@@ -2171,38 +2172,10 @@ class AnalyticsManager {
         tagSessions: { ...hourTagSessions }
       };
 
+      // Sum up total time from minute blocks
       hourData.forEach((minuteTime, minute) => {
         if (minuteTime > 0) {
           data.totalTime += minuteTime;
-
-          const taskName = hourTaskSessions[minute];
-          const taskTags = hourTagSessions[minute] || [];
-
-          if (taskName) {
-            // Debug: Log task and tags for specific tasks
-            if (taskName.includes('바이브') || taskName.includes('코딩')) {
-              console.log(`📋 Processing task "${taskName}" at ${hour}:${minute}:`, {
-                taskTags,
-                minuteTime
-              });
-            }
-            
-            // Count unique tasks
-            if (!data.tasks[taskName]) {
-              data.tasks[taskName] = { time: 0, categories: new Set() };
-              data.totalTasks++;
-            }
-            data.tasks[taskName].time += minuteTime;
-
-            // Aggregate by categories
-            taskTags.forEach(tag => {
-              data.tasks[taskName].categories.add(tag);
-              if (!data.categories[tag]) {
-                data.categories[tag] = 0;
-              }
-              data.categories[tag] += minuteTime;
-            });
-          }
 
           // Daily activity (simplified - using current day)
           const today = new Date().toDateString();
@@ -2213,6 +2186,43 @@ class AnalyticsManager {
         }
       });
     });
+
+    // Aggregate task data from MultiTaskManager (the source of truth for multi-tasking)
+    if (window.multiTaskManager) {
+      console.log('📊 Aggregating tasks from MultiTaskManager');
+      
+      window.multiTaskManager.tasks.forEach((task, taskId) => {
+        const taskName = task.name;
+        const taskCategory = task.category || '공부';
+        const taskTotalTime = task.totalTime;
+        
+        // Skip empty task names
+        if (!taskName) return;
+        
+        console.log(`📋 Processing task from MultiTaskManager: "${taskName}"`, {
+          category: taskCategory,
+          totalTime: taskTotalTime,
+          hasBeenRecorded: task.hasBeenRecorded
+        });
+        
+        // Only include tasks that have been recorded (have some time)
+        if (taskTotalTime > 0 || task.hasBeenRecorded) {
+          // Count unique tasks
+          if (!data.tasks[taskName]) {
+            data.tasks[taskName] = { time: 0, categories: new Set() };
+            data.totalTasks++;
+          }
+          data.tasks[taskName].time += taskTotalTime;
+          data.tasks[taskName].categories.add(taskCategory);
+          
+          // Aggregate by categories
+          if (!data.categories[taskCategory]) {
+            data.categories[taskCategory] = 0;
+          }
+          data.categories[taskCategory] += taskTotalTime;
+        }
+      });
+    }
 
     // Debug: Log final aggregated data
     console.log('📊 Final aggregated data:', {
