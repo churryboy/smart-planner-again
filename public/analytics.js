@@ -130,8 +130,15 @@ class Analytics {
 
   // AI Todo events
   trackAIRecommendationGenerated(examType, examDate, recommendationCount) {
+    console.log('📝 Tracking AI Recommendation Generated:', {
+      exam_type: examType,
+      exam_date: examDate,
+      recommendation_count: recommendationCount
+    });
+    
     this.track('AI Recommendation Generated', {
       exam_type: examType,
+      exam_type_length: examType.length,
       exam_date: examDate,
       recommendation_count: recommendationCount,
       days_until_exam: Math.ceil((new Date(examDate) - new Date()) / (1000 * 60 * 60 * 24))

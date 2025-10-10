@@ -2771,6 +2771,10 @@ class AITodoManager {
     const targetExam = document.getElementById('target-exam').value.trim();
     const examDate = document.getElementById('exam-date').value;
     
+    // Log the actual input values submitted
+    console.log('📋 Target Exam Input Value:', targetExam);
+    console.log('📅 Exam Date Input Value:', examDate);
+    
     // Validation
     if (!targetExam) {
       alert('목표 시험을 입력해주세요.');
