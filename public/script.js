@@ -2765,6 +2765,10 @@ class AITodoManager {
     const targetExam = document.getElementById('target-exam').value.trim();
     const examDate = document.getElementById('exam-date').value;
     
+    // Clear old cached recommendations before generating new ones
+    localStorage.removeItem('aiRecommendations');
+    console.log('🗑️ Cleared old AI recommendations from cache');
+    
     // Log the actual input values submitted
     console.log('📋 Target Exam Input Value:', targetExam);
     console.log('📅 Exam Date Input Value:', examDate);
