@@ -2875,14 +2875,14 @@ class AITodoManager {
       };
       
       console.log('📊 Sending userData to AI:');
-      console.log('  - timeDataKeys:', Object.keys(userData.timeData || {}));
-      console.log('  - taskSessionsKeys:', Object.keys(userData.taskSessions || {}));
-      console.log('  - totalTime:', userData.totalTime);
-      console.log('  - taskHistoryLength:', userData.taskHistory.length);
-      console.log('  - HAS multiTaskData:', !!userData.multiTaskData);
+      console.log('  - totalTime:', userData.totalTime, 'ms =', (userData.totalTime / (1000 * 60 * 60)).toFixed(2), 'hours');
       console.log('  - multiTaskCount:', multiTaskData.tasks.length);
-      console.log('  - multiTasks:', JSON.stringify(multiTaskData.tasks, null, 2));
-      console.log('  - Full userData.multiTaskData:', userData.multiTaskData);
+      console.log('  - multiTasks details:');
+      multiTaskData.tasks.forEach((task, idx) => {
+        const hours = (task.totalTime / (1000 * 60 * 60)).toFixed(2);
+        console.log(`    Task ${idx + 1}: "${task.name}" | ${task.totalTime}ms (${hours}h) | Category: ${task.category}`);
+      });
+      console.log('  - Full multiTaskData:', JSON.stringify(multiTaskData, null, 2));
       
       // Call OpenAI API
       const response = await fetch('/api/generate-study-plan', {
