@@ -2392,42 +2392,48 @@ class AnalyticsManager {
       });
     });
 
-    // Aggregate task data from MultiTaskManager (the source of truth for multi-tasking)
-    if (window.multiTaskManager) {
-      console.log('📊 Aggregating tasks from MultiTaskManager');
+    // Aggregate task data from the actual recorded time blocks (not cumulative totals)
+    // This ensures we only show tasks that were actually recorded in the selected date range
+    console.log('📊 Aggregating tasks from recorded time blocks in selected date range');
+    
+    Object.keys(this.timeTracker.timeData).forEach(hour => {
+      const hourTaskSessions = this.timeTracker.taskSessions[hour] || {};
+      const hourData = this.timeTracker.timeData[hour];
       
-      window.multiTaskManager.tasks.forEach((task, taskId) => {
-        const taskName = task.name;
-        const taskCategory = task.category || '공부';
-        const taskTotalTime = task.totalTime;
+      // Iterate through each minute that has recorded time
+      Object.keys(hourTaskSessions).forEach(minute => {
+        const taskName = hourTaskSessions[minute];
+        const minuteTime = hourData[parseInt(minute)];
         
-        // Skip empty task names
-        if (!taskName) return;
-        
-        console.log(`📋 Processing task from MultiTaskManager: "${taskName}"`, {
-          category: taskCategory,
-          totalTime: taskTotalTime,
-          hasBeenRecorded: task.hasBeenRecorded
-        });
-        
-        // Only include tasks that have been recorded (have some time)
-        if (taskTotalTime > 0 || task.hasBeenRecorded) {
+        if (taskName && minuteTime > 0) {
+          // Get category from MultiTaskManager if available
+          let taskCategory = '공부'; // default
+          if (window.multiTaskManager) {
+            window.multiTaskManager.tasks.forEach((task) => {
+              if (task.name === taskName) {
+                taskCategory = task.category || '공부';
+              }
+            });
+          }
+          
           // Count unique tasks
           if (!data.tasks[taskName]) {
             data.tasks[taskName] = { time: 0, categories: new Set() };
             data.totalTasks++;
           }
-          data.tasks[taskName].time += taskTotalTime;
+          data.tasks[taskName].time += minuteTime;
           data.tasks[taskName].categories.add(taskCategory);
           
           // Aggregate by categories
           if (!data.categories[taskCategory]) {
             data.categories[taskCategory] = 0;
           }
-          data.categories[taskCategory] += taskTotalTime;
+          data.categories[taskCategory] += minuteTime;
+          
+          console.log(`📋 Found recorded task: "${taskName}" at ${hour}:${minute} - ${minuteTime}ms (${taskCategory})`);
         }
       });
-    }
+    });
 
     // Debug: Log final aggregated data
     console.log('📊 Final aggregated data:', {
