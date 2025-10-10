@@ -1907,32 +1907,33 @@ body {
   background: white;
 }
 
-/* Heatmap levels based on study time */
+/* Heatmap levels based on study time - Blue (low) to Red (high) */
 .calendar-day.heat-0 {
   background: var(--neutral-95);
   border-color: var(--neutral-80);
 }
 
 .calendar-day.heat-1 {
-  background: #FFE5D9;
-  border-color: #FFB088;
+  background: #D1E7F8;
+  border-color: #7FB3E0;
+  color: var(--neutral-10);
 }
 
 .calendar-day.heat-2 {
-  background: #FFB088;
-  border-color: #FF8C4A;
+  background: #FFE699;
+  border-color: #FFC933;
   color: var(--neutral-10);
 }
 
 .calendar-day.heat-3 {
-  background: #FF8C4A;
-  border-color: #ED5000;
-  color: white;
+  background: #FFAD66;
+  border-color: #FF8533;
+  color: var(--neutral-10);
 }
 
 .calendar-day.heat-4 {
-  background: #ED5000;
-  border-color: #C44000;
+  background: #FF5252;
+  border-color: #E63946;
   color: white;
   font-weight: 600;
 }
@@ -1960,10 +1961,15 @@ body {
   box-shadow: 0 0 0 3px rgba(237, 80, 0, 0.3);
 }
 
-/* Adjust time text color for dark backgrounds */
-.calendar-day.heat-3 .calendar-day-time,
+/* Adjust time text color for red background */
 .calendar-day.heat-4 .calendar-day-time {
-  color: rgba(255, 255, 255, 0.9);
+  color: rgba(255, 255, 255, 0.95);
+}
+
+.calendar-day.heat-1 .calendar-day-time,
+.calendar-day.heat-2 .calendar-day-time,
+.calendar-day.heat-3 .calendar-day-time {
+  color: var(--neutral-20);
 }
 
 /* Remove the dot indicator for heatmap days */
@@ -2016,23 +2022,23 @@ body {
 }
 
 .legend-box.heat-1 {
-  background: #FFE5D9;
-  border-color: #FFB088;
+  background: #D1E7F8;
+  border-color: #7FB3E0;
 }
 
 .legend-box.heat-2 {
-  background: #FFB088;
-  border-color: #FF8C4A;
+  background: #FFE699;
+  border-color: #FFC933;
 }
 
 .legend-box.heat-3 {
-  background: #FF8C4A;
-  border-color: #ED5000;
+  background: #FFAD66;
+  border-color: #FF8533;
 }
 
 .legend-box.heat-4 {
-  background: #ED5000;
-  border-color: #C44000;
+  background: #FF5252;
+  border-color: #E63946;
 }
 
 .legend-text {
