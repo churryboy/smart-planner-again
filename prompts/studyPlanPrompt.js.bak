@@ -10,10 +10,7 @@ function generateStudyPlanPrompt(targetExam, examDate, daysUntilExam, taskAnalys
 시험 날짜: ${examDate}
 남은 기간: ${daysUntilExam}일
 
-=== ⏰ 긴급도 평가 ===
-${diagnosis.urgency}
-
-=== 📊 학습 현황 진단 ===
+=== �� 학습 현황 진단 ===
 ${diagnosis.studyTimeBalance}
 
 ${diagnosis.habitOptimization}

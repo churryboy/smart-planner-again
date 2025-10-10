@@ -222,6 +222,12 @@ body {
   padding: 16px;
 }
 
+.diagnosis-item.urgency-item {
+  background: linear-gradient(135deg, #FEF1EB 0%, #FBDCCC 100%);
+  border-left: 4px solid var(--orange-50);
+  margin-bottom: 20px;
+}
+
 .diagnosis-item h4 {
   font-size: 14px;
   font-weight: 600;
@@ -536,12 +542,32 @@ body {
 .recommendation-priority {
   background: var(--orange-50);
   color: var(--neutral-100);
-  padding: var(--space-xs) var(--space-sm);
+  padding: 6px 12px;
   border-radius: var(--radius-full);
   font-size: 12px;
-  font-weight: 500;
+  font-weight: 600;
   white-space: nowrap;
   flex-shrink: 0;
+  min-width: fit-content;
+}
+
+/* Priority level colors */
+.recommendation-priority.high,
+.recommendation-priority[data-priority="높음"] {
+  background: #DC2626;
+  color: white;
+}
+
+.recommendation-priority.medium,
+.recommendation-priority[data-priority="중간"] {
+  background: #F59E0B;
+  color: white;
+}
+
+.recommendation-priority.low,
+.recommendation-priority[data-priority="낮음"] {
+  background: #10B981;
+  color: white;
 }
 
 .recommendation-description {

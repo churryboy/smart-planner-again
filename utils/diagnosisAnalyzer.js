@@ -11,6 +11,32 @@ const {
 } = require('../prompts/diagnosisPrompts');
 
 /**
+ * Determine urgency level based on days until exam
+ */
+function getUrgencyLevel(daysUntilExam) {
+  if (daysUntilExam <= 7) return 'CRITICAL';
+  if (daysUntilExam <= 14) return 'HIGH';
+  if (daysUntilExam <= 30) return 'MEDIUM';
+  return 'LOW';
+}
+
+/**
+ * Generate urgency message based on days remaining
+ */
+function generateUrgencyMessage(daysUntilExam, targetExam) {
+  const urgency = getUrgencyLevel(daysUntilExam);
+  
+  const messages = {
+    CRITICAL: `⚠️ **긴급 상황**: ${targetExam}까지 ${daysUntilExam}일 남음\n- 시험이 임박했습니다. 즉시 집중적인 학습이 필요합니다.\n- 핵심 개념 위주로 효율적인 학습 전략이 필수입니다.`,
+    HIGH: `🔥 **시급**: ${targetExam}까지 ${daysUntilExam}일 남음\n- 2주 이내 시험입니다. 계획적이고 집중적인 학습이 필요합니다.\n- 약점 보완과 실전 연습에 집중해야 합니다.`,
+    MEDIUM: `📅 **보통**: ${targetExam}까지 ${daysUntilExam}일 남음\n- 한 달 이내 시험입니다. 체계적인 학습 계획이 중요합니다.\n- 기본 개념 정리와 문제 풀이를 병행하세요.`,
+    LOW: `✅ **여유**: ${targetExam}까지 ${daysUntilExam}일 남음\n- 충분한 준비 기간이 있습니다. 기초부터 탄탄히 다지세요.\n- 개념 이해와 심화 학습을 병행할 수 있습니다.`
+  };
+  
+  return messages[urgency];
+}
+
+/**
  * Generate comprehensive diagnosis based on task analysis
  */
 function generateDiagnosis(taskAnalysis, targetExam, daysUntilExam) {
@@ -27,9 +53,13 @@ function generateDiagnosis(taskAnalysis, targetExam, daysUntilExam) {
     totalTimeHours: totalTime / (1000 * 60 * 60),
     studyTimeRatio,
     daysUntilExam,
+    urgencyLevel: getUrgencyLevel(daysUntilExam),
     totalTasks,
     topTasksCount: topTasks.length
   });
+  
+  // Generate urgency message
+  const urgencyMessage = generateUrgencyMessage(daysUntilExam, targetExam);
   
   // Generate assessments
   const balanceAssessment = generateBalanceAssessment(studyTimeRatio);
@@ -39,6 +69,8 @@ function generateDiagnosis(taskAnalysis, targetExam, daysUntilExam) {
   );
   
   return {
+    urgency: urgencyMessage,
+    urgencyLevel: getUrgencyLevel(daysUntilExam),
     studyTimeBalance: balanceAssessment,
     habitOptimization: habitAnalysis,
     goalAchievability: achievabilityAnalysis,
@@ -46,7 +78,8 @@ function generateDiagnosis(taskAnalysis, targetExam, daysUntilExam) {
       studyTimeRatio,
       dailyStudyHours: studyTime / Math.max(1, daysUntilExam) / (1000 * 60 * 60),
       totalStudyTime: studyTime,
-      totalTasks
+      totalTasks,
+      daysUntilExam
     }
   };
 }

@@ -3004,6 +3004,12 @@ class AITodoManager {
         <div class="diagnosis-section">
           <h3 class="diagnosis-title">📊 학습 현황 진단</h3>
           <div class="diagnosis-content">
+            ${diagnosis.urgency ? `
+            <div class="diagnosis-item urgency-item">
+              <h4>⏰ 긴급도 평가</h4>
+              <p>${diagnosis.urgency.replace(/\n/g, '<br>')}</p>
+            </div>
+            ` : ''}
             <div class="diagnosis-item">
               <h4>학습 집중도 분석</h4>
               <p>${diagnosis.studyTimeBalance.replace(/\n/g, '<br>')}</p>
@@ -3021,20 +3027,28 @@ class AITodoManager {
       `;
     }
 
-    const recommendationsHTML = recommendations.map((rec, index) => `
-      <div class="recommendation-item clickable" data-todo-index="${index}">
-        <div class="recommendation-header">
-          <h4 class="recommendation-title">${rec.title}</h4>
-          <span class="recommendation-priority">${rec.priority}</span>
+    const recommendationsHTML = recommendations.map((rec, index) => {
+      // Map priority to full Korean text
+      const priorityText = rec.priority === '높음' ? '중요도 높음' 
+                         : rec.priority === '중간' ? '중요도 중간'
+                         : rec.priority === '낮음' ? '중요도 낮음'
+                         : rec.priority;
+      
+      return `
+        <div class="recommendation-item clickable" data-todo-index="${index}">
+          <div class="recommendation-header">
+            <h4 class="recommendation-title">${rec.title}</h4>
+            <span class="recommendation-priority" data-priority="${rec.priority}">${priorityText}</span>
+          </div>
+          <p class="recommendation-description">${rec.description}</p>
+          <div class="recommendation-meta">
+            <span>예상 시간: ${rec.estimatedTime}</span>
+            <span>카테고리: ${rec.category}</span>
+            ${rec.improvementEffect ? `<span>개선효과: ${rec.improvementEffect}</span>` : ''}
+          </div>
         </div>
-        <p class="recommendation-description">${rec.description}</p>
-        <div class="recommendation-meta">
-          <span>예상 시간: ${rec.estimatedTime}</span>
-          <span>카테고리: ${rec.category}</span>
-          ${rec.improvementEffect ? `<span>개선효과: ${rec.improvementEffect}</span>` : ''}
-        </div>
-      </div>
-    `).join('');
+      `;
+    }).join('');
 
     container.innerHTML = `
       ${diagnosisHTML}
