@@ -1389,10 +1389,7 @@ class TimeTracker {
     this.currentHour = timeInfo.hour;
     this.currentStartMinute = timeInfo.minute;
     
-    // Track task start
-    if (window.analytics) {
-      window.analytics.trackTaskStart(this.currentTaskName, this.currentTaskTags);
-    }
+    // Note: Analytics tracking is handled by MultiTaskManager to avoid duplicates
     
     // Debug: Check tags after setting recording state
     console.log('🔍 Tags after setting recording state:', this.currentTaskTags);
@@ -1472,10 +1469,7 @@ class TimeTracker {
       currentTime = new Date(date.getFullYear(), date.getMonth(), date.getDate(), hour, minute + 1, 0, 0).getTime();
     }
     
-    // Track task stop
-    if (window.analytics) {
-      window.analytics.trackTaskStop(this.currentTaskName, sessionTime, this.currentTaskTags);
-    }
+    // Note: Analytics tracking is handled by MultiTaskManager to avoid duplicates
     
     // Distribute session time across minutes
     this.distributeSessionTime(sessionTime);
