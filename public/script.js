@@ -2120,17 +2120,22 @@ class AnalyticsManager {
       // Check if this date has recorded time
       const dateKey = this.getDateKey(date);
       const dayTime = this.getDayTotalTime(date);
+      const studyTime = this.getDayStudyTime(date);
       const hasData = dayTime > 0;
+      
+      // Calculate heat level based on study time
+      const heatLevel = this.getHeatLevel(studyTime);
       
       let classes = 'calendar-day';
       if (isToday) classes += ' today';
       if (isSelected) classes += ' selected';
       if (hasData) classes += ' has-data';
+      classes += ` heat-${heatLevel}`;
       
       daysHTML += `
         <div class="${classes}" data-date="${dateKey}">
           <span class="calendar-day-number">${day}</span>
-          ${hasData ? `<span class="calendar-day-time">${this.formatCalendarTime(dayTime)}</span>` : ''}
+          ${hasData ? `<span class="calendar-day-time">${this.formatCalendarTime(studyTime)}</span>` : ''}
         </div>
       `;
     }
@@ -2182,6 +2187,45 @@ class AnalyticsManager {
     });
     
     return totalTime;
+  }
+
+  getDayStudyTime(date) {
+    // Check if the date is today
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const checkDate = new Date(date);
+    checkDate.setHours(0, 0, 0, 0);
+    
+    // Only show data for today (since we only track current day)
+    if (checkDate.getTime() !== today.getTime()) {
+      return 0;
+    }
+    
+    // Aggregate study time (공부 category) from MultiTaskManager
+    let studyTime = 0;
+    if (window.multiTaskManager) {
+      window.multiTaskManager.tasks.forEach((task, taskId) => {
+        if (task.category === '공부') {
+          studyTime += task.totalTime;
+          // Include current recording session if task is being recorded
+          if (task.isRecording && task.startTime) {
+            studyTime += Date.now() - task.startTime;
+          }
+        }
+      });
+    }
+    
+    return studyTime;
+  }
+
+  getHeatLevel(studyTimeMs) {
+    const hours = studyTimeMs / 3600000;
+    
+    if (hours === 0) return 0;
+    if (hours <= 2) return 1;
+    if (hours <= 4) return 2;
+    if (hours <= 6) return 3;
+    return 4;
   }
 
   formatCalendarTime(ms) {
@@ -2239,6 +2283,9 @@ class AnalyticsManager {
     this.updateTimeMetrics(data);
     this.updateTimelineReplica(data);
     this.updateTaskSummary(data);
+    
+    // Refresh calendar to update heatmap
+    this.renderCalendar();
   }
 
   getAnalyticsData(period) {
