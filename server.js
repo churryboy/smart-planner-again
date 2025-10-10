@@ -66,6 +66,23 @@ app.post('/api/generate-study-plan', async (req, res) => {
   try {
     const { targetExam, examDate, userData } = req.body;
     
+    console.log('🚀 =================');
+    console.log('📥 Received request for AI diagnosis');
+    console.log('🎯 Target Exam:', targetExam);
+    console.log('📅 Exam Date:', examDate);
+    console.log('📦 UserData keys:', Object.keys(userData || {}));
+    console.log('🔍 Has multiTaskData:', !!userData.multiTaskData);
+    console.log('📊 MultiTask count:', userData.multiTaskData?.tasks?.length || 0);
+    console.log('⏱️ Total time:', userData.totalTime);
+    if (userData.multiTaskData?.tasks) {
+      console.log('📋 MultiTask tasks:', userData.multiTaskData.tasks.map(t => ({
+        name: t.name,
+        time: Math.floor(t.totalTime / 60000) + 'm',
+        category: t.category
+      })));
+    }
+    console.log('🚀 =================');
+    
     if (!targetExam || !examDate) {
       return res.status(400).json({ error: '목표 시험과 시험 날짜를 모두 입력해주세요.' });
     }
