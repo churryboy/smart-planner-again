@@ -43,6 +43,24 @@ app.get('/api/analytics-debug', (req, res) => {
   });
 });
 
+// Debug endpoint to check userData being sent
+app.post('/api/debug-user-data', (req, res) => {
+  const { userData } = req.body;
+  const analysis = analyzeUserTasks(userData);
+  const diagnosis = generateDiagnosis(analysis, 'Test Exam', 30);
+  
+  res.json({
+    receivedData: {
+      hasMultiTaskData: !!userData.multiTaskData,
+      multiTaskCount: userData.multiTaskData?.tasks?.length || 0,
+      multiTasks: userData.multiTaskData?.tasks || [],
+      totalTime: userData.totalTime
+    },
+    analysis,
+    diagnosis
+  });
+});
+
 // OpenAI API endpoint
 app.post('/api/generate-study-plan', async (req, res) => {
   try {
