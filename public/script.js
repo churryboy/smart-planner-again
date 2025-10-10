@@ -1373,19 +1373,18 @@ class TimeTracker {
   startTrackingWithTodoTitle(todoTitle) {
     console.log('📋 Starting tracking with todo title:', todoTitle);
     
-    // Set the task name directly
-    this.currentTaskName = todoTitle;
-    
-    // Set default tags for AI-generated todos
-    this.currentTaskTags = ['공부'];
-    
-    // Add to task history
-    this.addToTaskHistory(todoTitle);
-    
-    // Start recording immediately
-    this.startRecording();
-    
-    console.log('✅ Todo tracking started successfully');
+    // Use MultiTaskManager to create a new task and start recording
+    if (window.multiTaskManager) {
+      // Add a new task with the todo title
+      const taskId = window.multiTaskManager.addNewTask(todoTitle);
+      
+      // Start recording on this task immediately
+      window.multiTaskManager.startTaskRecording(taskId);
+      
+      console.log('✅ Todo tracking started successfully with task ID:', taskId);
+    } else {
+      console.error('❌ MultiTaskManager not found');
+    }
   }
   
   toggleRecording() {
@@ -1407,10 +1406,7 @@ class TimeTracker {
     this.currentHour = timeInfo.hour;
     this.currentStartMinute = timeInfo.minute;
     
-    // Track task start
-    if (window.analytics) {
-      window.analytics.trackTaskStart(this.currentTaskName, this.currentTaskTags);
-    }
+    // Note: Analytics tracking is handled by MultiTaskManager to avoid duplicates
     
     // Debug: Check tags after setting recording state
     console.log('🔍 Tags after setting recording state:', this.currentTaskTags);
@@ -1490,10 +1486,7 @@ class TimeTracker {
       currentTime = new Date(date.getFullYear(), date.getMonth(), date.getDate(), hour, minute + 1, 0, 0).getTime();
     }
     
-    // Track task stop
-    if (window.analytics) {
-      window.analytics.trackTaskStop(this.currentTaskName, sessionTime, this.currentTaskTags);
-    }
+    // Note: Analytics tracking is handled by MultiTaskManager to avoid duplicates
     
     // Distribute session time across minutes
     this.distributeSessionTime(sessionTime);
@@ -2245,11 +2238,16 @@ class AnalyticsManager {
   getHeatLevel(studyTimeMs) {
     const hours = studyTimeMs / 3600000;
     
-    if (hours === 0) return 0;
-    if (hours <= 2) return 1;
-    if (hours <= 4) return 2;
-    if (hours <= 6) return 3;
-    return 4;
+    if (hours === 0) return 0;           // 0 hours: no color
+    if (hours <= 0.5) return 1;          // 0-0.5 hours
+    if (hours <= 1) return 2;            // 0.5-1 hours
+    if (hours <= 1.5) return 3;          // 1-1.5 hours
+    if (hours <= 2) return 4;            // 1.5-2 hours
+    if (hours <= 2.5) return 5;          // 2-2.5 hours
+    if (hours <= 3) return 6;            // 2.5-3 hours
+    if (hours <= 4) return 7;            // 3-4 hours
+    if (hours <= 5) return 8;            // 4-5 hours
+    return 9;                            // 5+ hours
   }
 
   formatCalendarTime(ms) {
@@ -2748,7 +2746,10 @@ class AITodoManager {
   constructor(timeTracker, navigationManager) {
     this.timeTracker = timeTracker;
     this.navigationManager = navigationManager;
+    this.currentRecommendations = [];
+    this.currentDiagnosis = null;
     this.initializeAITodo();
+    this.loadSavedRecommendations();
   }
 
   initializeAITodo() {
@@ -2766,9 +2767,48 @@ class AITodoManager {
     }
   }
 
+  loadSavedRecommendations() {
+    // Load previously generated recommendations from localStorage
+    try {
+      const saved = localStorage.getItem('aiRecommendations');
+      if (saved) {
+        const data = JSON.parse(saved);
+        this.currentRecommendations = data.recommendations || [];
+        this.currentDiagnosis = data.diagnosis || null;
+        
+        // Display the saved recommendations if they exist
+        if (this.currentRecommendations.length > 0) {
+          console.log('📋 Loading saved AI recommendations');
+          this.displayRecommendations(this.currentRecommendations, this.currentDiagnosis);
+        }
+      }
+    } catch (error) {
+      console.error('Error loading saved recommendations:', error);
+    }
+  }
+
+  saveRecommendations(recommendations, diagnosis) {
+    // Save recommendations to localStorage
+    try {
+      const data = {
+        recommendations,
+        diagnosis,
+        timestamp: Date.now()
+      };
+      localStorage.setItem('aiRecommendations', JSON.stringify(data));
+      console.log('💾 Saved AI recommendations to localStorage');
+    } catch (error) {
+      console.error('Error saving recommendations:', error);
+    }
+  }
+
   async generateRecommendations() {
     const targetExam = document.getElementById('target-exam').value.trim();
     const examDate = document.getElementById('exam-date').value;
+    
+    // Log the actual input values submitted
+    console.log('📋 Target Exam Input Value:', targetExam);
+    console.log('📅 Exam Date Input Value:', examDate);
     
     // Validation
     if (!targetExam) {
@@ -2918,6 +2958,10 @@ class AITodoManager {
 
     // Store recommendations for later use
     this.currentRecommendations = recommendations;
+    this.currentDiagnosis = diagnosis;
+    
+    // Save to localStorage for persistence
+    this.saveRecommendations(recommendations, diagnosis);
 
     // Generate diagnosis HTML if available
     let diagnosisHTML = '';
@@ -3158,10 +3202,8 @@ class NavigationManager {
       }
     }
 
-    // Initialize AI Todo manager when switching to ai-todo view
-    if (viewName === 'ai-todo' && !this.aiTodoManager) {
-      this.aiTodoManager = new AITodoManager(this.timeTracker, this);
-    }
+    // AI Todo Manager is now initialized at startup (window.aiTodoManager)
+    // No need to initialize it here
 
     // Update navigation active state
     document.querySelectorAll('.nav-item').forEach(item => {
@@ -3249,12 +3291,16 @@ document.addEventListener('DOMContentLoaded', async () => {
   window.timeTracker = new TimeTracker();
   window.navigationManager = new NavigationManager(window.timeTracker);
   
+  // Initialize AI Todo Manager at startup to load saved recommendations
+  window.aiTodoManager = new AITodoManager(window.timeTracker, window.navigationManager);
+  
   // Multi-task manager is now initialized inside TimeTracker.initializeMultiTaskManager()
   // No need to initialize it here again
   
   console.log('⏱️ Time Tracker initialized with minute-based timeline');
   console.log('📱 Navigation system initialized');
   console.log('📊 Analytics system ready');
+  console.log('🤖 AI Todo Manager initialized');
   console.log('🔄 Use timeTracker.resetAllData() to clear all minute blocks');
   console.log('🕐 Recording starts from current system minute');
 });

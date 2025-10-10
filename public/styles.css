@@ -1450,9 +1450,6 @@ body {
   border: none;
 }
 
-.btn-confirm:hover {
-}
-
 /* Mobile touch improvements */
 @media (max-width: 768px) {
   .btn-confirm, .btn-cancel {
@@ -1878,33 +1875,64 @@ body {
   background: white;
 }
 
-/* Heatmap levels based on study time - Blue (low) to Red (high) */
+/* Heatmap levels based on study time - Blue (low) to Red (high) - 10 tiers */
 .calendar-day.heat-0 {
   background: var(--neutral-95);
   border-color: var(--neutral-80);
 }
 
 .calendar-day.heat-1 {
-  background: #D1E7F8;
-  border-color: #7FB3E0;
+  background: #E3F2FD;
+  border-color: #90CAF9;
   color: var(--neutral-10);
 }
 
 .calendar-day.heat-2 {
-  background: #FFE699;
-  border-color: #FFC933;
+  background: #BBDEFB;
+  border-color: #64B5F6;
   color: var(--neutral-10);
 }
 
 .calendar-day.heat-3 {
-  background: #FFAD66;
-  border-color: #FF8533;
+  background: #81D4FA;
+  border-color: #42A5F5;
   color: var(--neutral-10);
 }
 
 .calendar-day.heat-4 {
-  background: #FF5252;
-  border-color: #E63946;
+  background: #FFF9C4;
+  border-color: #FFF176;
+  color: var(--neutral-10);
+}
+
+.calendar-day.heat-5 {
+  background: #FFEB3B;
+  border-color: #FDD835;
+  color: var(--neutral-10);
+}
+
+.calendar-day.heat-6 {
+  background: #FFD54F;
+  border-color: #FFC107;
+  color: var(--neutral-10);
+}
+
+.calendar-day.heat-7 {
+  background: #FFB74D;
+  border-color: #FF9800;
+  color: var(--neutral-10);
+}
+
+.calendar-day.heat-8 {
+  background: #FF8A65;
+  border-color: #FF7043;
+  color: white;
+  font-weight: 500;
+}
+
+.calendar-day.heat-9 {
+  background: #E53935;
+  border-color: #C62828;
   color: white;
   font-weight: 600;
 }
@@ -1919,7 +1947,12 @@ body {
 .calendar-day.today.heat-1,
 .calendar-day.today.heat-2,
 .calendar-day.today.heat-3,
-.calendar-day.today.heat-4 {
+.calendar-day.today.heat-4,
+.calendar-day.today.heat-5,
+.calendar-day.today.heat-6,
+.calendar-day.today.heat-7,
+.calendar-day.today.heat-8,
+.calendar-day.today.heat-9 {
   box-shadow: 0 0 0 2px var(--orange-50);
 }
 
@@ -1932,91 +1965,36 @@ body {
   box-shadow: 0 0 0 3px rgba(237, 80, 0, 0.3);
 }
 
-/* Adjust time text color for red background */
-.calendar-day.heat-4 .calendar-day-time {
-  color: rgba(255, 255, 255, 0.95);
-}
-
+/* Adjust time text color based on background */
 .calendar-day.heat-1 .calendar-day-time,
 .calendar-day.heat-2 .calendar-day-time,
-.calendar-day.heat-3 .calendar-day-time {
+.calendar-day.heat-3 .calendar-day-time,
+.calendar-day.heat-4 .calendar-day-time,
+.calendar-day.heat-5 .calendar-day-time,
+.calendar-day.heat-6 .calendar-day-time,
+.calendar-day.heat-7 .calendar-day-time {
   color: var(--neutral-20);
+}
+
+.calendar-day.heat-8 .calendar-day-time,
+.calendar-day.heat-9 .calendar-day-time {
+  color: rgba(255, 255, 255, 0.95);
 }
 
 /* Remove the dot indicator for heatmap days */
 .calendar-day.has-data.heat-1::after,
 .calendar-day.has-data.heat-2::after,
 .calendar-day.has-data.heat-3::after,
-.calendar-day.has-data.heat-4::after {
+.calendar-day.has-data.heat-4::after,
+.calendar-day.has-data.heat-5::after,
+.calendar-day.has-data.heat-6::after,
+.calendar-day.has-data.heat-7::after,
+.calendar-day.has-data.heat-8::after,
+.calendar-day.has-data.heat-9::after {
   display: none;
 }
 
-/* Calendar Legend */
-.calendar-legend {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--space-base);
-  margin-top: var(--space-lg);
-  padding-top: var(--space-base);
-  border-top: 1px solid var(--neutral-80);
-}
-
-.legend-label {
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--neutral-40);
-}
-
-.legend-items {
-  display: flex;
-  align-items: center;
-  gap: var(--space-sm);
-}
-
-.legend-item {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.legend-box {
-  width: 16px;
-  height: 16px;
-  border-radius: 4px;
-  border: 1px solid;
-}
-
-.legend-box.heat-0 {
-  background: var(--neutral-95);
-  border-color: var(--neutral-80);
-}
-
-.legend-box.heat-1 {
-  background: #D1E7F8;
-  border-color: #7FB3E0;
-}
-
-.legend-box.heat-2 {
-  background: #FFE699;
-  border-color: #FFC933;
-}
-
-.legend-box.heat-3 {
-  background: #FFAD66;
-  border-color: #FF8533;
-}
-
-.legend-box.heat-4 {
-  background: #FF5252;
-  border-color: #E63946;
-}
-
-.legend-text {
-  font-size: 11px;
-  color: var(--neutral-40);
-  font-weight: 500;
-}
+/* Calendar Legend - Removed */
 
 .calendar-day-number {
   font-size: 12px;
