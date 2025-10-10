@@ -3146,16 +3146,15 @@ class NavigationManager {
     this.updateAppHeader(viewName);
 
     // Initialize analytics manager when switching to analyzer view
-    if (viewName === 'analyzer' && !this.analyticsManager) {
-      this.analyticsManager = new AnalyticsManager(this.timeTracker);
-      // Track analytics view
-      if (window.analytics) {
-        window.analytics.trackAnalyticsView('all');
+    if (viewName === 'analyzer') {
+      if (!this.analyticsManager) {
+        this.analyticsManager = new AnalyticsManager(this.timeTracker);
+      } else {
+        // Refresh analytics data when returning to analyzer view
+        this.analyticsManager.updateAnalytics();
       }
-    } else if (viewName === 'analyzer' && this.analyticsManager) {
-      // Refresh analytics data when returning to analyzer view
-      this.analyticsManager.updateAnalytics();
-      // Track analytics view
+      
+      // Track analytics view (once per view switch)
       if (window.analytics) {
         window.analytics.trackAnalyticsView('all');
       }
