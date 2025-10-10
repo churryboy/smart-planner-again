@@ -540,6 +540,8 @@ body {
   border-radius: var(--radius-full);
   font-size: 12px;
   font-weight: 500;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .recommendation-description {
