@@ -3163,10 +3163,8 @@ class NavigationManager {
       }
     }
 
-    // Initialize AI Todo manager when switching to ai-todo view
-    if (viewName === 'ai-todo' && !this.aiTodoManager) {
-      this.aiTodoManager = new AITodoManager(this.timeTracker, this);
-    }
+    // AI Todo Manager is now initialized at startup (window.aiTodoManager)
+    // No need to initialize it here
 
     // Update navigation active state
     document.querySelectorAll('.nav-item').forEach(item => {
@@ -3254,12 +3252,16 @@ document.addEventListener('DOMContentLoaded', async () => {
   window.timeTracker = new TimeTracker();
   window.navigationManager = new NavigationManager(window.timeTracker);
   
+  // Initialize AI Todo Manager at startup to load saved recommendations
+  window.aiTodoManager = new AITodoManager(window.timeTracker, window.navigationManager);
+  
   // Multi-task manager is now initialized inside TimeTracker.initializeMultiTaskManager()
   // No need to initialize it here again
   
   console.log('⏱️ Time Tracker initialized with minute-based timeline');
   console.log('📱 Navigation system initialized');
   console.log('📊 Analytics system ready');
+  console.log('🤖 AI Todo Manager initialized');
   console.log('🔄 Use timeTracker.resetAllData() to clear all minute blocks');
   console.log('🕐 Recording starts from current system minute');
 });
