@@ -43,6 +43,24 @@ app.get('/api/analytics-debug', (req, res) => {
   });
 });
 
+// Debug endpoint to check userData being sent
+app.post('/api/debug-user-data', (req, res) => {
+  const { userData } = req.body;
+  const analysis = analyzeUserTasks(userData);
+  const diagnosis = generateDiagnosis(analysis, 'Test Exam', 30);
+  
+  res.json({
+    receivedData: {
+      hasMultiTaskData: !!userData.multiTaskData,
+      multiTaskCount: userData.multiTaskData?.tasks?.length || 0,
+      multiTasks: userData.multiTaskData?.tasks || [],
+      totalTime: userData.totalTime
+    },
+    analysis,
+    diagnosis
+  });
+});
+
 // OpenAI API endpoint
 app.post('/api/generate-study-plan', async (req, res) => {
   try {
@@ -104,13 +122,15 @@ app.post('/api/generate-study-plan', async (req, res) => {
 
 // Comprehensive task analysis function
 function analyzeUserTasks(userData) {
-  const { timeData = {}, taskSessions = {}, taskTagSessions = {}, taskHistory = [], totalTime = 0 } = userData || {};
+  const { timeData = {}, taskSessions = {}, taskTagSessions = {}, taskHistory = [], totalTime = 0, multiTaskData = null } = userData || {};
   
   console.log('🔍 Analyzing user data:', {
     timeDataKeys: Object.keys(timeData),
     taskSessionsKeys: Object.keys(taskSessions),
     taskTagSessionsKeys: Object.keys(taskTagSessions),
-    totalTimeReceived: totalTime
+    totalTimeReceived: totalTime,
+    hasMultiTaskData: !!multiTaskData,
+    multiTaskCount: multiTaskData?.tasks?.length || 0
   });
   
   // Calculate task statistics
@@ -119,10 +139,44 @@ function analyzeUserTasks(userData) {
   const hourlyActivity = {};
   let calculatedTotalTime = 0;
   
-  // Process all task sessions
-  Object.keys(taskSessions).forEach(hour => {
-    const hourTasks = taskSessions[hour] || {};
-    const hourTags = taskTagSessions[hour] || {};
+  // Prioritize MultiTaskManager data if available
+  if (multiTaskData && multiTaskData.tasks && multiTaskData.tasks.length > 0) {
+    console.log('📊 Using MultiTaskManager data for analysis');
+    
+    multiTaskData.tasks.forEach(task => {
+      let taskTime = task.totalTime;
+      
+      // Include currently recording time
+      if (task.isRecording && task.startTime) {
+        taskTime += Date.now() - task.startTime;
+      }
+      
+      calculatedTotalTime += taskTime;
+      
+      // Task statistics
+      taskStats[task.name] = {
+        totalTime: taskTime,
+        sessions: 1, // MultiTaskManager doesn't track sessions individually
+        tags: new Set([task.category || '기타']),
+        hours: new Set()
+      };
+      
+      // Category statistics
+      const category = task.category || '기타';
+      if (!categoryStats[category]) {
+        categoryStats[category] = 0;
+      }
+      categoryStats[category] += taskTime;
+      
+      console.log(`✅ Task: ${task.name}, Time: ${taskTime}ms, Category: ${category}`);
+    });
+  } else {
+    console.log('📊 Falling back to legacy TimeTracker data');
+    
+    // Process all task sessions (legacy data)
+    Object.keys(taskSessions).forEach(hour => {
+      const hourTasks = taskSessions[hour] || {};
+      const hourTags = taskTagSessions[hour] || {};
     
     Object.keys(hourTasks).forEach(minute => {
       const taskName = hourTasks[minute];
@@ -165,7 +219,8 @@ function analyzeUserTasks(userData) {
         hourlyActivity[hour] += minuteTime;
       }
     });
-  });
+    });
+  } // End of else block for legacy data processing
   
   // Format time helper
   const formatTime = (ms) => {
@@ -212,12 +267,18 @@ function analyzeUserTasks(userData) {
     ? `주로 ${activeHours.map(([hour, time]) => `${hour}시(${formatTime(time)})`).join(', ')} 시간대에 활동`
     : '시간대별 패턴 데이터 부족';
   
+  // Calculate study time (공부 category) for diagnosis
+  const studyTimeMs = categoryStats['공부'] || 0;
+  
   console.log('📊 Analysis results:', {
     calculatedTotalTime,
     passedTotalTime: totalTime,
     finalTotalTime,
+    studyTimeMs,
     taskStatsCount: Object.keys(taskStats).length,
-    categoryStatsCount: Object.keys(categoryStats).length
+    categoryStatsCount: Object.keys(categoryStats).length,
+    categories: Object.keys(categoryStats),
+    categoryTimes: Object.entries(categoryStats).map(([cat, time]) => `${cat}: ${time}ms`)
   });
   
   // Generate summary
@@ -243,9 +304,10 @@ function analyzeUserTasks(userData) {
     mostFrequentTask,
     longestTask,
     totalTasks,
-    totalStudyTime,
+    totalStudyTime, // Formatted string for display
     avgSessionTime,
-    totalTime: finalTotalTime // Return the calculated total time
+    totalTime: finalTotalTime, // Return the calculated total time in ms
+    studyTimeMs // Return study time in ms for diagnosis calculations
   };
 }
 
