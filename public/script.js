@@ -2211,11 +2211,16 @@ class AnalyticsManager {
   getHeatLevel(studyTimeMs) {
     const hours = studyTimeMs / 3600000;
     
-    if (hours === 0) return 0;
-    if (hours <= 1) return 1;  // 0-1 hour: light blue
-    if (hours <= 2) return 2;  // 1-2 hours: yellow
-    if (hours <= 3) return 3;  // 2-3 hours: orange
-    return 4;                  // 3+ hours: red
+    if (hours === 0) return 0;           // 0 hours: no color
+    if (hours <= 0.5) return 1;          // 0-0.5 hours
+    if (hours <= 1) return 2;            // 0.5-1 hours
+    if (hours <= 1.5) return 3;          // 1-1.5 hours
+    if (hours <= 2) return 4;            // 1.5-2 hours
+    if (hours <= 2.5) return 5;          // 2-2.5 hours
+    if (hours <= 3) return 6;            // 2.5-3 hours
+    if (hours <= 4) return 7;            // 3-4 hours
+    if (hours <= 5) return 8;            // 4-5 hours
+    return 9;                            // 5+ hours
   }
 
   formatCalendarTime(ms) {
