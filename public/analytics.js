@@ -163,6 +163,46 @@ class Analytics {
     });
   }
 
+  // Calendar events
+  trackCalendarMonthChanged(year, month) {
+    this.track('Calendar Month Changed', {
+      year: year,
+      month: month,
+      month_name: new Date(year, month).toLocaleString('ko-KR', { month: 'long' })
+    });
+  }
+
+  trackCalendarDateSelected(date, studyTime) {
+    this.track('Calendar Date Selected', {
+      selected_date: date,
+      day_of_week: new Date(date).toLocaleString('ko-KR', { weekday: 'long' }),
+      study_time_minutes: Math.round(studyTime / (1000 * 60)),
+      has_data: studyTime > 0
+    });
+  }
+
+  // Multi-task events
+  trackTaskAdded(taskName) {
+    this.track('Task Added', {
+      task_name: taskName
+    });
+  }
+
+  trackTaskDeleted(taskName, totalTime) {
+    this.track('Task Deleted', {
+      task_name: taskName,
+      total_time_minutes: Math.round(totalTime / (1000 * 60))
+    });
+  }
+
+  trackTaskCategoryChanged(taskName, oldCategory, newCategory) {
+    this.track('Task Category Changed', {
+      task_name: taskName,
+      old_category: oldCategory,
+      new_category: newCategory
+    });
+  }
+
   // Error tracking
   trackError(errorType, errorMessage, context = {}) {
     this.track('Error Occurred', {

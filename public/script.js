@@ -52,6 +52,11 @@ class MultiTaskManager {
     this.tasks.set(taskId, taskData);
     this.elements.tasksList.appendChild(taskElement);
     
+    // Track task addition
+    if (window.analytics && defaultName) {
+      window.analytics.trackTaskAdded(defaultName);
+    }
+    
     // Focus on the input if it's empty
     if (!defaultName) {
       const input = taskElement.querySelector('.task-input');
@@ -233,6 +238,11 @@ class MultiTaskManager {
   deleteTask(taskId) {
     const task = this.tasks.get(taskId);
     if (!task) return;
+    
+    // Track task deletion
+    if (window.analytics && task.name) {
+      window.analytics.trackTaskDeleted(task.name, task.totalTime);
+    }
     
     // Stop recording if active
     if (task.isRecording) {
@@ -2047,6 +2057,14 @@ class AnalyticsManager {
         this.selectedDate = null; // Clear selected date when changing months
         this.renderCalendar();
         this.updateMonthMetrics(); // Update time metrics for new month
+        
+        // Track month change
+        if (window.analytics) {
+          window.analytics.trackCalendarMonthChanged(
+            this.currentDate.getFullYear(),
+            this.currentDate.getMonth()
+          );
+        }
       });
     }
     
@@ -2056,6 +2074,14 @@ class AnalyticsManager {
         this.selectedDate = null; // Clear selected date when changing months
         this.renderCalendar();
         this.updateMonthMetrics(); // Update time metrics for new month
+        
+        // Track month change
+        if (window.analytics) {
+          window.analytics.trackCalendarMonthChanged(
+            this.currentDate.getFullYear(),
+            this.currentDate.getMonth()
+          );
+        }
       });
     }
     
@@ -2235,6 +2261,14 @@ class AnalyticsManager {
     const [year, month, day] = dateKey.split('-').map(Number);
     this.selectedDate = new Date(year, month - 1, day);
     this.selectedDate.setHours(0, 0, 0, 0);
+    
+    // Get study time for this date
+    const studyTime = this.getDayStudyTime(this.selectedDate);
+    
+    // Track date selection
+    if (window.analytics) {
+      window.analytics.trackCalendarDateSelected(dateKey, studyTime);
+    }
     
     // Re-render calendar to show selection
     this.renderCalendar();
