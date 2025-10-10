@@ -2793,12 +2793,24 @@ class AITodoManager {
     
     try {
       // Prepare user data for AI analysis
+      // Include MultiTaskManager data for accurate task analysis
+      const multiTaskData = window.multiTaskManager ? {
+        tasks: Array.from(window.multiTaskManager.tasks.values()).map(task => ({
+          name: task.name,
+          totalTime: task.totalTime,
+          category: task.category,
+          isRecording: task.isRecording,
+          startTime: task.startTime
+        }))
+      } : { tasks: [] };
+      
       const userData = {
         timeData: this.timeTracker.timeData,
         taskSessions: this.timeTracker.taskSessions,
         taskTagSessions: this.timeTracker.taskTagSessions,
         taskHistory: this.timeTracker.taskHistory || [],
-        totalTime: this.timeTracker.totalTime
+        totalTime: this.timeTracker.calculateTotalTimeFromData(),
+        multiTaskData: multiTaskData
       };
       
       console.log('📊 Sending userData to AI:', {
@@ -2806,7 +2818,9 @@ class AITodoManager {
         taskSessionsKeys: Object.keys(userData.taskSessions || {}),
         taskTagSessionsKeys: Object.keys(userData.taskTagSessions || {}),
         totalTime: userData.totalTime,
-        taskHistoryLength: userData.taskHistory.length
+        taskHistoryLength: userData.taskHistory.length,
+        multiTaskCount: multiTaskData.tasks.length,
+        multiTasks: multiTaskData.tasks
       });
       
       // Call OpenAI API

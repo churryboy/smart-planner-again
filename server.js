@@ -104,13 +104,15 @@ app.post('/api/generate-study-plan', async (req, res) => {
 
 // Comprehensive task analysis function
 function analyzeUserTasks(userData) {
-  const { timeData = {}, taskSessions = {}, taskTagSessions = {}, taskHistory = [], totalTime = 0 } = userData || {};
+  const { timeData = {}, taskSessions = {}, taskTagSessions = {}, taskHistory = [], totalTime = 0, multiTaskData = null } = userData || {};
   
   console.log('🔍 Analyzing user data:', {
     timeDataKeys: Object.keys(timeData),
     taskSessionsKeys: Object.keys(taskSessions),
     taskTagSessionsKeys: Object.keys(taskTagSessions),
-    totalTimeReceived: totalTime
+    totalTimeReceived: totalTime,
+    hasMultiTaskData: !!multiTaskData,
+    multiTaskCount: multiTaskData?.tasks?.length || 0
   });
   
   // Calculate task statistics
@@ -119,10 +121,44 @@ function analyzeUserTasks(userData) {
   const hourlyActivity = {};
   let calculatedTotalTime = 0;
   
-  // Process all task sessions
-  Object.keys(taskSessions).forEach(hour => {
-    const hourTasks = taskSessions[hour] || {};
-    const hourTags = taskTagSessions[hour] || {};
+  // Prioritize MultiTaskManager data if available
+  if (multiTaskData && multiTaskData.tasks && multiTaskData.tasks.length > 0) {
+    console.log('📊 Using MultiTaskManager data for analysis');
+    
+    multiTaskData.tasks.forEach(task => {
+      let taskTime = task.totalTime;
+      
+      // Include currently recording time
+      if (task.isRecording && task.startTime) {
+        taskTime += Date.now() - task.startTime;
+      }
+      
+      calculatedTotalTime += taskTime;
+      
+      // Task statistics
+      taskStats[task.name] = {
+        totalTime: taskTime,
+        sessions: 1, // MultiTaskManager doesn't track sessions individually
+        tags: new Set([task.category || '기타']),
+        hours: new Set()
+      };
+      
+      // Category statistics
+      const category = task.category || '기타';
+      if (!categoryStats[category]) {
+        categoryStats[category] = 0;
+      }
+      categoryStats[category] += taskTime;
+      
+      console.log(`✅ Task: ${task.name}, Time: ${taskTime}ms, Category: ${category}`);
+    });
+  } else {
+    console.log('📊 Falling back to legacy TimeTracker data');
+    
+    // Process all task sessions (legacy data)
+    Object.keys(taskSessions).forEach(hour => {
+      const hourTasks = taskSessions[hour] || {};
+      const hourTags = taskTagSessions[hour] || {};
     
     Object.keys(hourTasks).forEach(minute => {
       const taskName = hourTasks[minute];
@@ -165,7 +201,8 @@ function analyzeUserTasks(userData) {
         hourlyActivity[hour] += minuteTime;
       }
     });
-  });
+    });
+  } // End of else block for legacy data processing
   
   // Format time helper
   const formatTime = (ms) => {
