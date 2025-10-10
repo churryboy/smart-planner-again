@@ -2849,12 +2849,28 @@ class AITodoManager {
         }))
       } : { tasks: [] };
       
+      // Calculate total time from MultiTaskManager (more accurate)
+      let totalTimeMs = 0;
+      if (window.multiTaskManager) {
+        window.multiTaskManager.tasks.forEach(task => {
+          totalTimeMs += task.totalTime;
+          if (task.isRecording && task.startTime) {
+            totalTimeMs += Date.now() - task.startTime;
+          }
+        });
+      }
+      
+      // Fallback to TimeTracker if MultiTaskManager has no tasks
+      if (totalTimeMs === 0) {
+        totalTimeMs = this.timeTracker.calculateTotalTimeFromData();
+      }
+      
       const userData = {
         timeData: this.timeTracker.timeData,
         taskSessions: this.timeTracker.taskSessions,
         taskTagSessions: this.timeTracker.taskTagSessions,
         taskHistory: this.timeTracker.taskHistory || [],
-        totalTime: this.timeTracker.calculateTotalTimeFromData(),
+        totalTime: totalTimeMs,
         multiTaskData: multiTaskData
       };
       
