@@ -1738,63 +1738,6 @@ body {
   color: var(--orange-50);
 }
 
-/* Header Controls */
-.header-controls {
-  display: flex;
-  align-items: center;
-  gap: var(--space-base);
-}
-
-/* Refresh Button */
-.refresh-button {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 40px;
-  height: 40px;
-  background: var(--neutral-100);
-  border: 1px solid var(--neutral-70);
-  border-radius: var(--radius-lg);
-  cursor: pointer;
-  transition: all var(--transition-base);
-  color: var(--neutral-40);
-}
-
-.refresh-button:hover {
-  background: var(--neutral-90);
-  border-color: var(--neutral-60);
-  color: var(--neutral-20);
-}
-
-.refresh-button:active {
-  background: var(--neutral-80);
-  transform: scale(0.95);
-}
-
-.refresh-button.refreshing {
-  color: var(--orange-50);
-  border-color: var(--orange-50);
-}
-
-.refresh-button.refreshing .refresh-icon {
-  animation: spin 1s linear infinite;
-}
-
-.refresh-icon {
-  width: 18px;
-  height: 18px;
-  stroke-width: 1.5;
-}
-
-@keyframes spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}
-
 /* Period Dropdown */
 .period-dropdown {
   position: relative;
@@ -1832,6 +1775,151 @@ body {
 /* Analytics Content */
 .analytics-content {
   padding: var(--space-lg);
+}
+
+/* Calendar Panel */
+.calendar-container {
+  background: var(--neutral-100);
+  border: 1px solid var(--neutral-70);
+  border-radius: var(--radius-xl);
+  padding: var(--space-lg);
+  margin-bottom: var(--space-xl);
+}
+
+.calendar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-lg);
+}
+
+.calendar-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--neutral-10);
+  margin: 0;
+}
+
+.calendar-nav-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: transparent;
+  border: 1px solid var(--neutral-70);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all var(--transition-base);
+  color: var(--neutral-40);
+}
+
+.calendar-nav-btn:hover {
+  background: var(--neutral-90);
+  border-color: var(--neutral-60);
+  color: var(--neutral-20);
+}
+
+.calendar-nav-btn:active {
+  transform: scale(0.95);
+}
+
+.calendar-nav-btn svg {
+  width: 16px;
+  height: 16px;
+}
+
+.calendar-weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: var(--space-xs);
+  margin-bottom: var(--space-sm);
+}
+
+.calendar-weekday {
+  text-align: center;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--neutral-40);
+  padding: var(--space-sm) 0;
+}
+
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: var(--space-xs);
+}
+
+.calendar-day {
+  aspect-ratio: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-sm);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all var(--transition-base);
+  position: relative;
+  background: var(--neutral-95);
+  border: 1px solid var(--neutral-80);
+}
+
+.calendar-day:hover {
+  background: var(--neutral-90);
+  border-color: var(--neutral-70);
+}
+
+.calendar-day.other-month {
+  opacity: 0.3;
+  pointer-events: none;
+}
+
+.calendar-day.today {
+  background: var(--orange-95);
+  border-color: var(--orange-50);
+  color: var(--orange-50);
+  font-weight: 600;
+}
+
+.calendar-day.selected {
+  background: var(--orange-50);
+  border-color: var(--orange-50);
+  color: white;
+  font-weight: 600;
+}
+
+.calendar-day.has-data {
+  border-color: var(--orange-50);
+}
+
+.calendar-day.has-data::after {
+  content: '';
+  position: absolute;
+  bottom: 4px;
+  width: 4px;
+  height: 4px;
+  background: var(--orange-50);
+  border-radius: 50%;
+}
+
+.calendar-day.selected::after {
+  background: white;
+}
+
+.calendar-day-number {
+  font-size: 14px;
+  margin-bottom: 2px;
+}
+
+.calendar-day-time {
+  font-size: 10px;
+  color: var(--neutral-50);
+  font-weight: 500;
+}
+
+.calendar-day.selected .calendar-day-time {
+  color: rgba(255, 255, 255, 0.8);
 }
 
 /* Timeline Replica */

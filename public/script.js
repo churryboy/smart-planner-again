@@ -2024,10 +2024,15 @@ class AnalyticsManager {
   constructor(timeTracker) {
     this.timeTracker = timeTracker;
     this.currentPeriod = '24h';
+    this.currentDate = new Date();
+    this.selectedDate = null;
     this.initializeAnalytics();
   }
 
   initializeAnalytics() {
+    // Initialize calendar
+    this.initializeCalendar();
+    
     // Initialize period dropdown
     const periodSelect = document.getElementById('period-select');
     if (periodSelect) {
@@ -2040,20 +2045,176 @@ class AnalyticsManager {
       periodSelect.value = this.currentPeriod;
     }
 
-    // Initialize refresh button
-    const refreshButton = document.getElementById('refresh-button');
-    if (refreshButton) {
-      refreshButton.addEventListener('click', () => {
-        this.refreshData();
-      });
-    }
-
     // Initial data load
     this.updateAnalytics();
   }
 
+  initializeCalendar() {
+    // Set up navigation buttons
+    const prevBtn = document.getElementById('prev-month-btn');
+    const nextBtn = document.getElementById('next-month-btn');
+    
+    if (prevBtn) {
+      prevBtn.addEventListener('click', () => {
+        this.currentDate.setMonth(this.currentDate.getMonth() - 1);
+        this.renderCalendar();
+      });
+    }
+    
+    if (nextBtn) {
+      nextBtn.addEventListener('click', () => {
+        this.currentDate.setMonth(this.currentDate.getMonth() + 1);
+        this.renderCalendar();
+      });
+    }
+    
+    // Render initial calendar
+    this.renderCalendar();
+  }
+
+  renderCalendar() {
+    const year = this.currentDate.getFullYear();
+    const month = this.currentDate.getMonth();
+    
+    // Update title
+    const title = document.getElementById('calendar-title');
+    if (title) {
+      title.textContent = `${year}년 ${month + 1}월`;
+    }
+    
+    // Get calendar data
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+    const prevLastDay = new Date(year, month, 0);
+    
+    const firstDayOfWeek = firstDay.getDay();
+    const lastDate = lastDay.getDate();
+    const prevLastDate = prevLastDay.getDate();
+    
+    // Build calendar grid
+    const calendarGrid = document.getElementById('calendar-grid');
+    if (!calendarGrid) return;
+    
+    let daysHTML = '';
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    // Previous month days
+    for (let i = firstDayOfWeek - 1; i >= 0; i--) {
+      const day = prevLastDate - i;
+      daysHTML += `
+        <div class="calendar-day other-month">
+          <span class="calendar-day-number">${day}</span>
+        </div>
+      `;
+    }
+    
+    // Current month days
+    for (let day = 1; day <= lastDate; day++) {
+      const date = new Date(year, month, day);
+      date.setHours(0, 0, 0, 0);
+      
+      const isToday = date.getTime() === today.getTime();
+      const isSelected = this.selectedDate && date.getTime() === this.selectedDate.getTime();
+      
+      // Check if this date has recorded time
+      const dateKey = this.getDateKey(date);
+      const dayTime = this.getDayTotalTime(date);
+      const hasData = dayTime > 0;
+      
+      let classes = 'calendar-day';
+      if (isToday) classes += ' today';
+      if (isSelected) classes += ' selected';
+      if (hasData) classes += ' has-data';
+      
+      daysHTML += `
+        <div class="${classes}" data-date="${dateKey}">
+          <span class="calendar-day-number">${day}</span>
+          ${hasData ? `<span class="calendar-day-time">${this.formatCalendarTime(dayTime)}</span>` : ''}
+        </div>
+      `;
+    }
+    
+    // Next month days
+    const remainingDays = 42 - (firstDayOfWeek + lastDate);
+    for (let day = 1; day <= remainingDays; day++) {
+      daysHTML += `
+        <div class="calendar-day other-month">
+          <span class="calendar-day-number">${day}</span>
+        </div>
+      `;
+    }
+    
+    calendarGrid.innerHTML = daysHTML;
+    
+    // Add click listeners to calendar days
+    calendarGrid.querySelectorAll('.calendar-day:not(.other-month)').forEach(dayEl => {
+      dayEl.addEventListener('click', () => {
+        const dateKey = dayEl.dataset.date;
+        this.selectDate(dateKey);
+      });
+    });
+  }
+
+  getDateKey(date) {
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+  }
+
+  getDayTotalTime(date) {
+    // Check if the date is today
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const checkDate = new Date(date);
+    checkDate.setHours(0, 0, 0, 0);
+    
+    // Only show data for today (since we only track current day)
+    if (checkDate.getTime() !== today.getTime()) {
+      return 0;
+    }
+    
+    // Aggregate time from all hours of today
+    let totalTime = 0;
+    Object.keys(this.timeTracker.timeData).forEach(hour => {
+      const hourData = this.timeTracker.timeData[hour];
+      if (hourData && Array.isArray(hourData)) {
+        totalTime += hourData.reduce((sum, minuteTime) => sum + minuteTime, 0);
+      }
+    });
+    
+    return totalTime;
+  }
+
+  formatCalendarTime(ms) {
+    const hours = Math.floor(ms / 3600000);
+    const minutes = Math.floor((ms % 3600000) / 60000);
+    
+    if (hours > 0) {
+      return `${hours}h`;
+    } else if (minutes > 0) {
+      return `${minutes}m`;
+    }
+    return '';
+  }
+
+  selectDate(dateKey) {
+    const [year, month, day] = dateKey.split('-').map(Number);
+    this.selectedDate = new Date(year, month - 1, day);
+    this.selectedDate.setHours(0, 0, 0, 0);
+    
+    // Re-render calendar to show selection
+    this.renderCalendar();
+    
+    // Update analytics to show data for selected date
+    this.updateAnalytics();
+    
+    console.log('📅 Selected date:', dateKey, 'Updating analytics for this specific date');
+  }
+
   switchPeriod(period) {
     if (this.currentPeriod === period) return;
+
+    // Clear selected date when switching periods
+    this.selectedDate = null;
 
     // Update dropdown value
     const periodSelect = document.getElementById('period-select');
@@ -2062,55 +2223,16 @@ class AnalyticsManager {
     }
 
     this.currentPeriod = period;
+    
+    // Re-render calendar to clear selection
+    this.renderCalendar();
+    
+    // Update analytics
     this.updateAnalytics();
     
     console.log(`📊 Switched to ${period} analytics view`);
   }
 
-  refreshData() {
-    const refreshButton = document.getElementById('refresh-button');
-    
-    // Add refreshing state
-    if (refreshButton) {
-      refreshButton.classList.add('refreshing');
-      refreshButton.disabled = true;
-    }
-
-    // Debug: Log current TimeTracker data before refresh
-    console.log('🔍 TimeTracker data before refresh:', {
-      timeData: Object.keys(this.timeTracker.timeData),
-      taskSessions: Object.keys(this.timeTracker.taskSessions),
-      taskTagSessions: Object.keys(this.timeTracker.taskTagSessions)
-    });
-
-    // Force TimeTracker to save current state and ensure data is up to date
-    this.timeTracker.saveData();
-    
-    // Also ensure the TimeTracker display is updated (this might trigger data updates)
-    this.timeTracker.updateDisplay();
-    this.timeTracker.updateTaskLabels();
-
-    // Simulate a brief loading state for better UX
-    setTimeout(() => {
-      // Debug: Log TimeTracker data after forcing updates
-      console.log('🔍 TimeTracker data after forced updates:', {
-        timeData: Object.keys(this.timeTracker.timeData),
-        taskSessions: Object.keys(this.timeTracker.taskSessions),
-        taskTagSessions: Object.keys(this.timeTracker.taskTagSessions)
-      });
-      
-      // Update analytics with fresh data
-      this.updateAnalytics();
-      
-      // Remove refreshing state
-      if (refreshButton) {
-        refreshButton.classList.remove('refreshing');
-        refreshButton.disabled = false;
-      }
-      
-      console.log('🔄 Analytics data refreshed');
-    }, 300);
-  }
 
   updateAnalytics() {
     const data = this.getAnalyticsData(this.currentPeriod);
@@ -2120,6 +2242,19 @@ class AnalyticsManager {
   }
 
   getAnalyticsData(period) {
+    // If a specific date is selected, show data only for that date
+    if (this.selectedDate) {
+      const startOfDay = new Date(this.selectedDate);
+      startOfDay.setHours(0, 0, 0, 0);
+      
+      const endOfDay = new Date(this.selectedDate);
+      endOfDay.setHours(23, 59, 59, 999);
+      
+      console.log('📅 Getting analytics for selected date:', this.getDateKey(this.selectedDate));
+      return this.aggregateData(startOfDay, endOfDay);
+    }
+    
+    // Otherwise, use the period filter
     const now = new Date();
     let startDate;
 
@@ -2156,8 +2291,31 @@ class AnalyticsManager {
       endDate: endDate
     };
 
+    // Check if we're looking at today's data
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const startDay = new Date(startDate);
+    startDay.setHours(0, 0, 0, 0);
+    const endDay = new Date(endDate);
+    endDay.setHours(23, 59, 59, 999);
+    
+    // Only show data if the date range includes today (since we only track current day)
+    const includesToday = startDay.getTime() <= today.getTime() && endDay.getTime() >= today.getTime();
+    
+    console.log('📊 Aggregating data:', {
+      period: this.currentPeriod,
+      startDate: startDate.toDateString(),
+      endDate: endDate.toDateString(),
+      today: today.toDateString(),
+      includesToday: includesToday
+    });
+
+    if (!includesToday) {
+      console.log('📊 Selected date range does not include today - returning empty data');
+      return data;
+    }
+    
     // Aggregate data from timeTracker for timeline
-    console.log('📊 Aggregating data for period:', this.currentPeriod);
     console.log('📊 Available hours in timeData:', Object.keys(this.timeTracker.timeData));
     
     Object.keys(this.timeTracker.timeData).forEach(hour => {
@@ -2178,11 +2336,11 @@ class AnalyticsManager {
           data.totalTime += minuteTime;
 
           // Daily activity (simplified - using current day)
-          const today = new Date().toDateString();
-          if (!data.dailyActivity[today]) {
-            data.dailyActivity[today] = 0;
+          const todayStr = new Date().toDateString();
+          if (!data.dailyActivity[todayStr]) {
+            data.dailyActivity[todayStr] = 0;
           }
-          data.dailyActivity[today] += minuteTime;
+          data.dailyActivity[todayStr] += minuteTime;
         }
       });
     });
@@ -2253,6 +2411,21 @@ class AnalyticsManager {
 
   updateTimelineReplica(data) {
     const replicaContainer = document.getElementById('timeline-replica');
+    
+    // Update the title to show selected date if applicable
+    const replicaTitle = document.querySelector('.replica-title');
+    if (replicaTitle) {
+      if (this.selectedDate) {
+        const dateStr = this.selectedDate.toLocaleDateString('ko-KR', { 
+          year: 'numeric', 
+          month: 'long', 
+          day: 'numeric' 
+        });
+        replicaTitle.textContent = `${dateStr} 타임라인`;
+      } else {
+        replicaTitle.textContent = '기간별 타임라인';
+      }
+    }
     
     if (Object.keys(data.timelineData).length === 0) {
       replicaContainer.innerHTML = '<div class="replica-no-data">선택한 기간에 기록된 데이터가 없습니다</div>';
