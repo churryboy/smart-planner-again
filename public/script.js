@@ -2023,7 +2023,6 @@ class TimeTracker {
 class AnalyticsManager {
   constructor(timeTracker) {
     this.timeTracker = timeTracker;
-    this.currentPeriod = '24h';
     this.currentDate = new Date();
     this.selectedDate = null;
     this.initializeAnalytics();
@@ -2032,18 +2031,6 @@ class AnalyticsManager {
   initializeAnalytics() {
     // Initialize calendar
     this.initializeCalendar();
-    
-    // Initialize period dropdown
-    const periodSelect = document.getElementById('period-select');
-    if (periodSelect) {
-      periodSelect.addEventListener('change', (e) => {
-        const period = e.target.value;
-        this.switchPeriod(period);
-      });
-      
-      // Set initial value
-      periodSelect.value = this.currentPeriod;
-    }
 
     // Initial data load
     this.updateAnalytics();
@@ -2057,14 +2044,18 @@ class AnalyticsManager {
     if (prevBtn) {
       prevBtn.addEventListener('click', () => {
         this.currentDate.setMonth(this.currentDate.getMonth() - 1);
+        this.selectedDate = null; // Clear selected date when changing months
         this.renderCalendar();
+        this.updateMonthMetrics(); // Update time metrics for new month
       });
     }
     
     if (nextBtn) {
       nextBtn.addEventListener('click', () => {
         this.currentDate.setMonth(this.currentDate.getMonth() + 1);
+        this.selectedDate = null; // Clear selected date when changing months
         this.renderCalendar();
+        this.updateMonthMetrics(); // Update time metrics for new month
       });
     }
     
@@ -2254,32 +2245,23 @@ class AnalyticsManager {
     console.log('📅 Selected date:', dateKey, 'Updating analytics for this specific date');
   }
 
-  switchPeriod(period) {
-    if (this.currentPeriod === period) return;
-
-    // Clear selected date when switching periods
-    this.selectedDate = null;
-
-    // Update dropdown value
-    const periodSelect = document.getElementById('period-select');
-    if (periodSelect) {
-      periodSelect.value = period;
-    }
-
-    this.currentPeriod = period;
+  updateMonthMetrics() {
+    // Update only the time metrics for the current month (without timeline/task summary)
+    const year = this.currentDate.getFullYear();
+    const month = this.currentDate.getMonth();
     
-    // Re-render calendar to clear selection
-    this.renderCalendar();
+    // Get first and last day of the month
+    const startOfMonth = new Date(year, month, 1, 0, 0, 0, 0);
+    const endOfMonth = new Date(year, month + 1, 0, 23, 59, 59, 999);
     
-    // Update analytics
-    this.updateAnalytics();
+    console.log('📅 Updating metrics for month:', `${year}-${month + 1}`);
     
-    console.log(`📊 Switched to ${period} analytics view`);
+    const data = this.aggregateData(startOfMonth, endOfMonth);
+    this.updateTimeMetrics(data);
   }
 
-
   updateAnalytics() {
-    const data = this.getAnalyticsData(this.currentPeriod);
+    const data = this.getAnalyticsData();
     this.updateTimeMetrics(data);
     this.updateTimelineReplica(data);
     this.updateTaskSummary(data);
@@ -2288,7 +2270,7 @@ class AnalyticsManager {
     this.renderCalendar();
   }
 
-  getAnalyticsData(period) {
+  getAnalyticsData() {
     // If a specific date is selected, show data only for that date
     if (this.selectedDate) {
       const startOfDay = new Date(this.selectedDate);
@@ -2301,28 +2283,15 @@ class AnalyticsManager {
       return this.aggregateData(startOfDay, endOfDay);
     }
     
-    // Otherwise, use the period filter
-    const now = new Date();
-    let startDate;
-
-    switch (period) {
-      case '24h':
-        startDate = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-        break;
-      case '7d':
-        startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-        break;
-      case '1m':
-        startDate = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate());
-        break;
-      case '6m':
-        startDate = new Date(now.getFullYear(), now.getMonth() - 6, now.getDate());
-        break;
-      default:
-        startDate = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-    }
-
-    return this.aggregateData(startDate, now);
+    // Otherwise, use current month
+    const year = this.currentDate.getFullYear();
+    const month = this.currentDate.getMonth();
+    
+    const startOfMonth = new Date(year, month, 1, 0, 0, 0, 0);
+    const endOfMonth = new Date(year, month + 1, 0, 23, 59, 59, 999);
+    
+    console.log('📅 Getting analytics for month:', `${year}-${month + 1}`);
+    return this.aggregateData(startOfMonth, endOfMonth);
   }
 
   aggregateData(startDate, endDate) {
