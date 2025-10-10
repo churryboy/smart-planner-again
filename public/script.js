@@ -2212,10 +2212,10 @@ class AnalyticsManager {
     const hours = studyTimeMs / 3600000;
     
     if (hours === 0) return 0;
-    if (hours <= 2) return 1;
-    if (hours <= 4) return 2;
-    if (hours <= 6) return 3;
-    return 4;
+    if (hours <= 1) return 1;  // 0-1 hour: light blue
+    if (hours <= 2) return 2;  // 1-2 hours: yellow
+    if (hours <= 3) return 3;  // 2-3 hours: orange
+    return 4;                  // 3+ hours: red
   }
 
   formatCalendarTime(ms) {

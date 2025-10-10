@@ -1951,72 +1951,7 @@ body {
   display: none;
 }
 
-/* Calendar Legend */
-.calendar-legend {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--space-base);
-  margin-top: var(--space-lg);
-  padding-top: var(--space-base);
-  border-top: 1px solid var(--neutral-80);
-}
-
-.legend-label {
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--neutral-40);
-}
-
-.legend-items {
-  display: flex;
-  align-items: center;
-  gap: var(--space-sm);
-}
-
-.legend-item {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.legend-box {
-  width: 16px;
-  height: 16px;
-  border-radius: 4px;
-  border: 1px solid;
-}
-
-.legend-box.heat-0 {
-  background: var(--neutral-95);
-  border-color: var(--neutral-80);
-}
-
-.legend-box.heat-1 {
-  background: #D1E7F8;
-  border-color: #7FB3E0;
-}
-
-.legend-box.heat-2 {
-  background: #FFE699;
-  border-color: #FFC933;
-}
-
-.legend-box.heat-3 {
-  background: #FFAD66;
-  border-color: #FF8533;
-}
-
-.legend-box.heat-4 {
-  background: #FF5252;
-  border-color: #E63946;
-}
-
-.legend-text {
-  font-size: 11px;
-  color: var(--neutral-40);
-  font-weight: 500;
-}
+/* Calendar Legend - Removed */
 
 .calendar-day-number {
   font-size: 12px;
