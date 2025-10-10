@@ -123,8 +123,19 @@ app.post('/api/generate-study-plan', async (req, res) => {
 
     const aiResponse = completion.choices[0].message.content;
     
+    console.log('🤖 ================= AI RAW RESPONSE =================');
+    console.log(aiResponse);
+    console.log('🤖 ================= END AI RESPONSE =================');
+    
     // Parse the AI response into structured recommendations
     const recommendations = parseAIResponse(aiResponse, targetExam, daysUntilExam);
+    
+    console.log('📋 Parsed recommendations:', recommendations.length);
+    recommendations.forEach((rec, idx) => {
+      console.log(`  ${idx + 1}. ${rec.title}`);
+      console.log(`     설명: ${rec.description.substring(0, 50)}...`);
+      console.log(`     우선순위: ${rec.priority}, 시간: ${rec.estimatedTime}`);
+    });
     
     res.json({ recommendations, rawResponse: aiResponse, diagnosis });
 
