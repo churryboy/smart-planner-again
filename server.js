@@ -249,12 +249,18 @@ function analyzeUserTasks(userData) {
     ? `주로 ${activeHours.map(([hour, time]) => `${hour}시(${formatTime(time)})`).join(', ')} 시간대에 활동`
     : '시간대별 패턴 데이터 부족';
   
+  // Calculate study time (공부 category) for diagnosis
+  const studyTimeMs = categoryStats['공부'] || 0;
+  
   console.log('📊 Analysis results:', {
     calculatedTotalTime,
     passedTotalTime: totalTime,
     finalTotalTime,
+    studyTimeMs,
     taskStatsCount: Object.keys(taskStats).length,
-    categoryStatsCount: Object.keys(categoryStats).length
+    categoryStatsCount: Object.keys(categoryStats).length,
+    categories: Object.keys(categoryStats),
+    categoryTimes: Object.entries(categoryStats).map(([cat, time]) => `${cat}: ${time}ms`)
   });
   
   // Generate summary
@@ -280,9 +286,10 @@ function analyzeUserTasks(userData) {
     mostFrequentTask,
     longestTask,
     totalTasks,
-    totalStudyTime,
+    totalStudyTime, // Formatted string for display
     avgSessionTime,
-    totalTime: finalTotalTime // Return the calculated total time
+    totalTime: finalTotalTime, // Return the calculated total time in ms
+    studyTimeMs // Return study time in ms for diagnosis calculations
   };
 }
 

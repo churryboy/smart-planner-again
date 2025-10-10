@@ -14,11 +14,22 @@ const {
  * Generate comprehensive diagnosis based on task analysis
  */
 function generateDiagnosis(taskAnalysis, targetExam, daysUntilExam) {
-  const { totalTasks, totalStudyTime, topTasks, categoryBreakdown, totalTime } = taskAnalysis;
+  const { totalTasks, topTasks, categoryBreakdown, totalTime, studyTimeMs } = taskAnalysis;
   
-  // Calculate study time ratio
-  const studyTime = categoryBreakdown.find(cat => cat.category === '공부')?.time || 0;
+  // Use studyTimeMs from taskAnalysis, or calculate from categoryBreakdown as fallback
+  const studyTime = studyTimeMs || categoryBreakdown.find(cat => cat.category === '공부')?.time || 0;
   const studyTimeRatio = totalTime > 0 ? (studyTime / totalTime) * 100 : 0;
+  
+  console.log('🔍 Diagnosis calculation:', {
+    studyTime,
+    studyTimeHours: studyTime / (1000 * 60 * 60),
+    totalTime,
+    totalTimeHours: totalTime / (1000 * 60 * 60),
+    studyTimeRatio,
+    daysUntilExam,
+    totalTasks,
+    topTasksCount: topTasks.length
+  });
   
   // Generate assessments
   const balanceAssessment = generateBalanceAssessment(studyTimeRatio);
