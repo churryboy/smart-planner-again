@@ -1356,19 +1356,18 @@ class TimeTracker {
   startTrackingWithTodoTitle(todoTitle) {
     console.log('📋 Starting tracking with todo title:', todoTitle);
     
-    // Set the task name directly
-    this.currentTaskName = todoTitle;
-    
-    // Set default tags for AI-generated todos
-    this.currentTaskTags = ['공부'];
-    
-    // Add to task history
-    this.addToTaskHistory(todoTitle);
-    
-    // Start recording immediately
-    this.startRecording();
-    
-    console.log('✅ Todo tracking started successfully');
+    // Use MultiTaskManager to create a new task and start recording
+    if (window.multiTaskManager) {
+      // Add a new task with the todo title
+      const taskId = window.multiTaskManager.addNewTask(todoTitle);
+      
+      // Start recording on this task immediately
+      window.multiTaskManager.startTaskRecording(taskId);
+      
+      console.log('✅ Todo tracking started successfully with task ID:', taskId);
+    } else {
+      console.error('❌ MultiTaskManager not found');
+    }
   }
   
   toggleRecording() {
