@@ -122,9 +122,21 @@ class Analytics {
 
   // Navigation events
   trackViewSwitch(fromView, toView) {
-    this.track('View Switched', {
+    // Create specific event name based on target view
+    const viewNames = {
+      'tracker': 'Tracker View',
+      'analyzer': 'Analyzer View',
+      'ai-todo': 'AI Todo View'
+    };
+    
+    const targetViewName = viewNames[toView] || toView;
+    const eventName = `Switched to ${targetViewName}`;
+    
+    this.track(eventName, {
       from_view: fromView,
-      to_view: toView
+      to_view: toView,
+      from_view_readable: viewNames[fromView] || fromView,
+      to_view_readable: targetViewName
     });
   }
 
@@ -185,6 +197,14 @@ class Analytics {
   trackTaskAdded(taskName) {
     this.track('Task Added', {
       task_name: taskName
+    });
+  }
+
+  trackTaskNameEntered(taskName, taskLength) {
+    this.track('Task Name Entered', {
+      task_name: taskName,
+      name_length: taskLength,
+      has_name: taskName.length > 0
     });
   }
 

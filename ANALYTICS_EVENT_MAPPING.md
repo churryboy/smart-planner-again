@@ -23,10 +23,11 @@ This document maps every button, click, and interaction in the Smart Planner app
 ### Multi-Task Management
 | UI Element | Location | Event Name | Properties | Code Reference |
 |------------|----------|------------|------------|----------------|
-| 작업 추가 Button | Tracker View | `Task Added` | task_name | analytics.js:185 |
+| 작업 추가 Button | Tracker View | `Task Added` | task_name | analytics.js:197 |
+| Task Input Field (blur) | Task Item | `Task Name Entered` | task_name, name_length, has_name | analytics.js:203, script.js:117 |
 | ▶️ Record Button | Task Item | `Task Started` | task_name, tags, tag_count | script.js:171 |
 | ⏹ Stop Button | Task Item | `Task Stopped` | task_name, duration_minutes, duration_seconds, tags, tag_count | script.js:215 |
-| 🗑️ Delete Button | Task Item | `Task Deleted` | task_name, total_time_minutes | analytics.js:191 |
+| 🗑️ Delete Button | Task Item | `Task Deleted` | task_name, total_time_minutes | analytics.js:211 |
 
 ### Task Input Modal
 | UI Element | Location | Event Name | Properties | Code Reference |
@@ -44,12 +45,12 @@ This document maps every button, click, and interaction in the Smart Planner app
 | ◀ Previous Month | Calendar Header | `Calendar Month Changed` | year, month, month_name | analytics.js:167 |
 | ▶ Next Month | Calendar Header | `Calendar Month Changed` | year, month, month_name | analytics.js:167 |
 | Calendar Date Click | Calendar Grid | `Calendar Date Selected` | selected_date, day_of_week, study_time_minutes, has_data | analytics.js:175 |
-| View Switch to Analyzer | Bottom Nav | `View Switched` + `Analytics Viewed` | from_view, to_view, time_range | script.js:3086, 3116 |
+| View Switch to Analyzer | Bottom Nav | `Switched to Analyzer View` + `Analytics Viewed` | from_view, to_view, from_view_readable, to_view_readable, time_range | analytics.js:133, script.js:3086, 3116 |
 
 ### Task Summary
 | UI Element | Location | Event Name | Properties | Code Reference |
 |------------|----------|------------|------------|----------------|
-| Category Dropdown | Task Summary Item | `Task Category Changed` | task_name, old_category, new_category | analytics.js:198 |
+| Category Dropdown | Task Summary Item | `Task Category Changed` | task_name, old_category, new_category | analytics.js:218 |
 
 ---
 
@@ -75,9 +76,11 @@ This document maps every button, click, and interaction in the Smart Planner app
 ### Bottom Navigation Bar
 | UI Element | Location | Event Name | Properties | Code Reference |
 |------------|----------|------------|------------|----------------|
-| 시간 측정기 Tab | Bottom Nav | `View Switched` | from_view: current, to_view: 'tracker' | script.js:3086 |
-| 시간 분석기 Tab | Bottom Nav | `View Switched` + `Analytics Viewed` | from_view: current, to_view: 'analyzer' | script.js:3086, 3116 |
-| AI 할일 추천 Tab | Bottom Nav | `View Switched` | from_view: current, to_view: 'ai-todo' | script.js:3086 |
+| 시간 측정기 Tab | Bottom Nav | `Switched to Tracker View` | from_view, to_view: 'tracker', from_view_readable, to_view_readable: 'Tracker View' | analytics.js:133, script.js:3120 |
+| 시간 분석기 Tab | Bottom Nav | `Switched to Analyzer View` + `Analytics Viewed` | from_view, to_view: 'analyzer', from_view_readable, to_view_readable: 'Analyzer View' | analytics.js:133, script.js:3086, 3120 |
+| AI 할일 추천 Tab | Bottom Nav | `Switched to AI Todo View` | from_view, to_view: 'ai-todo', from_view_readable, to_view_readable: 'AI Todo View' | analytics.js:133, script.js:3120 |
+
+**Note:** View switch events now have specific names based on the target view (e.g., "Switched to Tracker View" instead of generic "View Switched"). This makes it easier to analyze which views users are navigating to in Mixpanel.
 
 ---
 
@@ -105,12 +108,20 @@ This document maps every button, click, and interaction in the Smart Planner app
 - `userAgent`: Browser user agent string
 
 ### Task-Related Properties
-- `task_name`: Name of the task
+- `task_name`: Name of the task (exact input from user)
+- `name_length`: Character count of task name
+- `has_name`: Boolean, whether task has a non-empty name
 - `tags`: Array of category tags (e.g., ['멀티태스킹', '공부'])
 - `tag_count`: Number of tags
 - `duration_minutes`: Task duration in minutes
 - `duration_seconds`: Task duration in seconds
 - `total_time_minutes`: Total accumulated time
+
+### Navigation Properties
+- `from_view`: Internal view ID (e.g., 'tracker', 'analyzer', 'ai-todo')
+- `to_view`: Target view ID
+- `from_view_readable`: Human-readable view name (e.g., 'Tracker View')
+- `to_view_readable`: Human-readable target view name
 
 ### Calendar Properties
 - `year`: Selected year (number)

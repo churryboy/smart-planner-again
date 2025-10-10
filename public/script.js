@@ -106,9 +106,16 @@ class MultiTaskManager {
     });
     
     input.addEventListener('blur', (e) => {
-      if (!e.target.value.trim()) {
+      const taskName = e.target.value.trim();
+      
+      if (!taskName) {
         e.target.value = `작업 ${taskData.id}`;
         taskData.name = e.target.value;
+      } else {
+        // Track task name entered when user finishes typing
+        if (window.analytics) {
+          window.analytics.trackTaskNameEntered(taskName, taskName.length);
+        }
       }
     });
     
