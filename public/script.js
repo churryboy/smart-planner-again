@@ -2706,7 +2706,10 @@ class AITodoManager {
   constructor(timeTracker, navigationManager) {
     this.timeTracker = timeTracker;
     this.navigationManager = navigationManager;
+    this.currentRecommendations = [];
+    this.currentDiagnosis = null;
     this.initializeAITodo();
+    this.loadSavedRecommendations();
   }
 
   initializeAITodo() {
@@ -2721,6 +2724,41 @@ class AITodoManager {
         e.preventDefault();
         this.generateRecommendations();
       });
+    }
+  }
+
+  loadSavedRecommendations() {
+    // Load previously generated recommendations from localStorage
+    try {
+      const saved = localStorage.getItem('aiRecommendations');
+      if (saved) {
+        const data = JSON.parse(saved);
+        this.currentRecommendations = data.recommendations || [];
+        this.currentDiagnosis = data.diagnosis || null;
+        
+        // Display the saved recommendations if they exist
+        if (this.currentRecommendations.length > 0) {
+          console.log('📋 Loading saved AI recommendations');
+          this.displayRecommendations(this.currentRecommendations, this.currentDiagnosis);
+        }
+      }
+    } catch (error) {
+      console.error('Error loading saved recommendations:', error);
+    }
+  }
+
+  saveRecommendations(recommendations, diagnosis) {
+    // Save recommendations to localStorage
+    try {
+      const data = {
+        recommendations,
+        diagnosis,
+        timestamp: Date.now()
+      };
+      localStorage.setItem('aiRecommendations', JSON.stringify(data));
+      console.log('💾 Saved AI recommendations to localStorage');
+    } catch (error) {
+      console.error('Error saving recommendations:', error);
     }
   }
 
@@ -2876,6 +2914,10 @@ class AITodoManager {
 
     // Store recommendations for later use
     this.currentRecommendations = recommendations;
+    this.currentDiagnosis = diagnosis;
+    
+    // Save to localStorage for persistence
+    this.saveRecommendations(recommendations, diagnosis);
 
     // Generate diagnosis HTML if available
     let diagnosisHTML = '';
