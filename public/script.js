@@ -473,6 +473,33 @@ class TimeTracker {
     };
     this.customTagColorIndex = 0;
     
+    // Task color mapping - each task name gets a distinct color
+    // Colors arranged for maximum contrast between consecutive tasks
+    this.taskColorMapping = {}; // { taskName: color }
+    this.taskColorPalette = [
+      '#FF6B6B', // 1. Bright Red
+      '#4ECDC4', // 2. Teal (cyan-green)
+      '#F7DC6F', // 3. Yellow
+      '#118AB2', // 4. Deep Blue
+      '#E76F51', // 5. Terracotta (orange-red)
+      '#52B788', // 6. Green
+      '#F72585', // 7. Magenta
+      '#85C1E2', // 8. Soft Blue
+      '#F8B739', // 9. Orange
+      '#2A9D8F', // 10. Dark Teal
+      '#EF476F', // 11. Pink
+      '#98D8C8', // 12. Mint
+      '#C77DFF', // 13. Lavender
+      '#06A77D', // 14. Emerald
+      '#FFD166', // 15. Gold
+      '#45B7D1', // 16. Sky Blue
+      '#E9C46A', // 17. Sand
+      '#BB8FCE', // 18. Light Purple
+      '#FFA07A', // 19. Light Salmon
+      '#90E0EF'  // 20. Light Cyan
+    ];
+    this.taskColorIndex = 0;
+    
     this.elements = {
       recordButton: document.getElementById('record-button'), // May be null with new UI
       statusDot: document.querySelector('.status-dot'),
@@ -1310,6 +1337,27 @@ class TimeTracker {
     this.customTagColorIndex++;
     return defaultColors[colorIndex];
   }
+  
+  getTaskColor(taskName) {
+    // Return default color if no task name
+    if (!taskName) {
+      return '#ED5000'; // Default orange
+    }
+    
+    // Check if we already assigned a color to this task
+    if (this.taskColorMapping[taskName]) {
+      return this.taskColorMapping[taskName];
+    }
+    
+    // Assign a new color from the palette
+    const color = this.taskColorPalette[this.taskColorIndex % this.taskColorPalette.length];
+    this.taskColorMapping[taskName] = color;
+    this.taskColorIndex++;
+    
+    console.log(`🎨 Assigned color ${color} to task "${taskName}"`);
+    
+    return color;
+  }
 
   getTagsGradient(tags) {
     if (!tags || tags.length === 0) {
@@ -1753,9 +1801,9 @@ class TimeTracker {
           const minuteTime = hourData[minute] || 0;
           let displayTime = minuteTime;
           
-          // Get tag information for this minute
-          const minuteTags = (this.taskTagSessions[currentHour] && this.taskTagSessions[currentHour][minute]) || [];
-          let tagColor = '#ED5000'; // Default orange color
+          // Get task name for this minute
+          const minuteTaskName = (this.taskSessions[currentHour] && this.taskSessions[currentHour][minute]) || null;
+          let taskColor = '#ED5000'; // Default orange color
           
 
           
@@ -1766,22 +1814,22 @@ class TimeTracker {
               // Add partial current session time for current minute
               const sessionInCurrentMinute = this.currentSessionTime % 60000; // Time in current minute
               displayTime += sessionInCurrentMinute;
-              // Use current session tags for color
-              tagColor = this.getTagsGradient(this.currentTaskTags);
-              console.log(`Current minute ${minute} - tags:`, this.currentTaskTags, `Color:`, tagColor);
+              // Use current task color
+              taskColor = this.getTaskColor(this.currentTaskName);
+              console.log(`Current minute ${minute} - task:`, this.currentTaskName, `Color:`, taskColor);
             } else if (minute > this.currentStartMinute && minute < currentMinute) {
               // Full minutes between start and current
               displayTime += 60000; // Full minute
-              // Use current session tags for color
-              tagColor = this.getTagsGradient(this.currentTaskTags);
-              console.log(`Past minute ${minute} - tags:`, this.currentTaskTags, `Color:`, tagColor);
-            } else if (minuteTags.length > 0) {
-              // Use stored tags for color
-              tagColor = this.getTagsGradient(minuteTags);
+              // Use current task color
+              taskColor = this.getTaskColor(this.currentTaskName);
+              console.log(`Past minute ${minute} - task:`, this.currentTaskName, `Color:`, taskColor);
+            } else if (minuteTaskName) {
+              // Use stored task color
+              taskColor = this.getTaskColor(minuteTaskName);
             }
-          } else if (minuteTags.length > 0) {
-            // Use stored tags for color
-            tagColor = this.getTagsGradient(minuteTags);
+          } else if (minuteTaskName) {
+            // Use stored task color
+            taskColor = this.getTaskColor(minuteTaskName);
           }
           
           // Calculate fill percentage (0-100% per minute)
@@ -1789,14 +1837,10 @@ class TimeTracker {
           
           // Update block appearance
           if (fillPercentage > 0) {
-            block.style.background = `linear-gradient(to right, ${tagColor} ${fillPercentage}%, var(--neutral-80) ${fillPercentage}%)`;
-            // Extract first color for border (for gradients, use the first color)
-            const borderColor = tagColor.includes('linear-gradient') ? this.extractFirstColor(tagColor) : tagColor;
-            block.style.borderColor = fillPercentage > 50 ? borderColor : "var(--neutral-80)";
+            block.style.background = `linear-gradient(to right, ${taskColor} ${fillPercentage}%, var(--neutral-80) ${fillPercentage}%)`;
             block.classList.add('has-time');
           } else {
             block.style.background = 'var(--neutral-80)';
-            block.style.borderColor = "var(--neutral-80)";
             block.classList.remove('has-time');
           }
           
@@ -1828,6 +1872,8 @@ class TimeTracker {
       taskSessions: this.taskSessions, // Save task sessions
       taskTagSessions: this.taskTagSessions, // Save task tag sessions
       taskHistory: this.taskHistory, // Save task history
+      taskColorMapping: this.taskColorMapping, // Save task color assignments
+      taskColorIndex: this.taskColorIndex, // Save color index
       lastSaved: Date.now(),
       // Save active recording state for recovery
       activeRecording: this.isRecording ? {
@@ -1856,6 +1902,8 @@ class TimeTracker {
           this.timelineOrder = this.generateTimelineOrder();
           this.taskSessions = data.taskSessions || {}; // Load task sessions
           this.taskHistory = data.taskHistory || []; // Load task history          this.taskTagSessions = data.taskTagSessions || {}; // Load task tag sessions
+          this.taskColorMapping = data.taskColorMapping || {}; // Load task color assignments
+          this.taskColorIndex = data.taskColorIndex || 0; // Load color index
           
           // Check for interrupted recording session and recover it
           this.recoverInterruptedSession(data.activeRecording);
@@ -1932,6 +1980,8 @@ class TimeTracker {
     this.timelineOrder = this.generateTimelineOrder();
     this.taskSessions = {}; // Clear task sessions
     this.taskTagSessions = {}; // Clear task tag sessions
+    this.taskColorMapping = {}; // Clear task color assignments
+    this.taskColorIndex = 0; // Reset color index
     this.currentTaskName = "";
     this.currentTaskTags = [];
     if (this.elements.currentTaskNameDisplay) {
@@ -2515,13 +2565,13 @@ class AnalyticsManager {
       // Create minute blocks
       const minuteBlocks = hourData.hourData.map((minuteTime, minute) => {
         const hasTime = minuteTime > 0;
-        const taskTags = hourData.tagSessions[minute] || [];
+        const taskName = hourData.taskSessions[minute] || null;
         let blockStyle = '';
         
-        if (hasTime && taskTags.length > 0) {
-          const tagColor = this.timeTracker.getTagsGradient(taskTags);
+        if (hasTime && taskName) {
+          const taskColor = this.timeTracker.getTaskColor(taskName);
           const fillPercentage = Math.min((minuteTime / 60000) * 100, 100);
-          blockStyle = `style="background: linear-gradient(to right, ${tagColor} ${fillPercentage}%, var(--neutral-80) ${fillPercentage}%)"`;
+          blockStyle = `style="background: linear-gradient(to right, ${taskColor} ${fillPercentage}%, var(--neutral-80) ${fillPercentage}%);"`;
         }
         
         return `<div class="replica-minute-block ${hasTime ? 'has-time' : ''}" ${blockStyle}></div>`;
@@ -2600,9 +2650,11 @@ class AnalyticsManager {
 
     summaryContainer.innerHTML = sortedTasks.map(([taskName, taskData]) => {
       const currentCategory = taskCategories.get(taskName) || '공부';
+      const taskColor = this.timeTracker.getTaskColor(taskName);
       
       return `
         <div class="task-summary-item" data-task-name="${taskName}">
+          <div class="task-color-badge" style="background-color: ${taskColor};"></div>
           <div class="task-summary-info">
             <div class="task-summary-name">${taskName}</div>
             <select class="task-summary-category-select" data-task-name="${taskName}">

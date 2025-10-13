@@ -1151,29 +1151,25 @@ body {
 .minute-grid {
   display: grid;
   grid-template-columns: repeat(60, 1fr);
-  gap: 1px;
+  gap: 0;
   width: 100%;
   height: 8px;
-  background: var(--neutral-70);
+  background: var(--neutral-80);
   border-radius: var(--radius-sm);
   overflow: hidden;
-  padding: 1px;
+  padding: 0;
 }
 
 .minute-block {
   background: var(--neutral-80);
-  border: 1px solid var(--neutral-80);
-  border-radius: 1px;
+  border: none;
+  border-radius: 0;
   transition: all 0.1s ease;
   min-width: 1px;
 }
-.minute-block.has-time {
-  background: var(--orange-50);
-  border-color: var(--orange-50);
-}
+/* .minute-block.has-time colors are set inline via JavaScript based on task */
 .minute-block.current-minute {
   background: var(--orange-60);
-  border-color: var(--orange-60);
   animation: pulse-minute 1s infinite;
 }
 @keyframes pulse-minute {
@@ -2108,26 +2104,23 @@ body {
 .replica-minute-grid {
   display: grid;
   grid-template-columns: repeat(60, 1fr);
-  gap: 1px;
+  gap: 0;
   width: 100%;
   height: 6px;
-  background: var(--neutral-70);
+  background: var(--neutral-80);
   border-radius: var(--radius-sm);
   overflow: hidden;
-  padding: 1px;
+  padding: 0;
 }
 
 .replica-minute-block {
   background: var(--neutral-80);
-  border: 1px solid var(--neutral-80);
-  border-radius: 1px;
+  border: none;
+  border-radius: 0;
   min-width: 1px;
 }
 
-.replica-minute-block.has-time {
-  background: var(--orange-50);
-  border-color: var(--orange-50);
-}
+/* .replica-minute-block.has-time colors are set inline via JavaScript based on task */
 
 .replica-no-data {
   text-align: center;
@@ -2166,10 +2159,18 @@ body {
   background: var(--neutral-90);
   border-radius: var(--radius-lg);
   transition: background-color var(--transition-base);
+  gap: var(--space-base);
 }
 
 .task-summary-item:hover {
   background: var(--neutral-80);
+}
+
+.task-color-badge {
+  width: 4px;
+  height: 40px;
+  border-radius: var(--radius-sm);
+  flex-shrink: 0;
 }
 
 .task-summary-info {
