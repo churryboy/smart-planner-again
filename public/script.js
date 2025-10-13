@@ -587,7 +587,7 @@ class TimeTracker {
     const savedNickname = localStorage.getItem('userNickname');
     if (savedNickname) {
       this.currentNickname = savedNickname;
-      this.storageKey = `timeTracker_${savedNickname}`;
+      this.storageKey = this.getStorageKeyForDate(new Date()); // Use date-specific key
       this.updateNicknameDisplay();
       
       // Identify existing user for analytics
@@ -599,6 +599,54 @@ class TimeTracker {
       return true;
     }
     return false;
+  }
+  
+  // Helper methods for date-specific storage
+  getStorageKeyForDate(date) {
+    const dateStr = this.formatDateForStorage(date);
+    return `timeTracker_${this.currentNickname}_${dateStr}`;
+  }
+  
+  formatDateForStorage(date) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+  
+  getAllStorageDates() {
+    if (!this.currentNickname) return [];
+    
+    const dates = [];
+    const prefix = `timeTracker_${this.currentNickname}_`;
+    
+    // Scan localStorage for all keys matching this user
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && key.startsWith(prefix)) {
+        const dateStr = key.substring(prefix.length);
+        // Validate date format YYYY-MM-DD
+        if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+          dates.push(dateStr);
+        }
+      }
+    }
+    
+    return dates.sort(); // Sort chronologically
+  }
+  
+  getDataForDate(dateStr) {
+    const key = `timeTracker_${this.currentNickname}_${dateStr}`;
+    const saved = localStorage.getItem(key);
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        console.error(`Error parsing data for ${dateStr}:`, e);
+        return null;
+      }
+    }
+    return null;
   }
   
   showNicknameModal() {
@@ -1865,7 +1913,12 @@ class TimeTracker {
   }
   
   saveData() {
+    const today = new Date();
+    const dateStr = this.formatDateForStorage(today);
+    const storageKey = this.getStorageKeyForDate(today);
+    
     const data = {
+      date: dateStr, // Store the date this data belongs to
       timeData: this.timeData,
       // totalTime is now calculated dynamically from timeData
       timelineOrder: this.timelineOrder,
@@ -1884,39 +1937,46 @@ class TimeTracker {
         startMinute: this.currentStartMinute
       } : null
     };
-    localStorage.setItem(this.storageKey, JSON.stringify(data));
+    
+    localStorage.setItem(storageKey, JSON.stringify(data));
+    console.log(`💾 Data saved for ${dateStr}`);
   }
   
   loadData() {
-    const saved = localStorage.getItem(this.storageKey);
+    const today = new Date();
+    const dateStr = this.formatDateForStorage(today);
+    const storageKey = this.getStorageKeyForDate(today);
+    const saved = localStorage.getItem(storageKey);
+    
     if (saved) {
       try {
         const data = JSON.parse(saved);
         
-        const lastSaved = new Date(data.lastSaved);
-        const today = new Date();
+        // Load today's data
+        this.timeData = data.timeData || {};
+        // totalTime is now calculated dynamically from timeData
+        this.timelineOrder = this.generateTimelineOrder();
+        this.taskSessions = data.taskSessions || {}; // Load task sessions
+        this.taskHistory = data.taskHistory || []; // Load task history          
+        this.taskTagSessions = data.taskTagSessions || {}; // Load task tag sessions
+        this.taskColorMapping = data.taskColorMapping || {}; // Load task color assignments
+        this.taskColorIndex = data.taskColorIndex || 0; // Load color index
         
-        if (lastSaved.toDateString() === today.toDateString()) {
-          this.timeData = data.timeData || {};
-          // totalTime is now calculated dynamically from timeData
-          this.timelineOrder = this.generateTimelineOrder();
-          this.taskSessions = data.taskSessions || {}; // Load task sessions
-          this.taskHistory = data.taskHistory || []; // Load task history          this.taskTagSessions = data.taskTagSessions || {}; // Load task tag sessions
-          this.taskColorMapping = data.taskColorMapping || {}; // Load task color assignments
-          this.taskColorIndex = data.taskColorIndex || 0; // Load color index
-          
-          // Check for interrupted recording session and recover it
-          this.recoverInterruptedSession(data.activeRecording);
-          
-          this.updateDisplay();
-          this.updateTaskLabels(); // Update labels after loading
-        } else {
-          this.resetData();
-        }
+        // Check for interrupted recording session and recover it
+        this.recoverInterruptedSession(data.activeRecording);
+        
+        this.updateDisplay();
+        this.updateTaskLabels(); // Update labels after loading
+        
+        console.log(`📂 Loaded data for ${dateStr}`);
       } catch (e) {
         console.error('Error loading saved data:', e);
+        // Start with fresh data but don't delete historical data
         this.resetData();
       }
+    } else {
+      console.log(`📂 No data found for ${dateStr}, starting fresh`);
+      // No data for today yet, start fresh (but don't delete historical data)
     }
   }
   
@@ -2233,21 +2293,16 @@ class AnalyticsManager {
   }
 
   getDayTotalTime(date) {
-    // Check if the date is today
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const checkDate = new Date(date);
-    checkDate.setHours(0, 0, 0, 0);
+    const dateStr = this.timeTracker.formatDateForStorage(date);
+    const dayData = this.timeTracker.getDataForDate(dateStr);
     
-    // Only show data for today (since we only track current day)
-    if (checkDate.getTime() !== today.getTime()) {
-      return 0;
-    }
+    if (!dayData) return 0;
     
-    // Aggregate time from all hours of today
+    // Aggregate time from all hours of this date
     let totalTime = 0;
-    Object.keys(this.timeTracker.timeData).forEach(hour => {
-      const hourData = this.timeTracker.timeData[hour];
+    const timeData = dayData.timeData || {};
+    Object.keys(timeData).forEach(hour => {
+      const hourData = timeData[hour];
       if (hourData && Array.isArray(hourData)) {
         totalTime += hourData.reduce((sum, minuteTime) => sum + minuteTime, 0);
       }
@@ -2257,30 +2312,41 @@ class AnalyticsManager {
   }
 
   getDayStudyTime(date) {
-    // Check if the date is today
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const checkDate = new Date(date);
-    checkDate.setHours(0, 0, 0, 0);
+    const dateStr = this.timeTracker.formatDateForStorage(date);
+    const dayData = this.timeTracker.getDataForDate(dateStr);
     
-    // Only show data for today (since we only track current day)
-    if (checkDate.getTime() !== today.getTime()) {
-      return 0;
-    }
+    if (!dayData) return 0;
     
-    // Aggregate study time (공부 category) from MultiTaskManager
+    // Aggregate study time (공부 category) from recorded data
     let studyTime = 0;
-    if (window.multiTaskManager) {
-      window.multiTaskManager.tasks.forEach((task, taskId) => {
-        if (task.category === '공부') {
-          studyTime += task.totalTime;
-          // Include current recording session if task is being recorded
-          if (task.isRecording && task.startTime) {
-            studyTime += Date.now() - task.startTime;
+    const timeData = dayData.timeData || {};
+    const taskSessions = dayData.taskSessions || {};
+    
+    Object.keys(timeData).forEach(hour => {
+      const hourData = timeData[hour];
+      const hourTaskSessions = taskSessions[hour] || {};
+      
+      hourData.forEach((minuteTime, minute) => {
+        if (minuteTime > 0) {
+          const taskName = hourTaskSessions[minute];
+          if (taskName) {
+            // Check task category - default to 공부 if not found
+            let taskCategory = '공부';
+            if (window.multiTaskManager) {
+              window.multiTaskManager.tasks.forEach((task) => {
+                if (task.name === taskName) {
+                  taskCategory = task.category || '공부';
+                }
+              });
+            }
+            
+            if (taskCategory === '공부') {
+              studyTime += minuteTime;
+            }
           }
         }
       });
-    }
+    });
     
     return studyTime;
   }
@@ -2396,102 +2462,101 @@ class AnalyticsManager {
       endDate: endDate
     };
 
-    // Check if we're looking at today's data
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    // Get all dates in the range
     const startDay = new Date(startDate);
     startDay.setHours(0, 0, 0, 0);
     const endDay = new Date(endDate);
     endDay.setHours(23, 59, 59, 999);
     
-    // Only show data if the date range includes today (since we only track current day)
-    const includesToday = startDay.getTime() <= today.getTime() && endDay.getTime() >= today.getTime();
-    
     console.log('📊 Aggregating data:', {
       period: this.currentPeriod,
       startDate: startDate.toDateString(),
-      endDate: endDate.toDateString(),
-      today: today.toDateString(),
-      includesToday: includesToday
+      endDate: endDate.toDateString()
     });
 
-    if (!includesToday) {
-      console.log('📊 Selected date range does not include today - returning empty data');
-      return data;
+    // Load data for each date in the range
+    let currentDay = new Date(startDay);
+    const datesProcessed = [];
+    
+    while (currentDay <= endDay) {
+      const dateStr = this.timeTracker.formatDateForStorage(currentDay);
+      const dayData = this.timeTracker.getDataForDate(dateStr);
+      
+      if (dayData) {
+        datesProcessed.push(dateStr);
+        console.log(`📊 Processing data for ${dateStr}`);
+        
+        // Aggregate data from this date
+        const timeData = dayData.timeData || {};
+        const taskSessions = dayData.taskSessions || {};
+        const tagSessions = dayData.taskTagSessions || {};
+        
+        Object.keys(timeData).forEach(hour => {
+          const hourData = timeData[hour];
+          const hourTaskSessions = taskSessions[hour] || {};
+          const hourTagSessions = tagSessions[hour] || {};
+
+          // Store timeline data for replica (only for selected single date)
+          if (this.selectedDate) {
+            const selectedDateStr = this.timeTracker.formatDateForStorage(this.selectedDate);
+            if (dateStr === selectedDateStr) {
+              data.timelineData[hour] = {
+                hourData: [...hourData],
+                taskSessions: { ...hourTaskSessions },
+                tagSessions: { ...hourTagSessions }
+              };
+            }
+          }
+
+          // Sum up total time from minute blocks
+          hourData.forEach((minuteTime, minute) => {
+            if (minuteTime > 0) {
+              data.totalTime += minuteTime;
+
+              // Daily activity - track by actual date
+              const dayStr = currentDay.toDateString();
+              if (!data.dailyActivity[dayStr]) {
+                data.dailyActivity[dayStr] = 0;
+              }
+              data.dailyActivity[dayStr] += minuteTime;
+              
+              // Aggregate task data
+              const taskName = hourTaskSessions[minute];
+              if (taskName) {
+                // Get category from MultiTaskManager if available
+                let taskCategory = '공부'; // default
+                if (window.multiTaskManager) {
+                  window.multiTaskManager.tasks.forEach((task) => {
+                    if (task.name === taskName) {
+                      taskCategory = task.category || '공부';
+                    }
+                  });
+                }
+                
+                // Count unique tasks
+                if (!data.tasks[taskName]) {
+                  data.tasks[taskName] = { time: 0, categories: new Set() };
+                  data.totalTasks++;
+                }
+                data.tasks[taskName].time += minuteTime;
+                data.tasks[taskName].categories.add(taskCategory);
+                
+                // Aggregate by categories
+                if (!data.categories[taskCategory]) {
+                  data.categories[taskCategory] = 0;
+                }
+                data.categories[taskCategory] += minuteTime;
+              }
+            }
+          });
+        });
+      }
+      
+      // Move to next day
+      currentDay.setDate(currentDay.getDate() + 1);
     }
     
-    // Aggregate data from timeTracker for timeline
-    console.log('📊 Available hours in timeData:', Object.keys(this.timeTracker.timeData));
-    
-    Object.keys(this.timeTracker.timeData).forEach(hour => {
-      const hourData = this.timeTracker.timeData[hour];
-      const hourTaskSessions = this.timeTracker.taskSessions[hour] || {};
-      const hourTagSessions = this.timeTracker.taskTagSessions[hour] || {};
-
-      // Store timeline data for replica
-      data.timelineData[hour] = {
-        hourData: [...hourData],
-        taskSessions: { ...hourTaskSessions },
-        tagSessions: { ...hourTagSessions }
-      };
-
-      // Sum up total time from minute blocks
-      hourData.forEach((minuteTime, minute) => {
-        if (minuteTime > 0) {
-          data.totalTime += minuteTime;
-
-          // Daily activity (simplified - using current day)
-          const todayStr = new Date().toDateString();
-          if (!data.dailyActivity[todayStr]) {
-            data.dailyActivity[todayStr] = 0;
-          }
-          data.dailyActivity[todayStr] += minuteTime;
-        }
-      });
-    });
-
-    // Aggregate task data from the actual recorded time blocks (not cumulative totals)
-    // This ensures we only show tasks that were actually recorded in the selected date range
-    console.log('📊 Aggregating tasks from recorded time blocks in selected date range');
-    
-    Object.keys(this.timeTracker.timeData).forEach(hour => {
-      const hourTaskSessions = this.timeTracker.taskSessions[hour] || {};
-      const hourData = this.timeTracker.timeData[hour];
-      
-      // Iterate through each minute that has recorded time
-      Object.keys(hourTaskSessions).forEach(minute => {
-        const taskName = hourTaskSessions[minute];
-        const minuteTime = hourData[parseInt(minute)];
-        
-        if (taskName && minuteTime > 0) {
-          // Get category from MultiTaskManager if available
-          let taskCategory = '공부'; // default
-          if (window.multiTaskManager) {
-            window.multiTaskManager.tasks.forEach((task) => {
-              if (task.name === taskName) {
-                taskCategory = task.category || '공부';
-              }
-            });
-          }
-          
-          // Count unique tasks
-          if (!data.tasks[taskName]) {
-            data.tasks[taskName] = { time: 0, categories: new Set() };
-            data.totalTasks++;
-          }
-          data.tasks[taskName].time += minuteTime;
-          data.tasks[taskName].categories.add(taskCategory);
-          
-          // Aggregate by categories
-          if (!data.categories[taskCategory]) {
-            data.categories[taskCategory] = 0;
-          }
-          data.categories[taskCategory] += minuteTime;
-          
-          console.log(`📋 Found recorded task: "${taskName}" at ${hour}:${minute} - ${minuteTime}ms (${taskCategory})`);
-        }
-      });
-    });
+    console.log(`📊 Processed ${datesProcessed.length} dates:`, datesProcessed);
 
     // Debug: Log final aggregated data
     console.log('📊 Final aggregated data:', {
