@@ -20,6 +20,11 @@ This document maps every button, click, and interaction in the Smart Planner app
 
 ## ⏱️ Time Tracker View (시간 측정기)
 
+### Hero Banner
+| UI Element | Location | Event Name | Properties | Code Reference |
+|------------|----------|------------|------------|----------------|
+| 순공시간 챌린지 Banner | Tracker View Top | `Hero Banner Clicked` | target_url, banner_title, click_timestamp | index.html:52, analytics.js:260 |
+
 ### Multi-Task Management
 | UI Element | Location | Event Name | Properties | Code Reference |
 |------------|----------|------------|------------|----------------|
@@ -142,6 +147,11 @@ This document maps every button, click, and interaction in the Smart Planner app
 - `recommendation_category`: Category of recommendation
 - `estimated_time`: Estimated time to complete
 
+### Hero Banner Properties
+- `target_url`: URL of the Google Form or destination
+- `banner_title`: Title of the banner (순공시간 챌린지)
+- `click_timestamp`: ISO timestamp when banner was clicked
+
 ### Category Options
 - 공부
 - 이동
@@ -161,6 +171,7 @@ This document maps every button, click, and interaction in the Smart Planner app
 - Analytics views
 - Session management
 - Error tracking
+- Hero banner clicks (순공시간 챌린지)
 
 ### ⚠️ Needs Implementation
 The following events are defined but need to be wired up in script.js:
@@ -218,6 +229,6 @@ View tracked events at: https://mixpanel.com/
 
 ---
 
-*Last Updated: 2025-10-10*
-*Version: 2.0*
+*Last Updated: 2025-10-13*
+*Version: 2.1*
 

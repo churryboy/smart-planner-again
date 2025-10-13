@@ -255,6 +255,15 @@ class Analytics {
       session_duration_minutes: Math.round(duration / (1000 * 60))
     });
   }
+
+  // Hero banner events
+  trackHeroBannerClick(targetUrl) {
+    this.track('Hero Banner Clicked', {
+      target_url: targetUrl,
+      banner_title: '순공시간 챌린지',
+      click_timestamp: new Date().toISOString()
+    });
+  }
 }
 
 // Create global analytics instance
