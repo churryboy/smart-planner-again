@@ -64,16 +64,12 @@ function generateDiagnosis(taskAnalysis, targetExam, daysUntilExam) {
   // Generate assessments
   const balanceAssessment = generateBalanceAssessment(studyTimeRatio);
   const habitAnalysis = generateHabitAnalysis(topTasks, totalTasks, totalTime);
-  const achievabilityAnalysis = generateAchievabilityAnalysis(
-    studyTime, daysUntilExam, targetExam
-  );
   
   return {
     urgency: urgencyMessage,
     urgencyLevel: getUrgencyLevel(daysUntilExam),
     studyTimeBalance: balanceAssessment,
     habitOptimization: habitAnalysis,
-    goalAchievability: achievabilityAnalysis,
     metrics: {
       studyTimeRatio,
       dailyStudyHours: studyTime / Math.max(1, daysUntilExam) / (1000 * 60 * 60),

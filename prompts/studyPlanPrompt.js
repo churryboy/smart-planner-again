@@ -18,8 +18,6 @@ ${diagnosis.studyTimeBalance}
 
 ${diagnosis.habitOptimization}
 
-${diagnosis.goalAchievability}
-
 === 📈 상세 데이터 분석 ===
 ${taskAnalysis.summary}
 
@@ -41,7 +39,7 @@ ${taskAnalysis.timePatterns}
 **📋 학습 계획 TODO 생성 기준:**
 
 다음 데이터를 종합적으로 고려하여 TODO를 생성하세요:
-1. **진단 결과**: 위에 제시된 학습 집중도, 습관 최적화, 목표 달성 가능성 분석
+1. **진단 결과**: 위에 제시된 학습 집중도, 습관 최적화 분석
 2. **학습 패턴**: Task-item별 실제 학습 시간 분배와 주요 활동
 3. **시간 현황**: 전체 시간 ${taskAnalysis.totalStudyTime}, 순공 시간 (공부 카테고리)
 4. **남은 기간**: ${daysUntilExam}일 (${examDate}까지)

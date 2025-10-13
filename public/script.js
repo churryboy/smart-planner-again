@@ -3135,10 +3135,6 @@ class AITodoManager {
               <h4>학습 습관 최적화</h4>
               <p>${diagnosis.habitOptimization.replace(/\n/g, '<br>')}</p>
             </div>
-            <div class="diagnosis-item">
-              <h4>목표 달성 가능성</h4>
-              <p>${diagnosis.goalAchievability.replace(/\n/g, '<br>')}</p>
-            </div>
           </div>
         </div>
       `;
