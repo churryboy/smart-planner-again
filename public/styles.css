@@ -1672,12 +1672,17 @@ body {
   display: none;
 }
 
+/* Tracker Content Wrapper */
+.tracker-content {
+  padding: var(--space-lg);
+}
+
 /* Hero Banner */
 .hero-banner {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   border-radius: var(--radius-lg);
   padding: var(--space-sm) var(--space-base);
-  margin: var(--space-lg) var(--space-base);
+  margin: 0 0 var(--space-lg) 0;
   box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
 }
 
@@ -1704,8 +1709,8 @@ body {
 }
 
 @media (max-width: 768px) {
-  .hero-banner {
-    margin: var(--space-base);
+  .tracker-content {
+    padding: var(--space-base);
   }
 }
 
