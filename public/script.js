@@ -2784,7 +2784,7 @@ class AnalyticsManager {
     } else {
       // Today's date - show image in button
       if (claimBtn) {
-        claimBtn.innerHTML = '<img src="image/123.png" alt="Naver Point" class="btn-icon-img" id="reward-btn-img">';
+        claimBtn.innerHTML = '<img src="/image/123.png" alt="Naver Point" class="btn-icon-img" id="reward-btn-img">';
         
         // Enable/disable claim button
         // Button is enabled only if: points >= 1000 AND not claimed today AND viewing today
