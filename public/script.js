@@ -2717,39 +2717,58 @@ class AnalyticsManager {
       progressFill.style.width = `${progressPercent}%`;
     }
     
-    // Check if reward was already claimed today
+    // Check if viewing a past date
     const today = new Date();
-    const dateStr = this.timeTracker.formatDateForStorage(today);
+    today.setHours(0, 0, 0, 0);
+    const isPastDate = this.selectedDate && this.selectedDate.getTime() < today.getTime();
+    
+    // Check if reward was already claimed for the selected date
+    const dateStr = this.timeTracker.formatDateForStorage(this.selectedDate || today);
     const rewardClaimKey = `rewardClaimed_${this.timeTracker.currentNickname}_${dateStr}`;
     const alreadyClaimed = localStorage.getItem(rewardClaimKey) === 'true';
     
     // Update info text based on claim status
     const infoElement = document.getElementById('reward-info');
-    if (infoElement) {
-      if (alreadyClaimed) {
-        infoElement.textContent = '✅ 오늘 수령 완료';
-        infoElement.style.color = 'rgba(255, 255, 255, 0.9)';
-        infoElement.style.fontWeight = '600';
-      } else {
-        infoElement.textContent = '1,000p = 네이버 1,000 포인트';
-        infoElement.style.color = 'rgba(255, 255, 255, 0.7)';
+    const claimBtn = document.getElementById('reward-claim-btn');
+    
+    if (isPastDate) {
+      // Past date - show expired
+      if (infoElement) {
+        infoElement.textContent = '만료됨';
+        infoElement.style.color = 'rgba(255, 255, 255, 0.5)';
         infoElement.style.fontWeight = '400';
       }
-    }
-    
-    // Enable/disable claim button
-    // Button is enabled only if: points >= 1000 AND not claimed today
-    const claimBtn = document.getElementById('reward-claim-btn');
-    if (claimBtn) {
-      if (points >= 1000 && !alreadyClaimed) {
-        claimBtn.disabled = false;
-        claimBtn.title = '포인트 받기 (1회 가능)';
-      } else if (alreadyClaimed) {
+      if (claimBtn) {
         claimBtn.disabled = true;
-        claimBtn.title = '오늘은 이미 받았습니다';
-      } else {
-        claimBtn.disabled = true;
-        claimBtn.title = `${1000 - points}p 더 필요합니다`;
+        claimBtn.title = '기한이 지났습니다';
+      }
+    } else {
+      // Today's date
+      if (infoElement) {
+        if (alreadyClaimed) {
+          infoElement.textContent = '✅ 오늘 수령 완료';
+          infoElement.style.color = 'rgba(255, 255, 255, 0.9)';
+          infoElement.style.fontWeight = '600';
+        } else {
+          infoElement.textContent = '1,000p = 네이버 1,000 포인트';
+          infoElement.style.color = 'rgba(255, 255, 255, 0.7)';
+          infoElement.style.fontWeight = '400';
+        }
+      }
+      
+      // Enable/disable claim button
+      // Button is enabled only if: points >= 1000 AND not claimed today AND viewing today
+      if (claimBtn) {
+        if (points >= 1000 && !alreadyClaimed) {
+          claimBtn.disabled = false;
+          claimBtn.title = '포인트 받기 (1회 가능)';
+        } else if (alreadyClaimed) {
+          claimBtn.disabled = true;
+          claimBtn.title = '오늘은 이미 받았습니다';
+        } else {
+          claimBtn.disabled = true;
+          claimBtn.title = `${1000 - points}p 더 필요합니다`;
+        }
       }
     }
   }
@@ -2779,21 +2798,6 @@ class AnalyticsManager {
 
   updateTimelineReplica(data) {
     const replicaContainer = document.getElementById('timeline-replica');
-    
-    // Update the title to show selected date if applicable
-    const replicaTitle = document.querySelector('.replica-title');
-    if (replicaTitle) {
-      if (this.selectedDate) {
-        const dateStr = this.selectedDate.toLocaleDateString('ko-KR', { 
-          year: 'numeric', 
-          month: 'long', 
-          day: 'numeric' 
-        });
-        replicaTitle.textContent = `${dateStr} 타임라인`;
-      } else {
-        replicaTitle.textContent = '기간별 타임라인';
-      }
-    }
     
     if (Object.keys(data.timelineData).length === 0) {
       replicaContainer.innerHTML = '<div class="replica-no-data">선택한 기간에 기록된 데이터가 없습니다</div>';
