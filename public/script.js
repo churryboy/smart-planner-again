@@ -2868,6 +2868,12 @@ class AnalyticsManager {
           });
         }
         
+        // Update monthly summary to reflect category change
+        this.updateMonthMetrics();
+        
+        // Update current analytics view (timeline, task summary)
+        this.updateAnalytics();
+        
         console.log(`📝 Updated task "${taskName}" category to "${newCategory}"`);
       });
     });

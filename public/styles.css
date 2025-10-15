@@ -1840,9 +1840,10 @@ body {
 }
 
 .monthly-value {
-  font-size: 28px;
-  font-weight: 700;
+  font-size: 32px;
+  font-weight: 500;
   color: var(--blue-50);
+  letter-spacing: -0.5px;
 }
 
 /* Daily Analytics Header */
