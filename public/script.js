@@ -2748,38 +2748,23 @@ class AnalyticsManager {
     const rewardClaimKey = `rewardClaimed_${this.timeTracker.currentNickname}_${dateStr}`;
     const alreadyClaimed = localStorage.getItem(rewardClaimKey) === 'true';
     
-    // Update info text based on claim status
-    const infoElement = document.getElementById('reward-info');
+    // Update button content and state
     const claimBtn = document.getElementById('reward-claim-btn');
     
     if (isPastDate) {
-      // Past date - show expired
-      if (infoElement) {
-        infoElement.textContent = '만료됨';
-        infoElement.style.color = 'rgba(255, 255, 255, 0.5)';
-        infoElement.style.fontWeight = '400';
-      }
+      // Past date - show expired text in button
       if (claimBtn) {
+        claimBtn.innerHTML = '만료됨';
         claimBtn.disabled = true;
         claimBtn.title = '기한이 지났습니다';
       }
     } else {
-      // Today's date
-      if (infoElement) {
-        if (alreadyClaimed) {
-          infoElement.textContent = '✅ 오늘 수령 완료';
-          infoElement.style.color = 'rgba(255, 255, 255, 0.9)';
-          infoElement.style.fontWeight = '600';
-        } else {
-          infoElement.textContent = '1,000p = 네이버 1,000 포인트';
-          infoElement.style.color = 'rgba(255, 255, 255, 0.7)';
-          infoElement.style.fontWeight = '400';
-        }
-      }
-      
-      // Enable/disable claim button
-      // Button is enabled only if: points >= 1000 AND not claimed today AND viewing today
+      // Today's date - show image in button
       if (claimBtn) {
+        claimBtn.innerHTML = '<img src="image/123.png" alt="Naver Point" class="btn-icon-img" id="reward-btn-img">';
+        
+        // Enable/disable claim button
+        // Button is enabled only if: points >= 1000 AND not claimed today AND viewing today
         if (points >= 1000 && !alreadyClaimed) {
           claimBtn.disabled = false;
           claimBtn.title = '포인트 받기 (1회 가능)';
@@ -2806,14 +2791,6 @@ class AnalyticsManager {
     if (claimBtn) {
       claimBtn.disabled = true;
       claimBtn.title = '오늘은 이미 받았습니다';
-    }
-    
-    // Update info text immediately
-    const infoElement = document.getElementById('reward-info');
-    if (infoElement) {
-      infoElement.textContent = '✅ 오늘 수령 완료';
-      infoElement.style.color = 'rgba(255, 255, 255, 0.9)';
-      infoElement.style.fontWeight = '600';
     }
   }
 
