@@ -3582,16 +3582,8 @@ class NavigationManager {
   }
 
   updateAppHeader(viewName) {
-    const headerTitle = document.querySelector('.header-title');
-    if (headerTitle) {
-      if (viewName === 'analyzer') {
-        headerTitle.textContent = '시간 분석기';
-      } else if (viewName === 'ai-todo') {
-        headerTitle.textContent = 'AI 할일 추천';
-      } else {
-        headerTitle.textContent = '타임 트래커';
-      }
-    }
+    // Header title is now static: "스마트 플래너"
+    // No dynamic updates needed
   }
 
   getCurrentView() {

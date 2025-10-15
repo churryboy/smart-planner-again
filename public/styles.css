@@ -1673,85 +1673,39 @@ body {
 }
 
 /* Hero Banner */
-.hero-banner-link {
-  text-decoration: none;
-  display: block;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-
-.hero-banner-link:hover .hero-banner {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
-}
-
-.hero-banner-link:active .hero-banner {
-  transform: translateY(0);
-}
-
 .hero-banner {
-  background: linear-gradient(135deg, #FF6B6B 0%, #4ECDC4 100%);
-  border-radius: var(--radius-xl);
-  padding: var(--space-base) var(--space-lg);
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: var(--radius-lg);
+  padding: var(--space-sm) var(--space-base);
   margin: var(--space-lg) var(--space-base);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  cursor: pointer;
-  transition: all 0.2s ease;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
 }
 
 .hero-content {
-  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 
 .hero-title {
-  font-size: 20px;
-  font-weight: 700;
+  font-size: 16px;
+  font-weight: 600;
   color: var(--neutral-100);
-  margin: 0 0 var(--space-xs) 0;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  margin: 0;
+  text-align: left;
 }
 
 .hero-subtitle {
   font-size: 13px;
-  font-weight: 500;
-  color: rgba(255, 255, 255, 0.95);
-  margin: 0 0 var(--space-sm) 0;
-  line-height: 1.4;
-}
-
-.hero-details {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-xs);
-  margin-top: 0;
-}
-
-.hero-detail-item {
-  font-size: 12px;
-  font-weight: 600;
-  color: rgba(255, 255, 255, 0.98);
-  background: rgba(255, 255, 255, 0.15);
-  padding: 6px var(--space-base);
-  border-radius: var(--radius-base);
-  backdrop-filter: blur(10px);
+  font-weight: 400;
+  color: rgba(255, 255, 255, 0.9);
+  margin: 0;
+  text-align: left;
 }
 
 @media (max-width: 768px) {
   .hero-banner {
-    padding: var(--space-sm) var(--space-base);
     margin: var(--space-base);
-  }
-  
-  .hero-title {
-    font-size: 18px;
-  }
-  
-  .hero-subtitle {
-    font-size: 12px;
-  }
-  
-  .hero-detail-item {
-    font-size: 11px;
-    padding: 5px var(--space-sm);
   }
 }
 
