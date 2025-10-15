@@ -2153,7 +2153,10 @@ class AnalyticsManager {
   constructor(timeTracker) {
     this.timeTracker = timeTracker;
     this.currentDate = new Date();
-    this.selectedDate = null;
+    // Default to today's date
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    this.selectedDate = today;
     this.initializeAnalytics();
   }
 
@@ -2161,7 +2164,7 @@ class AnalyticsManager {
     // Initialize calendar
     this.initializeCalendar();
 
-    // Initial data load
+    // Initial data load - will show today's data by default
     this.updateAnalytics();
   }
 
@@ -2408,6 +2411,31 @@ class AnalyticsManager {
     this.updateAnalytics();
     
     console.log('📅 Selected date:', dateKey, 'Updating analytics for this specific date');
+  }
+
+  resetToToday() {
+    // Reset to today's date
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    this.selectedDate = today;
+    
+    // Update current date to today's month if different
+    const todayMonth = today.getMonth();
+    const todayYear = today.getFullYear();
+    if (this.currentDate.getMonth() !== todayMonth || this.currentDate.getFullYear() !== todayYear) {
+      this.currentDate = new Date(todayYear, todayMonth, 1);
+    }
+    
+    // Re-render calendar to show today selected
+    this.renderCalendar();
+    
+    // Update analytics to show today's data
+    this.updateAnalytics();
+    
+    // Update monthly summary
+    this.updateMonthMetrics();
+    
+    console.log('📅 Reset to today:', this.getDateKey(today));
   }
 
   updateMonthMetrics() {
@@ -3494,8 +3522,8 @@ class NavigationManager {
       if (!this.analyticsManager) {
         this.analyticsManager = new AnalyticsManager(this.timeTracker);
       } else {
-        // Refresh analytics data when returning to analyzer view
-        this.analyticsManager.updateAnalytics();
+        // Reset to today's data when returning to analyzer view
+        this.analyticsManager.resetToToday();
       }
       
       // Track analytics view (once per view switch)
