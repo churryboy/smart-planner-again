@@ -346,21 +346,35 @@ class MultiTaskManager {
   }
   
   saveTasksData() {
-    const tasksData = Array.from(this.tasks.entries()).map(([id, task]) => ({
-      id,
-      name: task.name,
-      totalTime: task.totalTime,
-      isRecording: task.isRecording,
-      hasBeenRecorded: task.hasBeenRecorded || false,
-      category: task.category || '공부'
-    }));
+    const now = Date.now();
+    const tasksData = Array.from(this.tasks.entries()).map(([id, task]) => {
+      // Include current session time in totalTime for save
+      let totalTimeWithSession = task.totalTime;
+      let savedStartTime = null;
+      
+      if (task.isRecording && task.startTime) {
+        const sessionTime = now - task.startTime;
+        totalTimeWithSession += sessionTime;
+        savedStartTime = task.startTime; // Save start time for recovery
+      }
+      
+      return {
+        id,
+        name: task.name,
+        totalTime: totalTimeWithSession, // Save total including current session
+        isRecording: task.isRecording,
+        startTime: savedStartTime, // Save start time if recording
+        hasBeenRecorded: task.hasBeenRecorded || false,
+        category: task.category || '공부'
+      };
+    });
     
     // Use date-specific storage key to keep tasks separate per day
     const today = new Date();
     const dateStr = this.timeTracker.formatDateForStorage(today);
     const storageKey = `multiTasks_${this.timeTracker.currentNickname}_${dateStr}`;
     localStorage.setItem(storageKey, JSON.stringify(tasksData));
-    console.log(`💾 Saved ${tasksData.length} tasks for ${dateStr}`);
+    console.log(`💾 Saved ${tasksData.length} tasks for ${dateStr} (with session progress)`);
   }
   
   loadTasksData() {
@@ -392,8 +406,8 @@ class MultiTaskManager {
           id: taskData.id,
           name: taskData.name,
           startTime: null,
-          totalTime: taskData.totalTime || 0, // Default to 0 if not set
-          isRecording: false, // Don't restore recording state
+          totalTime: taskData.totalTime || 0, // Includes session time from last save
+          isRecording: false, // Don't auto-restart recording on page load
           hasBeenRecorded: taskData.hasBeenRecorded || false,
           category: taskData.category || '공부',
           element: null
@@ -1166,11 +1180,19 @@ class TimeTracker {
     });
     
     window.addEventListener('beforeunload', () => {
+      // Stop all multi-task recordings to save session time before unload
+      if (window.multiTaskManager) {
+        window.multiTaskManager.stopAllRecordings();
+      }
       this.stopTimeUpdateTimer();
       this.saveData();
     });
     
     setInterval(() => {
+      // Auto-save multi-task data (includes current session progress)
+      if (window.multiTaskManager) {
+        window.multiTaskManager.saveTasksData();
+      }
       this.saveData();
     }, 30000);
   }
