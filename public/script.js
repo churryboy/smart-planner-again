@@ -2178,7 +2178,7 @@ class AnalyticsManager {
         this.currentDate.setMonth(this.currentDate.getMonth() - 1);
         this.selectedDate = null; // Clear selected date when changing months
         this.renderCalendar();
-        this.updateMonthMetrics(); // Update time metrics for new month
+        this.updateMonthMetrics(); // Update monthly summary for new month
         
         // Track month change
         if (window.analytics) {
@@ -2195,7 +2195,7 @@ class AnalyticsManager {
         this.currentDate.setMonth(this.currentDate.getMonth() + 1);
         this.selectedDate = null; // Clear selected date when changing months
         this.renderCalendar();
-        this.updateMonthMetrics(); // Update time metrics for new month
+        this.updateMonthMetrics(); // Update monthly summary for new month
         
         // Track month change
         if (window.analytics) {
@@ -2439,7 +2439,7 @@ class AnalyticsManager {
   }
 
   updateMonthMetrics() {
-    // Update only the time metrics for the current month (without timeline/task summary)
+    // Update only the monthly summary (not daily time metrics)
     const year = this.currentDate.getFullYear();
     const month = this.currentDate.getMonth();
     
@@ -2447,11 +2447,10 @@ class AnalyticsManager {
     const startOfMonth = new Date(year, month, 1, 0, 0, 0, 0);
     const endOfMonth = new Date(year, month + 1, 0, 23, 59, 59, 999);
     
-    console.log('📅 Updating metrics for month:', `${year}-${month + 1}`);
+    console.log('📅 Updating monthly summary for:', `${year}-${month + 1}`);
     
     const data = this.aggregateData(startOfMonth, endOfMonth);
-    this.updateTimeMetrics(data);
-    this.updateMonthlySummary(data); // Update monthly cumulative time
+    this.updateMonthlySummary(data); // Update monthly cumulative time only
   }
   
   updateMonthlySummary(data) {
