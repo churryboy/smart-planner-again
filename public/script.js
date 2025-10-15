@@ -1179,6 +1179,28 @@ class TimeTracker {
       });
     });
     
+    // Hero banner click handler - redirect to analyzer view reward tracker
+    const heroBanner = document.getElementById('hero-banner');
+    if (heroBanner) {
+      heroBanner.addEventListener('click', () => {
+        // Switch to analyzer view
+        if (window.navigationManager) {
+          window.navigationManager.switchView('analyzer');
+          
+          // Scroll to reward tracker after a brief delay to allow view switch
+          setTimeout(() => {
+            const rewardTracker = document.querySelector('.reward-tracker');
+            if (rewardTracker) {
+              rewardTracker.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+          }, 100);
+        }
+      });
+      
+      // Add cursor pointer style
+      heroBanner.style.cursor = 'pointer';
+    }
+    
     window.addEventListener('beforeunload', () => {
       // Stop all multi-task recordings to save session time before unload
       if (window.multiTaskManager) {
