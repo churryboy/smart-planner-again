@@ -1927,8 +1927,8 @@ body {
   height: 44px;
   padding: 0;
   background: transparent;
-  border: 0;
-  border-radius: 12px;
+  border: 2px solid rgba(255, 255, 255, 0.6);
+  border-radius: 4px;
   color: white;
   font-size: 20px;
   cursor: pointer;
@@ -1943,7 +1943,7 @@ body {
 .reward-claim-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
-  border: 0;
+  border: 2px solid rgba(255, 255, 255, 0.6);
 }
 
 .reward-claim-btn:not(:disabled) {
