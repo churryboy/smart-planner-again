@@ -2597,6 +2597,38 @@ class AnalyticsManager {
     // Calculate study time (time with "공부" category)
     const studyTime = data.categories['공부'] || 0;
     document.getElementById('study-time-metric').textContent = this.timeTracker.formatTime(studyTime);
+    
+    // Update reward points
+    this.updateRewardPoints(studyTime);
+  }
+  
+  updateRewardPoints(studyTimeMs) {
+    // Calculate points: 50 points per hour of study time
+    const studyHours = studyTimeMs / (1000 * 60 * 60);
+    const points = Math.floor(studyHours * 50);
+    
+    // Update points display
+    const pointsElement = document.getElementById('reward-points');
+    if (pointsElement) {
+      pointsElement.textContent = points.toLocaleString();
+    }
+    
+    // Update progress bar (max at 1000 points)
+    const progressFill = document.getElementById('reward-progress-fill');
+    if (progressFill) {
+      const progressPercent = Math.min((points / 1000) * 100, 100);
+      progressFill.style.width = `${progressPercent}%`;
+    }
+    
+    // Enable/disable claim button
+    const claimBtn = document.getElementById('reward-claim-btn');
+    if (claimBtn) {
+      if (points >= 1000) {
+        claimBtn.disabled = false;
+      } else {
+        claimBtn.disabled = true;
+      }
+    }
   }
 
   updateTimelineReplica(data) {
