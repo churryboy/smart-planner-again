@@ -2185,9 +2185,32 @@ class AnalyticsManager {
   initializeAnalytics() {
     // Initialize calendar
     this.initializeCalendar();
+    
+    // Set up reward claim button click handler
+    this.setupRewardClaimHandler();
 
     // Initial data load - will show today's data by default
     this.updateAnalytics();
+  }
+  
+  setupRewardClaimHandler() {
+    const claimBtn = document.getElementById('reward-claim-btn');
+    if (claimBtn) {
+      claimBtn.addEventListener('click', () => {
+        if (!claimBtn.disabled) {
+          // Track the click
+          if (window.analytics) {
+            window.analytics.trackHeroBannerClick('https://forms.gle/uAg3rAvxbSU9h7si7');
+          }
+          
+          // Mark as claimed
+          this.markRewardAsClaimed();
+          
+          // Open the form
+          window.open('https://forms.gle/uAg3rAvxbSU9h7si7', '_blank');
+        }
+      });
+    }
   }
 
   initializeCalendar() {
