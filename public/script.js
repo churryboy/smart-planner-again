@@ -2475,12 +2475,40 @@ class AnalyticsManager {
 
   updateAnalytics() {
     const data = this.getAnalyticsData();
+    this.updateSectionTitles();
     this.updateTimeMetrics(data);
     this.updateTimelineReplica(data);
     this.updateTaskSummary(data);
     
     // Refresh calendar to update heatmap
     this.renderCalendar();
+  }
+
+  updateSectionTitles() {
+    // Update section titles based on selected date
+    const replicaTitle = document.getElementById('replica-title');
+    const taskSummaryTitle = document.getElementById('task-summary-title');
+    
+    if (this.selectedDate) {
+      // Show date-specific titles (without year)
+      const month = this.selectedDate.getMonth() + 1;
+      const day = this.selectedDate.getDate();
+      
+      if (replicaTitle) {
+        replicaTitle.textContent = `${month}월 ${day}일 타임라인`;
+      }
+      if (taskSummaryTitle) {
+        taskSummaryTitle.textContent = `${month}월 ${day}일 작업별 시간 요약`;
+      }
+    } else {
+      // Show default titles for month view
+      if (replicaTitle) {
+        replicaTitle.textContent = '기간별 타임라인';
+      }
+      if (taskSummaryTitle) {
+        taskSummaryTitle.textContent = '작업별 시간 요약';
+      }
+    }
   }
 
   getAnalyticsData() {
