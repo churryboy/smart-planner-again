@@ -2606,6 +2606,31 @@ class AnalyticsManager {
   }
 
   updateTimeMetrics(data) {
+    // Update metric labels based on selected date
+    const totalTimeLabel = document.getElementById('total-time-label');
+    const studyTimeLabel = document.getElementById('study-time-label');
+    
+    if (this.selectedDate) {
+      // Show date-specific labels
+      const month = this.selectedDate.getMonth() + 1;
+      const day = this.selectedDate.getDate();
+      
+      if (totalTimeLabel) {
+        totalTimeLabel.textContent = `${month}월 ${day}일 전체 시간`;
+      }
+      if (studyTimeLabel) {
+        studyTimeLabel.textContent = `${month}월 ${day}일 순공 시간`;
+      }
+    } else {
+      // Show default labels for month view
+      if (totalTimeLabel) {
+        totalTimeLabel.textContent = '전체 시간';
+      }
+      if (studyTimeLabel) {
+        studyTimeLabel.textContent = '순공 시간';
+      }
+    }
+    
     // Calculate total time
     const totalTime = data.totalTime;
     document.getElementById('total-time-metric').textContent = this.timeTracker.formatTime(totalTime);

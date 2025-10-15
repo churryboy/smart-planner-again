@@ -1812,11 +1812,9 @@ body {
 }
 
 .monthly-summary-title {
-  font-size: 12px;
-  font-weight: 500;
-  color: var(--neutral-40);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--neutral-10);
   margin: 0 0 var(--space-base) 0;
 }
 
