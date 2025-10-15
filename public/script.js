@@ -229,6 +229,7 @@ class MultiTaskManager {
     
     this.updateTaskTimeDisplay(taskId);
     this.updateTotalTime();
+    this.updateStudyTime(); // Update study time after stopping
     this.saveTasksData();
     
     console.log(`✅ Stopped recording task: ${task.name} - Session: ${this.formatTime(sessionTime)}`);
@@ -320,28 +321,22 @@ class MultiTaskManager {
   
   updateStudyTime() {
     // Calculate total study time (tasks with '공부' category)
+    // Only counts saved/completed time, not currently recording time
     let studyTime = 0;
     
-    console.log('📚 Calculating study time:');
+    console.log('📚 Calculating study time (saved only):');
     this.tasks.forEach(task => {
       console.log(`  Task: "${task.name}", Category: "${task.category}", TotalTime: ${task.totalTime}, IsRecording: ${task.isRecording}`);
       
       if (task.category === '공부') {
         studyTime += task.totalTime;
-        // Add current session time if recording
-        if (task.isRecording && task.startTime) {
-          const sessionTime = Date.now() - task.startTime;
-          studyTime += sessionTime;
-          console.log(`    ✅ Added ${this.formatTime(task.totalTime)} + ${this.formatTime(sessionTime)} (recording)`);
-        } else {
-          console.log(`    ✅ Added ${this.formatTime(task.totalTime)}`);
-        }
+        console.log(`    ✅ Added ${this.formatTime(task.totalTime)}`);
       } else {
         console.log(`    ❌ Skipped (category: ${task.category})`);
       }
     });
     
-    console.log(`📊 Total study time: ${this.formatTime(studyTime)}`);
+    console.log(`📊 Total study time (saved): ${this.formatTime(studyTime)}`);
     
     // Update the study time display in analyzer view
     const studyTimeElement = document.getElementById('study-time-metric');
@@ -446,7 +441,7 @@ class MultiTaskManager {
       
       if (hasRecording) {
         this.updateTotalTime();
-        this.updateStudyTime(); // Also update study time
+        // updateStudyTime() removed - only show saved time, not real-time
       }
     }, 1000);
   }
