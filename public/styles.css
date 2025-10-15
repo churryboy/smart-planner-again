@@ -1674,7 +1674,7 @@ body {
 
 /* Tracker Content Wrapper */
 .tracker-content {
-  padding: var(--space-lg);
+  padding: var(--space-base);
 }
 
 /* Hero Banner */
@@ -2008,7 +2008,7 @@ body {
 
 /* Analytics Content */
 .analytics-content {
-  padding: var(--space-lg);
+  padding: var(--space-base);
 }
 
 /* Calendar Panel */
