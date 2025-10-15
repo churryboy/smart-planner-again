@@ -1806,23 +1806,23 @@ body {
 /* Analytics View */
 /* Monthly Summary */
 .monthly-summary {
-  background: linear-gradient(135deg, var(--neutral-90) 0%, var(--neutral-95) 100%);
-  border: 1px solid var(--neutral-70);
-  border-radius: var(--radius-xl);
-  padding: var(--space-lg);
   margin-bottom: var(--space-xl);
+  padding-bottom: var(--space-lg);
+  border-bottom: 1px solid var(--neutral-70);
 }
 
 .monthly-summary-title {
-  font-size: 16px;
-  font-weight: 600;
-  color: var(--neutral-20);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--neutral-40);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
   margin: 0 0 var(--space-base) 0;
 }
 
 .monthly-time-display {
   display: flex;
-  gap: var(--space-xxl);
+  gap: var(--space-xl);
 }
 
 .monthly-metric {
@@ -1832,7 +1832,7 @@ body {
 }
 
 .monthly-label {
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 500;
   color: var(--neutral-40);
   text-transform: uppercase;
@@ -1840,10 +1840,13 @@ body {
 }
 
 .monthly-value {
-  font-size: 32px;
-  font-weight: 500;
-  color: var(--blue-50);
-  letter-spacing: -0.5px;
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--neutral-10);
+}
+
+#monthly-study-time {
+  color: var(--orange-50);
 }
 
 /* Daily Analytics Header */
