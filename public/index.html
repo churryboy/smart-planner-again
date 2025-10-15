@@ -103,22 +103,25 @@
                         
                         <!-- Reward Tracker -->
                         <div class="reward-tracker">
-                            <div class="reward-header">
-                                <span class="reward-icon">🏆</span>
-                                <span class="reward-title">리워드 포인트</span>
-                            </div>
-                            <div class="reward-points">
-                                <span class="points-value" id="reward-points">0</span>
-                                <span class="points-label">/ 1,000 P</span>
+                            <div class="reward-compact">
+                                <div class="reward-left">
+                                    <div class="reward-header">
+                                        <span class="reward-icon">🏆</span>
+                                        <span class="reward-title">리워드</span>
+                                    </div>
+                                    <div class="reward-points">
+                                        <span class="points-value" id="reward-points">0</span>
+                                        <span class="points-label">/ 1,000p</span>
+                                    </div>
+                                    <p class="reward-info" id="reward-info">1,000p = 네이버 1,000 포인트</p>
+                                </div>
+                                <button class="reward-claim-btn" id="reward-claim-btn" disabled onclick="analytics.trackHeroBannerClick('https://forms.gle/G3ayXZgXLDYBrR9R7'); analytics.markRewardAsClaimed(); window.open('https://forms.gle/G3ayXZgXLDYBrR9R7', '_blank');" title="1000p 이상 필요합니다">
+                                    <span class="btn-icon">🎁</span>
+                                </button>
                             </div>
                             <div class="reward-progress-bar">
                                 <div class="reward-progress-fill" id="reward-progress-fill"></div>
                             </div>
-                            <button class="reward-claim-btn" id="reward-claim-btn" disabled onclick="analytics.trackHeroBannerClick('https://forms.gle/G3ayXZgXLDYBrR9R7'); window.open('https://forms.gle/G3ayXZgXLDYBrR9R7', '_blank');">
-                                <span class="btn-icon">🎁</span>
-                                <span class="btn-text">포인트 받기</span>
-                            </button>
-                            <p class="reward-info">1시간 공부 = 50포인트</p>
                         </div>
                     </div>
 

@@ -2603,9 +2603,9 @@ class AnalyticsManager {
   }
   
   updateRewardPoints(studyTimeMs) {
-    // Calculate points: 50 points per hour of study time
-    const studyHours = studyTimeMs / (1000 * 60 * 60);
-    const points = Math.floor(studyHours * 50);
+    // Calculate points: 50 points per 2 minutes of study time
+    const studyMinutes = studyTimeMs / (1000 * 60);
+    const points = Math.floor((studyMinutes / 3) * 10);
     
     // Update points display
     const pointsElement = document.getElementById('reward-points');
@@ -2620,14 +2620,63 @@ class AnalyticsManager {
       progressFill.style.width = `${progressPercent}%`;
     }
     
+    // Check if reward was already claimed today
+    const today = new Date();
+    const dateStr = this.timeTracker.formatDateForStorage(today);
+    const rewardClaimKey = `rewardClaimed_${this.timeTracker.currentNickname}_${dateStr}`;
+    const alreadyClaimed = localStorage.getItem(rewardClaimKey) === 'true';
+    
+    // Update info text based on claim status
+    const infoElement = document.getElementById('reward-info');
+    if (infoElement) {
+      if (alreadyClaimed) {
+        infoElement.textContent = '✅ 오늘 수령 완료';
+        infoElement.style.color = 'rgba(255, 255, 255, 0.9)';
+        infoElement.style.fontWeight = '600';
+      } else {
+        infoElement.textContent = '1,000p = 네이버 1,000 포인트';
+        infoElement.style.color = 'rgba(255, 255, 255, 0.7)';
+        infoElement.style.fontWeight = '400';
+      }
+    }
+    
     // Enable/disable claim button
+    // Button is enabled only if: points >= 1000 AND not claimed today
     const claimBtn = document.getElementById('reward-claim-btn');
     if (claimBtn) {
-      if (points >= 1000) {
+      if (points >= 1000 && !alreadyClaimed) {
         claimBtn.disabled = false;
+        claimBtn.title = '포인트 받기 (1회 가능)';
+      } else if (alreadyClaimed) {
+        claimBtn.disabled = true;
+        claimBtn.title = '오늘은 이미 받았습니다';
       } else {
         claimBtn.disabled = true;
+        claimBtn.title = `${1000 - points}p 더 필요합니다`;
       }
+    }
+  }
+  
+  markRewardAsClaimed() {
+    // Mark reward as claimed for today
+    const today = new Date();
+    const dateStr = this.timeTracker.formatDateForStorage(today);
+    const rewardClaimKey = `rewardClaimed_${this.timeTracker.currentNickname}_${dateStr}`;
+    localStorage.setItem(rewardClaimKey, 'true');
+    
+    // Update button state immediately
+    const claimBtn = document.getElementById('reward-claim-btn');
+    if (claimBtn) {
+      claimBtn.disabled = true;
+      claimBtn.title = '오늘은 이미 받았습니다';
+    }
+    
+    // Update info text immediately
+    const infoElement = document.getElementById('reward-info');
+    if (infoElement) {
+      infoElement.textContent = '✅ 오늘 수령 완료';
+      infoElement.style.color = 'rgba(255, 255, 255, 0.9)';
+      infoElement.style.fontWeight = '600';
     }
   }
 
