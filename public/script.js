@@ -2206,6 +2206,7 @@ class AnalyticsManager {
     
     // Render initial calendar
     this.renderCalendar();
+    this.updateMonthMetrics(); // Initialize monthly summary
   }
 
   renderCalendar() {
@@ -2422,6 +2423,26 @@ class AnalyticsManager {
     
     const data = this.aggregateData(startOfMonth, endOfMonth);
     this.updateTimeMetrics(data);
+    this.updateMonthlySummary(data); // Update monthly cumulative time
+  }
+  
+  updateMonthlySummary(data) {
+    // Update monthly cumulative time display
+    const totalTime = data.totalTime || 0;
+    const studyTime = data.categories['공부'] || 0;
+    
+    const monthlyTotalElement = document.getElementById('monthly-total-time');
+    const monthlyStudyElement = document.getElementById('monthly-study-time');
+    
+    if (monthlyTotalElement) {
+      monthlyTotalElement.textContent = this.timeTracker.formatTime(totalTime);
+    }
+    
+    if (monthlyStudyElement) {
+      monthlyStudyElement.textContent = this.timeTracker.formatTime(studyTime);
+    }
+    
+    console.log(`📊 Monthly Summary - Total: ${this.timeTracker.formatTime(totalTime)}, Study: ${this.timeTracker.formatTime(studyTime)}`);
   }
 
   updateAnalytics() {

@@ -89,6 +89,51 @@
             <!-- Time Analyzer View -->
             <div class="view-container hidden" id="analyzer-view">
                 <div class="analytics-content">
+                    <!-- Monthly Time Summary -->
+                    <div class="monthly-summary">
+                        <h3 class="monthly-summary-title">이번 달 누적 시간</h3>
+                        <div class="monthly-time-display">
+                            <div class="monthly-metric">
+                                <span class="monthly-label">총 시간</span>
+                                <span class="monthly-value" id="monthly-total-time">00:00:00</span>
+                            </div>
+                            <div class="monthly-metric">
+                                <span class="monthly-label">순공 시간</span>
+                                <span class="monthly-value" id="monthly-study-time">00:00:00</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Calendar Panel -->
+                    <div class="calendar-container">
+                        <div class="calendar-header">
+                            <button class="calendar-nav-btn" id="prev-month-btn">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="15 18 9 12 15 6"></polyline>
+                                </svg>
+                            </button>
+                            <h3 class="calendar-title" id="calendar-title">2025년 1월</h3>
+                            <button class="calendar-nav-btn" id="next-month-btn">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="9 18 15 12 9 6"></polyline>
+                                </svg>
+                            </button>
+                        </div>
+                        <div class="calendar-weekdays">
+                            <div class="calendar-weekday">일</div>
+                            <div class="calendar-weekday">월</div>
+                            <div class="calendar-weekday">화</div>
+                            <div class="calendar-weekday">수</div>
+                            <div class="calendar-weekday">목</div>
+                            <div class="calendar-weekday">금</div>
+                            <div class="calendar-weekday">토</div>
+                        </div>
+                        <div class="calendar-grid" id="calendar-grid">
+                            <!-- Calendar days will be generated here -->
+                        </div>
+                    </div>
+
+                    <!-- Daily Time Metrics & Rewards -->
                     <div class="analytics-header">
                         <div class="time-metrics">
                             <div class="metric-item">
@@ -122,35 +167,6 @@
                             <div class="reward-progress-bar">
                                 <div class="reward-progress-fill" id="reward-progress-fill"></div>
                             </div>
-                        </div>
-                    </div>
-
-                    <!-- Calendar Panel -->
-                    <div class="calendar-container">
-                        <div class="calendar-header">
-                            <button class="calendar-nav-btn" id="prev-month-btn">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <polyline points="15 18 9 12 15 6"></polyline>
-                                </svg>
-                            </button>
-                            <h3 class="calendar-title" id="calendar-title">2025년 1월</h3>
-                            <button class="calendar-nav-btn" id="next-month-btn">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <polyline points="9 18 15 12 9 6"></polyline>
-                                </svg>
-                            </button>
-                        </div>
-                        <div class="calendar-weekdays">
-                            <div class="calendar-weekday">일</div>
-                            <div class="calendar-weekday">월</div>
-                            <div class="calendar-weekday">화</div>
-                            <div class="calendar-weekday">수</div>
-                            <div class="calendar-weekday">목</div>
-                            <div class="calendar-weekday">금</div>
-                            <div class="calendar-weekday">토</div>
-                        </div>
-                        <div class="calendar-grid" id="calendar-grid">
-                            <!-- Calendar days will be generated here -->
                         </div>
                     </div>
 
