@@ -360,12 +360,25 @@ class MultiTaskManager {
       category: task.category || '공부'
     }));
     
-    localStorage.setItem(`multiTasks_${this.timeTracker.currentNickname}`, JSON.stringify(tasksData));
+    // Use date-specific storage key to keep tasks separate per day
+    const today = new Date();
+    const dateStr = this.timeTracker.formatDateForStorage(today);
+    const storageKey = `multiTasks_${this.timeTracker.currentNickname}_${dateStr}`;
+    localStorage.setItem(storageKey, JSON.stringify(tasksData));
+    console.log(`💾 Saved ${tasksData.length} tasks for ${dateStr}`);
   }
   
   loadTasksData() {
-    const saved = localStorage.getItem(`multiTasks_${this.timeTracker.currentNickname}`);
-    if (!saved) return false;
+    // Use date-specific storage key to load only today's tasks
+    const today = new Date();
+    const dateStr = this.timeTracker.formatDateForStorage(today);
+    const storageKey = `multiTasks_${this.timeTracker.currentNickname}_${dateStr}`;
+    const saved = localStorage.getItem(storageKey);
+    
+    if (!saved) {
+      console.log(`📂 No tasks found for ${dateStr}, starting fresh`);
+      return false;
+    }
     
     try {
       const tasksData = JSON.parse(saved);
@@ -378,13 +391,13 @@ class MultiTaskManager {
       this.tasks.clear();
       this.elements.tasksList.innerHTML = '';
       
-      // Restore tasks
+      // Restore tasks for today only
       tasksData.forEach(taskData => {
         const task = {
           id: taskData.id,
           name: taskData.name,
           startTime: null,
-          totalTime: taskData.totalTime,
+          totalTime: taskData.totalTime || 0, // Default to 0 if not set
           isRecording: false, // Don't restore recording state
           hasBeenRecorded: taskData.hasBeenRecorded || false,
           category: taskData.category || '공부',
@@ -411,6 +424,7 @@ class MultiTaskManager {
       
       this.updateTotalTime();
       this.updateStudyTime(); // Update study time after loading tasks
+      console.log(`📂 Loaded ${tasksData.length} tasks for ${dateStr}`);
       return true;
     } catch (error) {
       console.error('Failed to load tasks data:', error);
